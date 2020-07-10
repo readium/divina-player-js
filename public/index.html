@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Divina Player</title>
+	<style type="text/css">
+		body, html {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			background-color: black;
+		}
+		#stage {
+			position: fixed;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+		}
+	</style>
+	<script type="text/javascript" src="./divinaPlayer.js"></script>
+</head>
+<body>
+	<script type="text/javascript">
+
+		// List of divina folder URLs (relative to index.html's parent folder)
+		let divinaFoldersArray = ["./webtoon"]
+		
+		// URL of the specific page/resource to access directly (i.e. start reading from) in a divina
+		let targetUrl = null
+		
+		// Options for the player
+		let options = {
+			// Variables
+			allowsDestroy: true,
+			allowsParallel: false,
+			maxNbOfPagesAfter: 6,
+			videoLoadTimeout: 2000,
+			allowsZoom: true,
+			allowsSwipe: true,
+			allowsWheelScroll: true,
+			allowsPaginatedScroll: true,
+			isPaginationSticky: true,
+			isPaginationGridBased: true,
+			language: "en",
+		}
+
+		window.onload = function () {
+			let Player = window.divinaPlayer
+			if (!Player) {
+				return
+			}
+
+			// Get the root element
+			let stage = window.document.getElementById("stage")
+
+			// Create the player
+			let player = new Player(stage)
+
+			// Load the divina from its folder path
+			player.openDivinaFromPath(divinaFoldersArray[0], targetUrl, options)
+
+			// Handle events emitted by the player
+			let eventEmitter = player.eventEmitter
+			eventEmitter.on("jsonload", (data) => {
+				console.log("JSON load", data)
+			})
+			eventEmitter.on("pagenavigatorscreation", (data) => {
+				console.log("Page navigators creation", data)
+			})
+			eventEmitter.on("initialload", (data) => {
+				console.log("Initial load", data)
+			})
+			eventEmitter.on("languagechange", (data) => {
+				console.log("Language change", data)
+			})
+			eventEmitter.on("readingmodechange", (data) => {
+				console.log("Reading mode change", data)
+			})
+			eventEmitter.on("readingmodesupdate", (data) => {
+				console.log("Reading modes update", data)
+			})
+			eventEmitter.on("pagechange", (data) => {
+				console.log("Page change", data)
+			})
+			/*eventEmitter.on("inpagescroll", (data) => {
+				console.log("In-page scroll", data)
+			})*/
+		}
+
+	</script>
+	<div id="stage"></div>>
+</body>
+</html> 
