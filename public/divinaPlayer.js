@@ -52442,203 +52442,178 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return DivinaParser; });
 /* harmony import */ var _LinkObject__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LinkObject */ "./src/DivinaParser/LinkObject.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
-
-
-var DivinaParser =
-/*#__PURE__*/
-function () {
-  function DivinaParser(player, textManager, doWithParsedDivinaData) {
-    _classCallCheck(this, DivinaParser);
-
+class DivinaParser {
+  constructor(player, textManager, doWithParsedDivinaData) {
     this._player = player;
     this._textManager = textManager;
     this._doWithParsedDivinaData = doWithParsedDivinaData;
   }
 
-  _createClass(DivinaParser, [{
-    key: "loadFromPath",
-    value: function loadFromPath(folderPath) {
-      var _this = this;
-
-      DivinaParser.loadJson(folderPath).then(function (json) {
-        _this._buildStoryFromJson(json);
-      }, function (error) {
-        if (_this._textManager) {
-          _this._textManager.showMessage({
-            type: "error",
-            data: error.message
-          });
-        }
-      });
-    }
-  }, {
-    key: "loadFromData",
-    value: function loadFromData(data) {
-      if (data && data.json) {
-        this._buildStoryFromJson(data.json);
-      }
-    }
-  }, {
-    key: "loadFromJsonAndPath",
-    value: function loadFromJsonAndPath(json) {
+  loadFromPath(folderPath) {
+    DivinaParser.loadJson(folderPath).then(json => {
       this._buildStoryFromJson(json);
-    }
-  }, {
-    key: "_buildStoryFromJson",
-    value: function _buildStoryFromJson(json) {
-      var metadata = json.metadata,
-          readingOrder = json.readingOrder,
-          guided = json.guided;
+    }, error => {
+      if (this._textManager) {
+        this._textManager.showMessage({
+          type: "error",
+          data: error.message
+        });
+      }
+    });
+  }
 
-      if (!metadata || !readingOrder) {
-        if (this._textManager) {
-          this._textManager.showMessage({
-            type: "error",
-            data: "Missing metadata or readingOrder information"
-          });
-        }
-
-        return;
+  static loadJson(folderPath) {
+    return new Promise((resolve, reject) => {
+      if (!folderPath) {
+        reject(Error("No folder path was specified"));
       }
 
-      var parsedMetadata = this._parseMetadata(metadata);
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", `${folderPath}/${_constants__WEBPACK_IMPORTED_MODULE_1__["defaultManifestFilename"]}`);
+      xhr.responseType = "text";
 
-      if (!parsedMetadata) {
-        return;
-      }
+      xhr.onload = () => {
+        const text = xhr.response;
 
-      var parsedDivinaData = {
-        metadata: parsedMetadata,
-        mainLinkObjectsArray: this._parseObjectsList(readingOrder)
-      };
-
-      if (guided) {
-        parsedDivinaData.guidedLinkObjectsArray = this._parseObjectsList(guided);
-      }
-
-      if (!this._doWithParsedDivinaData) {
-        return;
-      }
-
-      this._doWithParsedDivinaData(parsedDivinaData);
-    }
-  }, {
-    key: "_parseMetadata",
-    value: function _parseMetadata(metadata) {
-      var readingProgression = metadata.readingProgression,
-          language = metadata.language,
-          presentation = metadata.presentation;
-
-      if (!readingProgression) {
-        if (this._textManager) {
-          this._textManager.showMessage({
-            type: "error",
-            data: "Missing readingProgression information"
-          });
-        }
-
-        return null;
-      }
-
-      if (readingProgression !== "ltr" && readingProgression !== "rtl" && readingProgression !== "ttb" && readingProgression !== "btt") {
-        if (this._textManager) {
-          this._textManager.showMessage({
-            type: "error",
-            data: "Value for readingProgression is not valid"
-          });
-        }
-
-        return null;
-      }
-
-      var _ref = presentation || {},
-          continuous = _ref.continuous,
-          fit = _ref.fit,
-          overflow = _ref.overflow,
-          clipped = _ref.clipped,
-          spread = _ref.spread,
-          viewportRatio = _ref.viewportRatio,
-          orientation = _ref.orientation;
-
-      var storyContinuous = continuous === true || continuous === false ? continuous : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultContinuous"];
-      var storyFit = fit === "contain" || fit === "cover" || fit === "width" || fit === "height" ? fit : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultFit"];
-      var storyOverflow = overflow === "scrolled" || overflow === "paginated" ? overflow : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultOverflow"];
-      var storyClipped = clipped === true || clipped === false ? clipped : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultClipped"];
-      var storySpread = spread === "both" || spread === "landscape" || spread === "none" ? spread : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultSpread"];
-      var languagesArray = [];
-
-      if (language) {
-        languagesArray = Array.isArray(language) === true ? language : [language];
-      } else {
-        languagesArray = ["unspecified"];
-      }
-
-      return {
-        readingProgression: readingProgression,
-        continuous: storyContinuous,
-        fit: storyFit,
-        overflow: storyOverflow,
-        clipped: storyClipped,
-        spread: storySpread,
-        viewportRatio: viewportRatio,
-        orientation: orientation,
-        languagesArray: languagesArray
-      };
-    }
-  }, {
-    key: "_parseObjectsList",
-    value: function _parseObjectsList(objectsList) {
-      var _this2 = this;
-
-      var parentLinkObject = null;
-      var linkObjectsArray = objectsList.map(function (object) {
-        return new _LinkObject__WEBPACK_IMPORTED_MODULE_0__["default"](object, parentLinkObject, _this2._player);
-      });
-      return linkObjectsArray;
-    }
-  }], [{
-    key: "loadJson",
-    value: function loadJson(folderPath) {
-      return new Promise(function (resolve, reject) {
-        if (!folderPath) {
-          reject(Error("No folder path was specified"));
-        }
-
-        var xhr = new XMLHttpRequest();
-        xhr.open("GET", "".concat(folderPath, "/").concat(_constants__WEBPACK_IMPORTED_MODULE_1__["defaultManifestFilename"]));
-        xhr.responseType = "text";
-
-        xhr.onload = function () {
-          var text = xhr.response;
-
-          try {
-            var json = JSON.parse(text);
-            resolve(json);
-          } catch (error) {
-            reject(error);
-          }
-        };
-
-        xhr.onerror = function (error) {
+        try {
+          const json = JSON.parse(text);
+          resolve(json);
+        } catch (error) {
           reject(error);
-        };
+        }
+      };
 
-        xhr.send();
-      });
+      xhr.onerror = error => {
+        reject(error);
+      };
+
+      xhr.send();
+    });
+  }
+
+  loadFromData(data) {
+    if (data && data.json) {
+      this._buildStoryFromJson(data.json);
     }
-  }]);
+  }
 
-  return DivinaParser;
-}();
+  loadFromJsonAndPath(json) {
+    this._buildStoryFromJson(json);
+  }
 
+  _buildStoryFromJson(json) {
+    const {
+      metadata,
+      readingOrder,
+      guided
+    } = json;
 
+    if (!metadata || !readingOrder) {
+      if (this._textManager) {
+        this._textManager.showMessage({
+          type: "error",
+          data: "Missing metadata or readingOrder information"
+        });
+      }
+
+      return;
+    }
+
+    const parsedMetadata = this._parseMetadata(metadata);
+
+    if (!parsedMetadata) {
+      return;
+    }
+
+    const parsedDivinaData = {
+      metadata: parsedMetadata,
+      mainLinkObjectsArray: this._parseObjectsList(readingOrder)
+    };
+
+    if (guided) {
+      parsedDivinaData.guidedLinkObjectsArray = this._parseObjectsList(guided);
+    }
+
+    if (!this._doWithParsedDivinaData) {
+      return;
+    }
+
+    this._doWithParsedDivinaData(parsedDivinaData);
+  }
+
+  _parseMetadata(metadata) {
+    const {
+      readingProgression,
+      language,
+      presentation
+    } = metadata;
+
+    if (!readingProgression) {
+      if (this._textManager) {
+        this._textManager.showMessage({
+          type: "error",
+          data: "Missing readingProgression information"
+        });
+      }
+
+      return null;
+    }
+
+    if (readingProgression !== "ltr" && readingProgression !== "rtl" && readingProgression !== "ttb" && readingProgression !== "btt") {
+      if (this._textManager) {
+        this._textManager.showMessage({
+          type: "error",
+          data: "Value for readingProgression is not valid"
+        });
+      }
+
+      return null;
+    }
+
+    const {
+      continuous,
+      fit,
+      overflow,
+      clipped,
+      spread,
+      viewportRatio,
+      orientation
+    } = presentation || {};
+    const storyContinuous = continuous === true || continuous === false ? continuous : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultContinuous"];
+    const storyFit = fit === "contain" || fit === "cover" || fit === "width" || fit === "height" ? fit : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultFit"];
+    const storyOverflow = overflow === "scrolled" || overflow === "paginated" ? overflow : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultOverflow"];
+    const storyClipped = clipped === true || clipped === false ? clipped : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultClipped"];
+    const storySpread = spread === "both" || spread === "landscape" || spread === "none" ? spread : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultSpread"];
+    let languagesArray = [];
+
+    if (language) {
+      languagesArray = Array.isArray(language) === true ? language : [language];
+    } else {
+      languagesArray = ["unspecified"];
+    }
+
+    return {
+      readingProgression,
+      continuous: storyContinuous,
+      fit: storyFit,
+      overflow: storyOverflow,
+      clipped: storyClipped,
+      spread: storySpread,
+      viewportRatio,
+      orientation,
+      languagesArray
+    };
+  }
+
+  _parseObjectsList(objectsList) {
+    const parentLinkObject = null;
+    const linkObjectsArray = objectsList.map(object => new _LinkObject__WEBPACK_IMPORTED_MODULE_0__["default"](object, parentLinkObject, this._player));
+    return linkObjectsArray;
+  }
+
+}
 
 /***/ }),
 
@@ -52655,51 +52630,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Slice__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Slice */ "./src/Slice/index.js");
 /* harmony import */ var _SliceResource__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./SliceResource */ "./src/DivinaParser/SliceResource.js");
 /* harmony import */ var _Transition__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Transition */ "./src/DivinaParser/Transition.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
+class LinkObject {
+  get slice() {
+    return this._slice;
+  }
 
+  get transitionForward() {
+    return this._transitionForward;
+  }
 
-var LinkObject =
-/*#__PURE__*/
-function () {
-  _createClass(LinkObject, [{
-    key: "slice",
-    get: function get() {
-      return this._slice;
-    }
-  }, {
-    key: "transitionForward",
-    get: function get() {
-      return this._transitionForward;
-    }
-  }, {
-    key: "transitionBackward",
-    get: function get() {
-      return this._transitionBackward;
-    }
-  }, {
-    key: "snapPoints",
-    get: function get() {
-      return this._snapPoints;
-    }
-  }, {
-    key: "children",
-    get: function get() {
-      return this._children;
-    }
-  }]);
+  get transitionBackward() {
+    return this._transitionBackward;
+  }
 
-  function LinkObject(object, parentInfo, player) {
-    var forcedRole = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  get snapPoints() {
+    return this._snapPoints;
+  }
 
-    _classCallCheck(this, LinkObject);
+  get children() {
+    return this._children;
+  }
 
+  constructor(object, parentInfo, player, forcedRole = null) {
     this._slice = null; // For transitions (will eventually be stored at page level)
 
     this._transitionForward = null;
@@ -52712,91 +52667,81 @@ function () {
     this._buildSlicesAndTransitions(object, parentInfo, player, forcedRole);
   }
 
-  _createClass(LinkObject, [{
-    key: "_buildSlicesAndTransitions",
-    value: function _buildSlicesAndTransitions(object) {
-      var _this = this;
+  _buildSlicesAndTransitions(object, parentInfo = null, player, forcedRole = null) {
+    const {
+      properties
+    } = object || {};
+    const {
+      fit,
+      clipped,
+      page,
+      layers,
+      transitionForward,
+      transitionBackward,
+      snapPoints
+    } = properties || {};
+    let sliceFit = null;
 
-      var parentInfo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var player = arguments.length > 2 ? arguments[2] : undefined;
-      var forcedRole = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-
-      var _ref = object || {},
-          properties = _ref.properties;
-
-      var _ref2 = properties || {},
-          fit = _ref2.fit,
-          clipped = _ref2.clipped,
-          page = _ref2.page,
-          layers = _ref2.layers,
-          transitionForward = _ref2.transitionForward,
-          transitionBackward = _ref2.transitionBackward,
-          snapPoints = _ref2.snapPoints;
-
-      var sliceFit = null;
-
-      if (fit === "contain" || fit === "cover" || fit === "width" || fit === "height") {
-        sliceFit = fit;
-      } else if (parentInfo) {
-        // If a layer slice
-        sliceFit = "pixel";
-      }
-
-      var sliceClipped = clipped === true || clipped === false ? clipped : null;
-      var pageSide = page === "left" || page === "right" || page === "center" ? page : null;
-      var role = forcedRole || "standard";
-
-      if (parentInfo) {
-        role = "layersLayer";
-      } else if (layers) {
-        role = "layersParent";
-      }
-
-      var sliceResource = new _SliceResource__WEBPACK_IMPORTED_MODULE_1__["default"](object, role, sliceFit, sliceClipped, pageSide);
-      this._slice = new _Slice__WEBPACK_IMPORTED_MODULE_0__["Slice"](sliceResource, player, parentInfo);
-
-      if (!parentInfo && layers) {
-        // No need to consider layers for a child link object
-        this._children = layers.map(function (layerObject, i) {
-          var layerProperties = layerObject.properties || {};
-          var entryForward = layerProperties.entryForward,
-              exitForward = layerProperties.exitForward,
-              entryBackward = layerProperties.entryBackward,
-              exitBackward = layerProperties.exitBackward; // Create a new link object, using this link object's slice as the parent slice
-
-          var parentInformation = {
-            slice: _this._slice,
-            layerIndex: i
-          };
-          var linkObject = new LinkObject(layerObject, parentInformation, player);
-          return {
-            linkObject: linkObject,
-            entryForward: entryForward,
-            exitForward: exitForward,
-            entryBackward: entryBackward,
-            exitBackward: exitBackward
-          };
-        });
-      } // Store more detailed transition information
-
-
-      if (transitionForward) {
-        this._transitionForward = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](transitionForward, player);
-      }
-
-      if (transitionBackward) {
-        this._transitionBackward = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](transitionBackward, player);
-      } // Store snap points
-
-
-      this._snapPoints = snapPoints;
+    if (fit === "contain" || fit === "cover" || fit === "width" || fit === "height") {
+      sliceFit = fit;
+    } else if (parentInfo) {
+      // If a layer slice
+      sliceFit = "pixel";
     }
-  }]);
 
-  return LinkObject;
-}();
+    const sliceClipped = clipped === true || clipped === false ? clipped : null;
+    const pageSide = page === "left" || page === "right" || page === "center" ? page : null;
+    let role = forcedRole || "standard";
+
+    if (parentInfo) {
+      role = "layersLayer";
+    } else if (layers) {
+      role = "layersParent";
+    }
+
+    const sliceResource = new _SliceResource__WEBPACK_IMPORTED_MODULE_1__["default"](object, role, sliceFit, sliceClipped, pageSide);
+    this._slice = new _Slice__WEBPACK_IMPORTED_MODULE_0__["Slice"](sliceResource, player, parentInfo);
+
+    if (!parentInfo && layers) {
+      // No need to consider layers for a child link object
+      this._children = layers.map((layerObject, i) => {
+        const layerProperties = layerObject.properties || {};
+        const {
+          entryForward,
+          exitForward,
+          entryBackward,
+          exitBackward
+        } = layerProperties; // Create a new link object, using this link object's slice as the parent slice
+
+        const parentInformation = {
+          slice: this._slice,
+          layerIndex: i
+        };
+        const linkObject = new LinkObject(layerObject, parentInformation, player);
+        return {
+          linkObject,
+          entryForward,
+          exitForward,
+          entryBackward,
+          exitBackward
+        };
+      });
+    } // Store more detailed transition information
 
 
+    if (transitionForward) {
+      this._transitionForward = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](transitionForward, player);
+    }
+
+    if (transitionBackward) {
+      this._transitionBackward = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](transitionBackward, player);
+    } // Store snap points
+
+
+    this._snapPoints = snapPoints;
+  }
+
+}
 
 /***/ }),
 
@@ -52812,131 +52757,81 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return SliceResource; });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
+class SliceResource {
+  get role() {
+    return this._role;
+  }
+
+  get fit() {
+    return this._fit;
+  }
+
+  get clipped() {
+    return this._clipped;
+  }
+
+  get pageSide() {
+    return this._pageSide;
+  }
+
+  get type() {
+    return this._type;
+  }
+
+  get href() {
+    return this._href;
+  }
+
+  get path() {
+    return this._path;
+  }
+
+  get mediaFragment() {
+    return this._mediaFragment;
+  }
+
+  get width() {
+    return this._width;
+  }
+
+  get height() {
+    return this._height;
+  } // Note that fallback and each alternate[tag] objects will have
+  // the same structure = { type, path, mediaFragment, href }
 
 
-var SliceResource =
-/*#__PURE__*/
-function () {
-  _createClass(SliceResource, [{
-    key: "role",
-    get: function get() {
-      return this._role;
-    }
-  }, {
-    key: "fit",
-    get: function get() {
-      return this._fit;
-    }
-  }, {
-    key: "clipped",
-    get: function get() {
-      return this._clipped;
-    }
-  }, {
-    key: "pageSide",
-    get: function get() {
-      return this._pageSide;
-    }
-  }, {
-    key: "type",
-    get: function get() {
-      return this._type;
-    }
-  }, {
-    key: "href",
-    get: function get() {
-      return this._href;
-    }
-  }, {
-    key: "path",
-    get: function get() {
-      return this._path;
-    }
-  }, {
-    key: "mediaFragment",
-    get: function get() {
-      return this._mediaFragment;
-    }
-  }, {
-    key: "width",
-    get: function get() {
-      return this._width;
-    }
-  }, {
-    key: "height",
-    get: function get() {
-      return this._height;
-    } // Note that fallback and each alternate[tag] objects will have
-    // the same structure = { type, path, mediaFragment, href }
+  get fallback() {
+    return this._fallback;
+  }
 
-  }, {
-    key: "fallback",
-    get: function get() {
-      return this._fallback;
-    }
-  }, {
-    key: "alternate",
-    get: function get() {
-      return this._alternate;
-    } // Used in Player to list a story's tags
+  get alternate() {
+    return this._alternate;
+  } // Used in Player to list a story's tags
 
-  }, {
-    key: "usedTags",
-    get: function get() {
-      var tags = {};
-      Object.entries(this._alternate || {}).forEach(function (_ref) {
-        var _ref2 = _slicedToArray(_ref, 2),
-            tagName = _ref2[0],
-            tagData = _ref2[1];
 
-        tags[tagName] = Object.keys(tagData);
-      });
-      return tags;
-    }
-  }]);
+  get usedTags() {
+    const tags = {};
+    Object.entries(this._alternate || {}).forEach(([tagName, tagData]) => {
+      tags[tagName] = Object.keys(tagData);
+    });
+    return tags;
+  }
 
-  function SliceResource(object, role, fit) {
-    var _this = this;
-
-    var clipped = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : true;
-    var pageSide = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
-
-    _classCallCheck(this, SliceResource);
-
+  constructor(object, role, fit, clipped = true, pageSide = null) {
     this._role = role;
     this._fit = fit;
     this._clipped = clipped;
     this._pageSide = pageSide;
-
-    var _ref3 = object || {},
-        href = _ref3.href,
-        type = _ref3.type,
-        width = _ref3.width,
-        height = _ref3.height,
-        fallbackHref = _ref3.fallbackHref,
-        alternate = _ref3.alternate;
-
+    const {
+      href,
+      type,
+      width,
+      height,
+      fallbackHref,
+      alternate
+    } = object || {};
     this._type = type;
     this._href = href;
     this._width = width;
@@ -52947,16 +52842,16 @@ function () {
       return;
     }
 
-    var _Utils$getPathAndMedi = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](href),
-        path = _Utils$getPathAndMedi.path,
-        mediaFragment = _Utils$getPathAndMedi.mediaFragment;
-
+    const {
+      path,
+      mediaFragment
+    } = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](href);
     this._path = path;
     this._mediaFragment = mediaFragment;
-    var resourceType = null; // To assign a general resourceType, first check the specified value for type
+    let resourceType = null; // To assign a general resourceType, first check the specified value for type
 
     if (type) {
-      var generalType = type.split("/")[0];
+      const generalType = type.split("/")[0];
 
       if (generalType === "image" || generalType === "video") {
         resourceType = generalType;
@@ -52980,35 +52875,35 @@ function () {
     this._type = resourceType;
 
     if (fallbackHref) {
-      var fallbackInfo = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](fallbackHref);
-      this._fallback = _objectSpread({}, fallbackInfo, {
+      const fallbackInfo = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](fallbackHref);
+      this._fallback = { ...fallbackInfo,
         href: fallbackHref
-      });
+      };
     }
 
     this._alternate = null;
 
     if (alternate) {
-      alternate.forEach(function (alternateObject) {
+      alternate.forEach(alternateObject => {
         if (alternateObject.href) {
-          _constants__WEBPACK_IMPORTED_MODULE_1__["possibleTagNames"].forEach(function (possibleTagName) {
-            var tagValue = alternateObject[possibleTagName];
+          _constants__WEBPACK_IMPORTED_MODULE_1__["possibleTagNames"].forEach(possibleTagName => {
+            const tagValue = alternateObject[possibleTagName];
 
             if (tagValue !== undefined) {
               // Assumption: same type and dimensions
-              if (!_this._alternate) {
-                _this._alternate = {};
+              if (!this._alternate) {
+                this._alternate = {};
               }
 
-              if (!_this._alternate[possibleTagName]) {
-                _this._alternate[possibleTagName] = {};
+              if (!this._alternate[possibleTagName]) {
+                this._alternate[possibleTagName] = {};
               }
 
-              var alternateInfo = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](alternateObject.href);
-              _this._alternate[possibleTagName][tagValue] = _objectSpread({}, alternateInfo, {
+              const alternateInfo = _utils__WEBPACK_IMPORTED_MODULE_0__["getPathAndMediaFragment"](alternateObject.href);
+              this._alternate[possibleTagName][tagValue] = { ...alternateInfo,
                 type: resourceType,
                 href: alternateObject.href
-              });
+              };
             }
           });
         }
@@ -53016,10 +52911,7 @@ function () {
     }
   }
 
-  return SliceResource;
-}();
-
-
+}
 
 /***/ }),
 
@@ -53037,63 +52929,39 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _LinkObject__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./LinkObject */ "./src/DivinaParser/LinkObject.js");
 /* harmony import */ var _SliceResource__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./SliceResource */ "./src/DivinaParser/SliceResource.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
 
+class Transition {
+  get type() {
+    return this._type;
+  }
 
+  get duration() {
+    return this._duration;
+  }
 
-var Transition =
-/*#__PURE__*/
-function () {
-  _createClass(Transition, [{
-    key: "type",
-    get: function get() {
-      return this._type;
-    }
-  }, {
-    key: "duration",
-    get: function get() {
-      return this._duration;
-    }
-  }, {
-    key: "direction",
-    get: function get() {
-      return this._direction;
-    }
-  }, {
-    key: "sliceType",
-    get: function get() {
-      return this._sliceType;
-    }
-  }, {
-    key: "slice",
-    get: function get() {
-      return this._slice;
-    }
-  }]);
+  get direction() {
+    return this._direction;
+  }
 
-  function Transition(transition, player) {
-    _classCallCheck(this, Transition);
+  get sliceType() {
+    return this._sliceType;
+  }
 
-    var _ref = transition || {},
-        type = _ref.type,
-        duration = _ref.duration,
-        direction = _ref.direction,
-        file = _ref.file,
-        sequence = _ref.sequence;
+  get slice() {
+    return this._slice;
+  }
 
+  constructor(transition, player) {
+    const {
+      type,
+      duration,
+      direction,
+      file,
+      sequence
+    } = transition || {};
     this._type = type;
     this._duration = duration;
     this._direction = direction;
@@ -53103,38 +52971,37 @@ function () {
     if (type === "animation") {
       if (file) {
         this._sliceType = "video";
-
-        var fullObject = _objectSpread({}, file, {
+        const fullObject = { ...file,
           type: "video"
-        });
-
-        var parentInfo = null;
-        var forcedRole = "transition";
+        };
+        const parentInfo = null;
+        const forcedRole = "transition";
         this._linkObject = new _LinkObject__WEBPACK_IMPORTED_MODULE_1__["default"](fullObject, parentInfo, player, forcedRole);
-        var slice = this._linkObject.slice;
+        const {
+          slice
+        } = this._linkObject;
         this._slice = slice;
       } else if (sequence) {
         this._sliceType = "sequence";
-        var role = "transition";
-        var resourcesArray = [];
-        var fit = null;
-        sequence.forEach(function (object, i) {
+        const role = "transition";
+        const resourcesArray = [];
+        let fit = null;
+        sequence.forEach((object, i) => {
           if (i === 0 && object.properties && object.properties.fit) {
             fit = object.properties.fit;
           }
 
-          var fullObject = _objectSpread({}, object, {
+          const fullObject = { ...object,
             type: "image"
-          });
-
-          var sliceResource = new _SliceResource__WEBPACK_IMPORTED_MODULE_2__["default"](fullObject, role, fit);
+          };
+          const sliceResource = new _SliceResource__WEBPACK_IMPORTED_MODULE_2__["default"](fullObject, role, fit);
           resourcesArray.push(sliceResource);
         });
-        var resourcesInfo = {
-          role: role,
-          resourcesArray: resourcesArray,
-          fit: fit,
-          duration: duration
+        const resourcesInfo = {
+          role,
+          resourcesArray,
+          fit,
+          duration
         };
         this._slice = new _Slice__WEBPACK_IMPORTED_MODULE_0__["SequenceSlice"](resourcesInfo, player);
         this._duration = duration || _constants__WEBPACK_IMPORTED_MODULE_3__["defaultDuration"];
@@ -53143,78 +53010,72 @@ function () {
   } // Used in StoryBuilder to split each page transition into two layer transitions
 
 
-  _createClass(Transition, [{
-    key: "getEntryAndExitTransitions",
-    value: function getEntryAndExitTransitions(isForward) {
-      var entry = {
-        type: this._type,
-        duration: this._duration // Duration may remain undefined
+  getEntryAndExitTransitions(isForward) {
+    let entry = {
+      type: this._type,
+      duration: this._duration // Duration may remain undefined
 
-      };
-      var exit = {
-        type: this._type,
-        duration: this._duration // Duration may remain undefined
+    };
+    let exit = {
+      type: this._type,
+      duration: this._duration // Duration may remain undefined
 
-      };
+    };
 
-      switch (this._type) {
-        case "cut":
-          // Duration is not taken into account, i.e. the cut occurs at once
-          entry = null;
-          exit = null;
-          break;
+    switch (this._type) {
+      case "cut":
+        // Duration is not taken into account, i.e. the cut occurs at once
+        entry = null;
+        exit = null;
+        break;
 
-        case "dissolve":
-          if (isForward === true) {
-            entry.type = "fade-in";
-            exit.type = "remove"; // Will occur after duration
-          } else {
-            exit.type = "fade-out";
-            entry = null;
-          }
-
-          break;
-
-        case "slide-in":
-          entry.direction = this._direction;
+      case "dissolve":
+        if (isForward === true) {
+          entry.type = "fade-in";
           exit.type = "remove"; // Will occur after duration
+        } else {
+          exit.type = "fade-out";
+          entry = null;
+        }
 
-          break;
+        break;
 
-        case "slide-out":
-          entry.type = "remove"; // Will occur after duration
+      case "slide-in":
+        entry.direction = this._direction;
+        exit.type = "remove"; // Will occur after duration
 
-          exit.direction = this._direction;
-          break;
+        break;
 
-        case "push":
-          entry.type = "slide-in";
-          entry.direction = this._direction;
-          exit.type = "slide-out";
-          exit.direction = this._direction;
-          break;
+      case "slide-out":
+        entry.type = "remove"; // Will occur after duration
 
-        case "animation":
-          entry.sliceType = this._sliceType;
-          entry.slice = this._slice;
-          exit = null;
-          break;
+        exit.direction = this._direction;
+        break;
 
-        default:
-          break;
-      }
+      case "push":
+        entry.type = "slide-in";
+        entry.direction = this._direction;
+        exit.type = "slide-out";
+        exit.direction = this._direction;
+        break;
 
-      return {
-        entry: entry,
-        exit: exit
-      };
+      case "animation":
+        entry.sliceType = this._sliceType;
+        entry.slice = this._slice;
+        exit = null;
+        break;
+
+      default:
+        break;
     }
-  }]);
 
-  return Transition;
-}();
+    return {
+      entry,
+      exit
+    };
+  }
 
-
+}
 
 /***/ }),
 
@@ -53243,47 +53104,30 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return EventEmitter; });
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var EventEmitter =
-/*#__PURE__*/
-function () {
-  function EventEmitter() {
-    _classCallCheck(this, EventEmitter);
-
+class EventEmitter {
+  constructor() {
     this._callbacks = {};
   }
 
-  _createClass(EventEmitter, [{
-    key: "on",
-    value: function on(event, callback) {
-      if (!this._callbacks[event]) {
-        this._callbacks[event] = [];
-      }
-
-      this._callbacks[event].push(callback);
+  on(event, callback) {
+    if (!this._callbacks[event]) {
+      this._callbacks[event] = [];
     }
-  }, {
-    key: "emit",
-    value: function emit(event, data) {
-      var callbacksArray = this._callbacks[event];
 
-      if (callbacksArray) {
-        callbacksArray.forEach(function (callback) {
-          callback(data);
-        });
-      }
+    this._callbacks[event].push(callback);
+  }
+
+  emit(event, data) {
+    const callbacksArray = this._callbacks[event];
+
+    if (callbacksArray) {
+      callbacksArray.forEach(callback => {
+        callback(data);
+      });
     }
-  }]);
+  }
 
-  return EventEmitter;
-}();
-
-
+}
 
 /***/ }),
 
@@ -53301,32 +53145,21 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var hammerjs__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(hammerjs__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./constants */ "./src/constants.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
-
-
-var InteractionManager =
-/*#__PURE__*/
-function () {
-  function InteractionManager(player, rootElement) {
-    _classCallCheck(this, InteractionManager);
-
+class InteractionManager {
+  constructor(player, rootElement) {
     this._player = player; // Useful only to get viewportRect below
 
     this._rootElement = rootElement; // Create Hammer object to handle user gestures
 
     this._mc = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Manager"](rootElement); // Implement single and double tap detection
 
-    var singleTap = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Tap"]({
+    const singleTap = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Tap"]({
       event: "singletap"
     });
-    var doubleTap = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Tap"]({
+    const doubleTap = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Tap"]({
       event: "doubletap",
       taps: 2
     });
@@ -53351,431 +53184,416 @@ function () {
     this._wasLastEventPanend = false; // For (non-wheel scroll) viewport drags
   }
 
-  _createClass(InteractionManager, [{
-    key: "_handleSingleTap",
-    value: function _handleSingleTap(e) {
-      // If story not loaded yet, only allow a center tap
-      if (!this._pageNavigator) {
-        if (this._doOnCenterTap) {
-          this._doOnCenterTap();
-        }
-
-        return;
+  _handleSingleTap(e) {
+    // If story not loaded yet, only allow a center tap
+    if (!this._pageNavigator) {
+      if (this._doOnCenterTap) {
+        this._doOnCenterTap();
       }
 
-      var viewportRect = this._player.viewportRect;
-
-      var _this$_rootElement$ge = this._rootElement.getBoundingClientRect(),
-          x = _this$_rootElement$ge.x,
-          y = _this$_rootElement$ge.y,
-          width = _this$_rootElement$ge.width,
-          height = _this$_rootElement$ge.height; // Get coordinates of the canvas' origin in _rootElement
-
-
-      var topLeftCanvasPoint = {
-        x: (width - viewportRect.width) / 2,
-        y: (height - viewportRect.height) / 2
-      }; // Compute the reference lengths used for checking what viewport zone a hit lies in
-
-      var referencePercent = _constants__WEBPACK_IMPORTED_MODULE_2__["referencePercent"];
-      var referenceXLength = topLeftCanvasPoint.x + viewportRect.width * referencePercent;
-      var referenceYLength = topLeftCanvasPoint.y + viewportRect.height * referencePercent;
-      var hitPointer = e.center;
-      var hitX = hitPointer.x - x;
-      var hitY = hitPointer.y - y; // Based on the PageNavigator's direction and where in the window the user tap lied in,
-      // decide whether the tap was a forward, center or backward tap
-
-      this._handleDiscontinuousGesture(true, hitX >= width - referenceXLength, hitX <= referenceXLength, hitY >= height - referenceYLength, hitY <= referenceYLength, this._doOnCenterTap);
+      return;
     }
-  }, {
-    key: "_handleDiscontinuousGesture",
-    value: function _handleDiscontinuousGesture(expression, goRightIntentExpression, goLeftIntentExpression, goDownIntentExpression, goUpIntentExpression) {
-      var doOtherwise = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : null;
 
-      if (!this._pageNavigator) {
-        return;
-      }
+    const {
+      viewportRect
+    } = this._player;
 
-      var currentPage = this._pageNavigator.currentPage;
+    const {
+      x,
+      y,
+      width,
+      height
+    } = this._rootElement.getBoundingClientRect(); // Get coordinates of the canvas' origin in _rootElement
 
-      var _ref = currentPage || {},
-          hitZoneToPrevious = _ref.hitZoneToPrevious,
-          hitZoneToNext = _ref.hitZoneToNext;
 
-      var _this$_pageNavigator = this._pageNavigator,
-          goForward = _this$_pageNavigator.goForward,
-          goBackward = _this$_pageNavigator.goBackward;
-      goForward = goForward.bind(this._pageNavigator);
-      goBackward = goBackward.bind(this._pageNavigator);
+    const topLeftCanvasPoint = {
+      x: (width - viewportRect.width) / 2,
+      y: (height - viewportRect.height) / 2
+    }; // Compute the reference lengths used for checking what viewport zone a hit lies in
 
-      if (expression === goRightIntentExpression && hitZoneToNext === "right" || expression === goLeftIntentExpression && hitZoneToNext === "left" || expression === goDownIntentExpression && hitZoneToNext === "bottom" || expression === goUpIntentExpression && hitZoneToNext === "top") {
-        goForward();
-      } else if (expression === goRightIntentExpression && hitZoneToPrevious === "right" || expression === goLeftIntentExpression && hitZoneToPrevious === "left" || expression === goDownIntentExpression && hitZoneToPrevious === "bottom" || expression === goUpIntentExpression && hitZoneToPrevious === "top") {
-        goBackward();
-      } else if (doOtherwise) {
-        doOtherwise();
-      }
+    const {
+      referencePercent
+    } = _constants__WEBPACK_IMPORTED_MODULE_2__;
+    const referenceXLength = topLeftCanvasPoint.x + viewportRect.width * referencePercent;
+    const referenceYLength = topLeftCanvasPoint.y + viewportRect.height * referencePercent;
+    const hitPointer = e.center;
+    const hitX = hitPointer.x - x;
+    const hitY = hitPointer.y - y; // Based on the PageNavigator's direction and where in the window the user tap lied in,
+    // decide whether the tap was a forward, center or backward tap
+
+    this._handleDiscontinuousGesture(true, hitX >= width - referenceXLength, hitX <= referenceXLength, hitY >= height - referenceYLength, hitY <= referenceYLength, this._doOnCenterTap);
+  }
+
+  _handleDiscontinuousGesture(expression, goRightIntentExpression, goLeftIntentExpression, goDownIntentExpression, goUpIntentExpression, doOtherwise = null) {
+    if (!this._pageNavigator) {
+      return;
     }
-  }, {
-    key: "setStoryInteractions",
-    value: function setStoryInteractions(options) {
-      var doOnCenterTap = options.doOnCenterTap,
-          allowsZoom = options.allowsZoom,
-          allowsSwipe = options.allowsSwipe,
-          allowsWheelScroll = options.allowsWheelScroll,
-          isPaginationSticky = options.isPaginationSticky;
-      this._doOnCenterTap = doOnCenterTap;
-      this._allowsZoom = allowsZoom === true || allowsZoom === false ? allowsZoom : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsZoom"];
-      this._allowsSwipe = allowsSwipe === true || allowsSwipe === false ? allowsSwipe : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsSwipe"];
-      this._allowsWheelScroll = allowsWheelScroll === true || allowsWheelScroll === false ? allowsWheelScroll : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsWheelScroll"];
-      this._isPaginationSticky = isPaginationSticky === true || isPaginationSticky === false ? isPaginationSticky : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultIsPaginationSticky"];
+
+    const {
+      currentPage
+    } = this._pageNavigator;
+    const {
+      hitZoneToPrevious,
+      hitZoneToNext
+    } = currentPage || {};
+    let {
+      goForward,
+      goBackward
+    } = this._pageNavigator;
+    goForward = goForward.bind(this._pageNavigator);
+    goBackward = goBackward.bind(this._pageNavigator);
+
+    if (expression === goRightIntentExpression && hitZoneToNext === "right" || expression === goLeftIntentExpression && hitZoneToNext === "left" || expression === goDownIntentExpression && hitZoneToNext === "bottom" || expression === goUpIntentExpression && hitZoneToNext === "top") {
+      goForward();
+    } else if (expression === goRightIntentExpression && hitZoneToPrevious === "right" || expression === goLeftIntentExpression && hitZoneToPrevious === "left" || expression === goDownIntentExpression && hitZoneToPrevious === "bottom" || expression === goUpIntentExpression && hitZoneToPrevious === "top") {
+      goBackward();
+    } else if (doOtherwise) {
+      doOtherwise();
     }
-  }, {
-    key: "setPageNavigator",
-    value: function setPageNavigator(pageNavigator) {
-      if (!pageNavigator) {
-        return;
-      } // If this is a pageNavigator change, no need to recreate gesture handlers
+  }
+
+  setStoryInteractions(options) {
+    const {
+      doOnCenterTap,
+      allowsZoom,
+      allowsSwipe,
+      allowsWheelScroll,
+      isPaginationSticky
+    } = options;
+    this._doOnCenterTap = doOnCenterTap;
+    this._allowsZoom = allowsZoom === true || allowsZoom === false ? allowsZoom : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsZoom"];
+    this._allowsSwipe = allowsSwipe === true || allowsSwipe === false ? allowsSwipe : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsSwipe"];
+    this._allowsWheelScroll = allowsWheelScroll === true || allowsWheelScroll === false ? allowsWheelScroll : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultAllowsWheelScroll"];
+    this._isPaginationSticky = isPaginationSticky === true || isPaginationSticky === false ? isPaginationSticky : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultIsPaginationSticky"];
+  }
+
+  setPageNavigator(pageNavigator) {
+    if (!pageNavigator) {
+      return;
+    } // If this is a pageNavigator change, no need to recreate gesture handlers
 
 
-      if (this._pageNavigator) {
-        this._pageNavigator = pageNavigator;
-        return;
-      } // The first time a pageNavigator is set however, gesture handlers neet to be set up
+    if (this._pageNavigator) {
+      this._pageNavigator = pageNavigator;
+      return;
+    } // The first time a pageNavigator is set however, gesture handlers neet to be set up
 
 
-      this._pageNavigator = pageNavigator; // Implement key press handling
+    this._pageNavigator = pageNavigator; // Implement key press handling
 
-      this._handleKeyUp = this._handleKeyUp.bind(this);
-      window.addEventListener("keyup", this._handleKeyUp); // Implement zoom handling if relevant
+    this._handleKeyUp = this._handleKeyUp.bind(this);
+    window.addEventListener("keyup", this._handleKeyUp); // Implement zoom handling if relevant
 
-      if (this._allowsZoom === true) {
-        // Finalize the implementation of double tap detection
-        this._handleDoubleTap = this._handleDoubleTap.bind(this);
+    if (this._allowsZoom === true) {
+      // Finalize the implementation of double tap detection
+      this._handleDoubleTap = this._handleDoubleTap.bind(this);
 
-        this._mc.on("doubletap", this._handleDoubleTap); // Implement pinch detection for touch devices
-
-
-        var pinch = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Pinch"]();
-
-        this._mc.add(pinch);
-
-        this._handlePinch = this._handlePinch.bind(this);
-
-        this._mc.on("pinch", this._handlePinch); // Zooming will also be possible via ctrl/alt + scroll
-
-      } // Implement swipe detection if relevant
+      this._mc.on("doubletap", this._handleDoubleTap); // Implement pinch detection for touch devices
 
 
-      if (this._allowsSwipe === true) {
-        var swipe = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Swipe"]({
-          direction: hammerjs__WEBPACK_IMPORTED_MODULE_0__["DIRECTION_ALL"],
-          velocity: 0.3 // Default value is 0.3
+      const pinch = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Pinch"]();
 
-        });
+      this._mc.add(pinch);
 
-        this._mc.add(swipe);
+      this._handlePinch = this._handlePinch.bind(this);
 
-        this._handleSwipe = this._handleSwipe.bind(this);
+      this._mc.on("pinch", this._handlePinch); // Zooming will also be possible via ctrl/alt + scroll
 
-        this._mc.on("swipeleft swiperight swipeup swipedown", this._handleSwipe);
-      } // Implement non-wheel (= pan) scroll detection
+    } // Implement swipe detection if relevant
 
 
-      var pan = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Pan"]({
-        direction: hammerjs__WEBPACK_IMPORTED_MODULE_0__["DIRECTION_ALL"]
+    if (this._allowsSwipe === true) {
+      const swipe = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Swipe"]({
+        direction: hammerjs__WEBPACK_IMPORTED_MODULE_0__["DIRECTION_ALL"],
+        velocity: 0.3 // Default value is 0.3
+
       });
 
-      this._mc.add(pan);
+      this._mc.add(swipe);
 
-      this._onNonWheelScroll = this._onNonWheelScroll.bind(this);
+      this._handleSwipe = this._handleSwipe.bind(this);
 
-      this._mc.on("panleft panright panup pandown panend", this._onNonWheelScroll); // Implement wheel scroll detection if relevant
-
-
-      if (this._allowsWheelScroll === true) {
-        this._onWheelScroll = this._onWheelScroll.bind(this);
-
-        this._rootElement.addEventListener("wheel", this._onWheelScroll);
-      } // Reset scroll (works for both wheel and non-wheel scroll)
+      this._mc.on("swipeleft swiperight swipeup swipedown", this._handleSwipe);
+    } // Implement non-wheel (= pan) scroll detection
 
 
-      this._resetScroll();
-    } // Double tap is used to trigger the "quick change" zoom (switching zoomFactor at once
-    // between the values of 1 and maxZoomFactor - the value defined in constants.js)
+    const pan = new hammerjs__WEBPACK_IMPORTED_MODULE_0__["Pan"]({
+      direction: hammerjs__WEBPACK_IMPORTED_MODULE_0__["DIRECTION_ALL"]
+    });
 
-  }, {
-    key: "_handleDoubleTap",
-    value: function _handleDoubleTap(e) {
-      if (!this._pageNavigator) {
-        return;
-      }
+    this._mc.add(pan);
 
-      var touchPoint = e.center;
-      var zoomData = {
-        isContinuous: false,
-        touchPoint: touchPoint
-      };
+    this._onNonWheelScroll = this._onNonWheelScroll.bind(this);
 
-      this._pageNavigator.zoom(zoomData);
+    this._mc.on("panleft panright panup pandown panend", this._onNonWheelScroll); // Implement wheel scroll detection if relevant
+
+
+    if (this._allowsWheelScroll === true) {
+      this._onWheelScroll = this._onWheelScroll.bind(this);
+
+      this._rootElement.addEventListener("wheel", this._onWheelScroll);
+    } // Reset scroll (works for both wheel and non-wheel scroll)
+
+
+    this._resetScroll();
+  } // Double tap is used to trigger the "quick change" zoom (switching zoomFactor at once
+  // between the values of 1 and maxZoomFactor - the value defined in constants.js)
+
+
+  _handleDoubleTap(e) {
+    if (!this._pageNavigator) {
+      return;
     }
-  }, {
-    key: "_handlePinch",
-    value: function _handlePinch(e) {
+
+    const touchPoint = e.center;
+    const zoomData = {
+      isContinuous: false,
+      touchPoint
+    };
+
+    this._pageNavigator.zoom(zoomData);
+  }
+
+  _handlePinch(e) {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    if (e.type === "pinchend") {
+      this._lastDistance = null;
+    } else {
+      const {
+        viewportRect
+      } = this._player;
+      const pointers = [{
+        x: viewportRect.width / 2,
+        y: viewportRect.height / 2
+      }, {
+        x: e.center.x,
+        y: e.center.y
+      }];
+      const distance = _utils__WEBPACK_IMPORTED_MODULE_1__["getDistance"](pointers[0], pointers[1]);
+
+      if (!this._lastDistance) {
+        this._lastDistance = distance;
+      } else if (this._lastDistance > 0) {
+        const touchPoint = {
+          x: (pointers[0].x + pointers[1].x) / 2,
+          y: (pointers[0].y + pointers[1].y) / 2
+        };
+        const zoomData = {
+          isContinuous: true,
+          touchPoint,
+          multiplier: distance / this._lastDistance
+        };
+
+        this._pageNavigator.zoom(zoomData);
+
+        this._lastDistance = distance;
+      }
+    }
+  }
+
+  _handleKeyUp(e) {
+    this._handleDiscontinuousGesture(e.code, "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp");
+  }
+
+  _handleSwipe(e) {
+    this._handleDiscontinuousGesture(e.type, "swipeleft", "swiperight", "swipeup", "swipedown");
+  } // For touch-device and mouse click-and-drag scroll events
+
+
+  _onNonWheelScroll(e) {
+    requestAnimationFrame(() => {
       if (!this._pageNavigator) {
         return;
       }
 
-      if (e.type === "pinchend") {
-        this._lastDistance = null;
-      } else {
-        var viewportRect = this._player.viewportRect;
-        var pointers = [{
-          x: viewportRect.width / 2,
-          y: viewportRect.height / 2
-        }, {
-          x: e.center.x,
-          y: e.center.y
-        }];
-        var distance = _utils__WEBPACK_IMPORTED_MODULE_1__["getDistance"](pointers[0], pointers[1]);
+      const {
+        srcEvent,
+        type,
+        center,
+        deltaX,
+        deltaY
+      } = e; // For a zoom non-wheel scroll (i.e. ctrl/alt + non-wheel scroll)
 
-        if (!this._lastDistance) {
-          this._lastDistance = distance;
-        } else if (this._lastDistance > 0) {
-          var touchPoint = {
-            x: (pointers[0].x + pointers[1].x) / 2,
-            y: (pointers[0].y + pointers[1].y) / 2
-          };
-          var zoomData = {
+      if ((srcEvent.ctrlKey || srcEvent.altKey) && this._allowsZoom === true) {
+        // Store the coordinates of the first touch point of the gesture
+        if (!this._initialTouchPoint) {
+          this._initialTouchPoint = center;
+        } // If the gesture has finished, reset zoom handling information
+
+
+        if (type === "panend") {
+          this._resetScroll();
+
+          this._initialTouchPoint = null; // If the gesture is going on, send zoom data to the current page navigator
+        } else {
+          const zoomData = {
             isContinuous: true,
-            touchPoint: touchPoint,
-            multiplier: distance / this._lastDistance
+            touchPoint: this._initialTouchPoint,
+            delta: deltaY - this._lastScrollEvent.deltaY
           };
 
           this._pageNavigator.zoom(zoomData);
 
-          this._lastDistance = distance;
-        }
-      }
-    }
-  }, {
-    key: "_handleKeyUp",
-    value: function _handleKeyUp(e) {
-      this._handleDiscontinuousGesture(e.code, "ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp");
-    }
-  }, {
-    key: "_handleSwipe",
-    value: function _handleSwipe(e) {
-      this._handleDiscontinuousGesture(e.type, "swipeleft", "swiperight", "swipeup", "swipedown");
-    } // For touch-device and mouse click-and-drag scroll events
+          this._lastScrollEvent = e;
+        } // When a non-zoom non-wheel scroll ends
 
-  }, {
-    key: "_onNonWheelScroll",
-    value: function _onNonWheelScroll(e) {
-      var _this = this;
-
-      requestAnimationFrame(function () {
-        if (!_this._pageNavigator) {
+      } else if (type === "panend") {
+        // If this event immediately follows a panend, cancel it
+        if (this._wasLastEventPanend === true) {
           return;
         }
 
-        var srcEvent = e.srcEvent,
-            type = e.type,
-            center = e.center,
-            deltaX = e.deltaX,
-            deltaY = e.deltaY; // For a zoom non-wheel scroll (i.e. ctrl/alt + non-wheel scroll)
+        this._resetScroll();
 
-        if ((srcEvent.ctrlKey || srcEvent.altKey) && _this._allowsZoom === true) {
-          // Store the coordinates of the first touch point of the gesture
-          if (!_this._initialTouchPoint) {
-            _this._initialTouchPoint = center;
-          } // If the gesture has finished, reset zoom handling information
+        this._wasLastEventPanend = true; // Attempt a sticky page change if possible, and should it fail,
+        // then only trigger a drag end (via _releaseScroll)
 
+        if (this._isPaginationSticky === false || this._pageNavigator.attemptStickyStep() === false) {
+          this._releaseScroll(e);
+        } // For normal non-wheel scroll
 
-          if (type === "panend") {
-            _this._resetScroll();
-
-            _this._initialTouchPoint = null; // If the gesture is going on, send zoom data to the current page navigator
-          } else {
-            var zoomData = {
-              isContinuous: true,
-              touchPoint: _this._initialTouchPoint,
-              delta: deltaY - _this._lastScrollEvent.deltaY
-            };
-
-            _this._pageNavigator.zoom(zoomData);
-
-            _this._lastScrollEvent = e;
-          } // When a non-zoom non-wheel scroll ends
-
-        } else if (type === "panend") {
-          // If this event immediately follows a panend, cancel it
-          if (_this._wasLastEventPanend === true) {
-            return;
-          }
-
-          _this._resetScroll();
-
-          _this._wasLastEventPanend = true; // Attempt a sticky page change if possible, and should it fail,
-          // then only trigger a drag end (via _releaseScroll)
-
-          if (_this._isPaginationSticky === false || _this._pageNavigator.attemptStickyStep() === false) {
-            _this._releaseScroll(e);
-          } // For normal non-wheel scroll
-
-        } else {
-          var scrollEvent = {
-            deltaX: deltaX - _this._lastScrollEvent.deltaX,
-            deltaY: deltaY - _this._lastScrollEvent.deltaY
-          };
-          var isWheelScroll = false;
-
-          _this._scroll(scrollEvent, isWheelScroll);
-
-          _this._lastScrollEvent = e;
-          _this._wasLastEventPanend = false;
-        }
-      });
-    }
-  }, {
-    key: "_resetScroll",
-    value: function _resetScroll() {
-      this._lastScrollEvent = {
-        deltaX: 0,
-        deltaY: 0
-      };
-    } // Record velocity and timestamp on drag end (i.e. on scroll release)
-
-  }, {
-    key: "_releaseScroll",
-    value: function _releaseScroll(e) {
-      var velocity = {
-        x: -e.velocityX * _constants__WEBPACK_IMPORTED_MODULE_2__["velocityFactor"],
-        y: -e.velocityY * _constants__WEBPACK_IMPORTED_MODULE_2__["velocityFactor"]
-      };
-      var releaseDate = Date.now();
-
-      this._autoScroll(velocity, releaseDate);
-    } // Apply kinetic scrolling formula after drag end (i.e. on scroll release)
-
-  }, {
-    key: "_autoScroll",
-    value: function _autoScroll(velocity, releaseDate) {
-      var elapsedTime = Date.now() - releaseDate;
-      var deltaX = -velocity.x * Math.exp(-elapsedTime / _constants__WEBPACK_IMPORTED_MODULE_2__["timeConstant"]);
-      var deltaY = -velocity.y * Math.exp(-elapsedTime / _constants__WEBPACK_IMPORTED_MODULE_2__["timeConstant"]); // Simple hack to allow for a smoother stop (using half pixels)
-
-      if (Math.abs(deltaX) < 1 || Math.abs(deltaY) < 1) {
-        deltaX = Math.round(deltaX * 2) / 2;
-        deltaY = Math.round(deltaY * 2) / 2;
       } else {
-        deltaX = Math.round(deltaX);
-        deltaY = Math.round(deltaY);
+        const scrollEvent = {
+          deltaX: deltaX - this._lastScrollEvent.deltaX,
+          deltaY: deltaY - this._lastScrollEvent.deltaY
+        };
+        const isWheelScroll = false;
+
+        this._scroll(scrollEvent, isWheelScroll);
+
+        this._lastScrollEvent = e;
+        this._wasLastEventPanend = false;
       }
+    });
+  }
 
-      if (Math.abs(deltaX) >= 0.5 || Math.abs(deltaY) >= 0.5) {
-        this._scroll({
-          deltaX: deltaX,
-          deltaY: deltaY
-        });
+  _resetScroll() {
+    this._lastScrollEvent = {
+      deltaX: 0,
+      deltaY: 0
+    };
+  } // Record velocity and timestamp on drag end (i.e. on scroll release)
 
-        requestAnimationFrame(this._autoScroll.bind(this, velocity, releaseDate));
-      }
-    } // Apply scroll to the current page via the pageNavigator
 
-  }, {
-    key: "_scroll",
-    value: function _scroll(e, isWheelScroll) {
+  _releaseScroll(e) {
+    const velocity = {
+      x: -e.velocityX * _constants__WEBPACK_IMPORTED_MODULE_2__["velocityFactor"],
+      y: -e.velocityY * _constants__WEBPACK_IMPORTED_MODULE_2__["velocityFactor"]
+    };
+    const releaseDate = Date.now();
+
+    this._autoScroll(velocity, releaseDate);
+  } // Apply kinetic scrolling formula after drag end (i.e. on scroll release)
+
+
+  _autoScroll(velocity, releaseDate) {
+    const elapsedTime = Date.now() - releaseDate;
+    let deltaX = -velocity.x * Math.exp(-elapsedTime / _constants__WEBPACK_IMPORTED_MODULE_2__["timeConstant"]);
+    let deltaY = -velocity.y * Math.exp(-elapsedTime / _constants__WEBPACK_IMPORTED_MODULE_2__["timeConstant"]); // Simple hack to allow for a smoother stop (using half pixels)
+
+    if (Math.abs(deltaX) < 1 || Math.abs(deltaY) < 1) {
+      deltaX = Math.round(deltaX * 2) / 2;
+      deltaY = Math.round(deltaY * 2) / 2;
+    } else {
+      deltaX = Math.round(deltaX);
+      deltaY = Math.round(deltaY);
+    }
+
+    if (Math.abs(deltaX) >= 0.5 || Math.abs(deltaY) >= 0.5) {
+      this._scroll({
+        deltaX,
+        deltaY
+      });
+
+      requestAnimationFrame(this._autoScroll.bind(this, velocity, releaseDate));
+    }
+  } // Apply scroll to the current page via the pageNavigator
+
+
+  _scroll(e, isWheelScroll) {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const {
+      deltaX,
+      deltaY
+    } = e;
+
+    this._pageNavigator.handleScroll({
+      deltaX,
+      deltaY
+    }, isWheelScroll);
+  } // For mouse and trackpad scroll events
+
+
+  _onWheelScroll(e) {
+    e.preventDefault();
+    requestAnimationFrame(() => {
       if (!this._pageNavigator) {
         return;
       }
 
-      var deltaX = e.deltaX,
-          deltaY = e.deltaY;
+      if (e.ctrlKey || e.altKey) {
+        const zoomData = {
+          isContinuous: true,
+          touchPoint: {
+            x: e.x,
+            y: e.y
+          },
+          delta: e.deltaY
+        };
 
-      this._pageNavigator.handleScroll({
-        deltaX: deltaX,
-        deltaY: deltaY
-      }, isWheelScroll);
-    } // For mouse and trackpad scroll events
+        this._pageNavigator.zoom(zoomData);
+      } else {
+        const isWheelScroll = true;
 
-  }, {
-    key: "_onWheelScroll",
-    value: function _onWheelScroll(e) {
-      var _this2 = this;
-
-      e.preventDefault();
-      requestAnimationFrame(function () {
-        if (!_this2._pageNavigator) {
-          return;
-        }
-
-        if (e.ctrlKey || e.altKey) {
-          var zoomData = {
-            isContinuous: true,
-            touchPoint: {
-              x: e.x,
-              y: e.y
-            },
-            delta: e.deltaY
-          };
-
-          _this2._pageNavigator.zoom(zoomData);
-        } else {
-          var isWheelScroll = true;
-
-          _this2._scroll({
-            deltaX: -e.deltaX,
-            deltaY: -e.deltaY
-          }, isWheelScroll);
-        }
-      });
-    } // For button hits
-
-  }, {
-    key: "goRight",
-    value: function goRight() {
-      this._handleDiscontinuousGesture(true, true, false, false, false);
-    }
-  }, {
-    key: "goLeft",
-    value: function goLeft() {
-      this._handleDiscontinuousGesture(true, false, true, false, false);
-    }
-  }, {
-    key: "goDown",
-    value: function goDown() {
-      this._handleDiscontinuousGesture(true, false, false, true, false);
-    }
-  }, {
-    key: "goUp",
-    value: function goUp() {
-      this._handleDiscontinuousGesture(true, false, false, false, true);
-    } // Remove all event listeners on destroy
-
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this._mc.off("singletap", this._handleSingleTap);
-
-      this._mc.off("doubletap", this._handleDoubleTap);
-
-      this._mc.off("pinch", this._handlePinch);
-
-      this._mc.off("swipeleft swiperight swipeup swipedown", this._handleSwipe);
-
-      this._mc.off("panleft panright panup pandown panend", this._onNonWheelScroll);
-
-      this._rootElement.removeEventListener("wheel", this._onWheelScroll);
-
-      window.removeEventListener("keyup", this._handleKeyUp);
-    }
-  }]);
-
-  return InteractionManager;
-}();
+        this._scroll({
+          deltaX: -e.deltaX,
+          deltaY: -e.deltaY
+        }, isWheelScroll);
+      }
+    });
+  } // For button hits
 
 
+  goRight() {
+    this._handleDiscontinuousGesture(true, true, false, false, false);
+  }
+
+  goLeft() {
+    this._handleDiscontinuousGesture(true, false, true, false, false);
+  }
+
+  goDown() {
+    this._handleDiscontinuousGesture(true, false, false, true, false);
+  }
+
+  goUp() {
+    this._handleDiscontinuousGesture(true, false, false, false, true);
+  } // Remove all event listeners on destroy
+
+
+  destroy() {
+    this._mc.off("singletap", this._handleSingleTap);
+
+    this._mc.off("doubletap", this._handleDoubleTap);
+
+    this._mc.off("pinch", this._handlePinch);
+
+    this._mc.off("swipeleft swiperight swipeup swipedown", this._handleSwipe);
+
+    this._mc.off("panleft panright panup pandown panend", this._onNonWheelScroll);
+
+    this._rootElement.removeEventListener("wheel", this._onWheelScroll);
+
+    window.removeEventListener("keyup", this._handleKeyUp);
+  }
+
+}
 
 /***/ }),
 
@@ -53798,25 +53616,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _EventEmitter__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./EventEmitter */ "./src/EventEmitter.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./utils */ "./src/utils.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./constants */ "./src/constants.js");
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
@@ -53826,84 +53625,66 @@ function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _d
 
 
 
+class Player {
+  // Size of the rootElement (used in Camera)
+  get rootSize() {
+    return this._renderer.size;
+  } // Size of the effective viewport (i.e. once viewport ratio constraint is applied),
+  // used in TextureElement, InteractionManager, StateHandler, PageNavigator and Cameram
 
 
-var Player =
-/*#__PURE__*/
-function () {
-  _createClass(Player, [{
-    key: "rootSize",
-    // Size of the rootElement (used in Camera)
-    get: function get() {
-      return this._renderer.size;
-    } // Size of the effective viewport (i.e. once viewport ratio constraint is applied),
-    // used in TextureElement, InteractionManager, StateHandler, PageNavigator and Cameram
+  get viewportRect() {
+    return this._viewportRect;
+  } // Used in PageNavigator and Camera
 
-  }, {
-    key: "viewportRect",
-    get: function get() {
-      return this._viewportRect;
-    } // Used in PageNavigator and Camera
 
-  }, {
-    key: "options",
-    get: function get() {
-      return this._options;
-    } // Used in TextureElement
+  get options() {
+    return this._options;
+  } // Used in TextureElement
 
-  }, {
-    key: "readingMode",
-    get: function get() {
-      return this._pageNavigator ? this._pageNavigator.type : null;
-    } // Used in PageNavigator
 
-  }, {
-    key: "interactionManager",
-    get: function get() {
-      return this._interactionManager;
-    } // Used in TextureElement and PageNavigator
+  get readingMode() {
+    return this._pageNavigator ? this._pageNavigator.type : null;
+  } // Used in PageNavigator
 
-  }, {
-    key: "resourceManager",
-    get: function get() {
-      return this._resourceManager;
-    } // Used in ResourceManager
 
-  }, {
-    key: "slices",
-    get: function get() {
-      return this._slices;
-    } // Used in Slice
+  get interactionManager() {
+    return this._interactionManager;
+  } // Used in TextureElement and PageNavigator
 
-  }, {
-    key: "pageNavigator",
-    get: function get() {
-      return this._pageNavigator;
-    }
-  }, {
-    key: "tags",
-    get: function get() {
-      return this._tags;
-    } // Used in outside app and PageNavigator
 
-  }, {
-    key: "eventEmitter",
-    get: function get() {
-      return this._eventEmitter;
-    } // The rootElement is the parent DOM element (HTML page's body)
+  get resourceManager() {
+    return this._resourceManager;
+  } // Used in ResourceManager
 
-  }]);
 
-  function Player(rootElement) {
-    _classCallCheck(this, Player);
+  get slices() {
+    return this._slices;
+  } // Used in Slice
 
+
+  get pageNavigator() {
+    return this._pageNavigator;
+  }
+
+  get tags() {
+    return this._tags;
+  } // Used in outside app and PageNavigator
+
+
+  get eventEmitter() {
+    return this._eventEmitter;
+  } // The rootElement is the parent DOM element (HTML page's body)
+
+
+  constructor(rootElement) {
     this._rootElement = rootElement; // Create the player's renderer
 
     this._renderer = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["Renderer"](rootElement, _constants__WEBPACK_IMPORTED_MODULE_8__["defaultBackgroundColor"]); // Create the container that will hold the loading message
 
     this._textManager = new _TextManager__WEBPACK_IMPORTED_MODULE_1__["default"](this._renderer.mainContainer); // Create an object that will pass important variables around
 
-    var defaultRect = {
+    const defaultRect = {
       x: 0,
       y: 0,
       width: 0,
@@ -53914,7 +53695,7 @@ function () {
     this._tags = {};
     this._options = {}; // Size those managers
 
-    var shouldResizeImmediately = true;
+    const shouldResizeImmediately = true;
     this.resize(shouldResizeImmediately); // Create the interaction manager (which will deal with user gestures)
 
     this._interactionManager = new _InteractionManager__WEBPACK_IMPORTED_MODULE_2__["default"](this, rootElement); // Initialize story data
@@ -53941,884 +53722,832 @@ function () {
   // and whenever a "resize" event is detected (e.g. after an orientation change)
 
 
-  _createClass(Player, [{
-    key: "resize",
-    value: function resize() {
-      var _this = this;
-
-      var shouldResizeImmediately = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-
-      var callback = function callback() {
-        var _this$_rootElement$ge = _this._rootElement.getBoundingClientRect(),
-            width = _this$_rootElement$ge.width,
-            height = _this$_rootElement$ge.height; // Size viewport based on _rootElement's size (and applicable viewport ratio constraints)
+  resize(shouldResizeImmediately = false) {
+    const callback = () => {
+      const {
+        width,
+        height
+      } = this._rootElement.getBoundingClientRect(); // Size viewport based on _rootElement's size (and applicable viewport ratio constraints)
 
 
-        _this._sizeViewport(width, height); // Now resize the current pageNavigator if there is one
+      this._sizeViewport(width, height); // Now resize the current pageNavigator if there is one
 
 
-        if (_this._pageNavigator) {
-          _this._pageNavigator.resize();
-        } // Note that the list of available story navigators can also be updated
+      if (this._pageNavigator) {
+        this._pageNavigator.resize();
+      } // Note that the list of available story navigators can also be updated
 
-      };
+    };
 
-      if (shouldResizeImmediately === true) {
-        callback();
-      } else {
-        requestAnimationFrame(callback);
-      }
-    } // This function sizes the viewport based on _rootElement's size and viewport ratio constraints
-
-  }, {
-    key: "_sizeViewport",
-    value: function _sizeViewport(width, height) {
-      var viewportWidth = width;
-      var viewportHeight = height; // Get the (target) ratio value that conforms to the viewport ratio constraints
-
-      var applicableRatio = this._getApplicableRatio(width, height);
-
-      var rootElementRatio = width / height;
-      var topLeftPoint = {
-        x: 0,
-        y: 0
-      };
-
-      if (rootElementRatio >= applicableRatio) {
-        // The _rootElement's height becomes the viewport's and constrains the viewport's width
-        viewportWidth = height * applicableRatio;
-        topLeftPoint.x = (width - viewportWidth) / 2;
-      } else if (rootElementRatio < applicableRatio) {
-        // The _rootElement's width becomes the viewport's and constrains the viewport's height
-        viewportHeight = width / applicableRatio;
-        topLeftPoint.y = (height - viewportHeight) / 2;
-      } // Resize the renderer
-
-
-      this._renderer.setSize(width, height); // Store the viewport's rectangle
-
-
-      this._viewportRect = {
-        x: topLeftPoint.x,
-        y: topLeftPoint.y,
-        width: viewportWidth,
-        height: viewportHeight
-      }; // Update the renderer's display (note that zoomFactor is forced to 1 on a resize)
-
-      this.updateDisplayForZoomFactor(1, this._viewportRect); // Update availability of double reading mode if necessary
-
-      if (this._pageNavigator && this._isDoublePageReadingModeAvailable() !== this._wasDoublePageReadingModeAvailable) {
-        var customData = {
-          readingMode: this._pageNavigator.type
-        };
-
-        var actualReadingModes = _objectSpread({}, this._pageNavigatorsInfo);
-
-        delete actualReadingModes.metadata;
-
-        if (this._wasDoublePageReadingModeAvailable === true) {
-          delete actualReadingModes["double"];
-          this.setReadingMode("single");
-        }
-
-        customData.readingModesArray = Object.keys(actualReadingModes);
-
-        this._eventEmitter.emit("readingmodesupdate", customData);
-
-        this._wasDoublePageReadingModeAvailable = !this._wasDoublePageReadingModeAvailable;
-      }
-    } // _getApplicableRatio computes the (target) ratio that conforms to viewportRatio constraints
-    // Reminder: viewportRatio = { min, max } where both min and max are written as "width:height"
-
-  }, {
-    key: "_getApplicableRatio",
-    value: function _getApplicableRatio(width, height) {
-      // The default ratio is that of the rootElement's dimensions
-      var currentRatio = width / height; // If there are no viewportRatio constraints, then keep the rootElement's ratio
-
-      if (!this._minRatio && !this._maxRatio) {
-        return currentRatio;
-      } // If there's only a min, or only a max, then apply the constraint
-
-
-      if (this._minRatio && !this._maxRatio) {
-        return Math.max(this._minRatio, currentRatio);
-      }
-
-      if (this._maxRatio && !this._minRatio) {
-        return Math.min(this._maxRatio, currentRatio);
-      } // If both a min and max are defined, then apply both constraints
-
-
-      return Math.min(Math.max(currentRatio, this._minRatio), this._maxRatio);
-    } // Used above (after a resize) and in Camera (when changing zoom)
-
-  }, {
-    key: "updateDisplayForZoomFactor",
-    value: function updateDisplayForZoomFactor(zoomFactor) {
-      var viewportRect = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this._viewportRect;
-
-      this._renderer.updateDisplay(viewportRect, zoomFactor);
+    if (shouldResizeImmediately === true) {
+      callback();
+    } else {
+      requestAnimationFrame(callback);
     }
-  }, {
-    key: "_isDoublePageReadingModeAvailable",
-    value: function _isDoublePageReadingModeAvailable() {
-      return this._spread === "both" || this._spread === "landscape" && this._viewportRect.width >= this._viewportRect.height;
-    } // For loading the divina data from a folder path
+  } // This function sizes the viewport based on _rootElement's size and viewport ratio constraints
 
-  }, {
-    key: "openDivinaFromPath",
-    value: function openDivinaFromPath(folderPath) {
-      var href = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var textureSource = {
-        folderPath: folderPath
+
+  _sizeViewport(width, height) {
+    let viewportWidth = width;
+    let viewportHeight = height; // Get the (target) ratio value that conforms to the viewport ratio constraints
+
+    const applicableRatio = this._getApplicableRatio(width, height);
+
+    const rootElementRatio = width / height;
+    const topLeftPoint = {
+      x: 0,
+      y: 0
+    };
+
+    if (rootElementRatio >= applicableRatio) {
+      // The _rootElement's height becomes the viewport's and constrains the viewport's width
+      viewportWidth = height * applicableRatio;
+      topLeftPoint.x = (width - viewportWidth) / 2;
+    } else if (rootElementRatio < applicableRatio) {
+      // The _rootElement's width becomes the viewport's and constrains the viewport's height
+      viewportHeight = width / applicableRatio;
+      topLeftPoint.y = (height - viewportHeight) / 2;
+    } // Resize the renderer
+
+
+    this._renderer.setSize(width, height); // Store the viewport's rectangle
+
+
+    this._viewportRect = {
+      x: topLeftPoint.x,
+      y: topLeftPoint.y,
+      width: viewportWidth,
+      height: viewportHeight
+    }; // Update the renderer's display (note that zoomFactor is forced to 1 on a resize)
+
+    this.updateDisplayForZoomFactor(1, this._viewportRect); // Update availability of double reading mode if necessary
+
+    if (this._pageNavigator && this._isDoublePageReadingModeAvailable() !== this._wasDoublePageReadingModeAvailable) {
+      const customData = {
+        readingMode: this._pageNavigator.type
       };
-
-      var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromPath(folderPath);
+      const actualReadingModes = { ...this._pageNavigatorsInfo
       };
-
-      this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
-    } // For loading the divina data from a json and its file URLs (via folder path)
-
-  }, {
-    key: "openDivinaFromJsonAndPath",
-    value: function openDivinaFromJsonAndPath(json, folderPath) {
-      var href = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-      var textureSource = {
-        folderPath: folderPath
-      };
-
-      var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromJsonAndPath(json);
-      };
-
-      this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
-    } // For loading the divina data from data = { json, base64DataByHref }
-
-  }, {
-    key: "openDivinaFromData",
-    value: function openDivinaFromData(data) {
-      var href = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var textureSource = {
-        data: data
-      };
-
-      var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromData(data);
-      };
-
-      this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
-    }
-  }, {
-    key: "_parseDivina",
-    value: function _parseDivina() {
-      var _this2 = this;
-
-      var href = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var textureSource = arguments.length > 1 ? arguments[1] : undefined;
-      var options = arguments.length > 2 ? arguments[2] : undefined;
-      var parseAndHandleDivinaData = arguments.length > 3 ? arguments[3] : undefined;
-      this._startHref = href;
-      this._options = options || {}; // Set loading properties, which shall be common to all page navigators
-
-      this._setLoadingProperties(); // Set allowed story interactions based on options
-
-
-      this._interactionManager.setStoryInteractions(options); // Create resource manager (now that options and possibly data exist)
-
-
-      this._createResourceManager(textureSource);
-
-      var doWithParsedDivinaData = function doWithParsedDivinaData(parsedDivinaData) {
-        var _ref = parsedDivinaData || {},
-            metadata = _ref.metadata;
-
-        var _ref2 = metadata || {},
-            readingProgression = _ref2.readingProgression,
-            orientation = _ref2.orientation;
-
-        var customData = {
-          readingProgression: readingProgression,
-          orientation: orientation
-        };
-
-        _this2._eventEmitter.emit("jsonload", customData);
-
-        _this2._buildStoryFromStoryData(parsedDivinaData);
-      };
-
-      var divinaParser = new _DivinaParser__WEBPACK_IMPORTED_MODULE_3__["default"](this, this._textManager, doWithParsedDivinaData);
-      parseAndHandleDivinaData(divinaParser);
-    }
-  }, {
-    key: "_setLoadingProperties",
-    value: function _setLoadingProperties() {
-      var _ref3 = this._options || {},
-          maxNbOfPagesAfter = _ref3.maxNbOfPagesAfter;
-
-      var nbOfPages = maxNbOfPagesAfter > 0 ? maxNbOfPagesAfter : _constants__WEBPACK_IMPORTED_MODULE_8__["defaultMaxNbOfPagesAfter"];
-      this._maxNbOfPagesAfter = Math.ceil(nbOfPages);
-      this._maxNbOfPagesBefore = Math.ceil(this._maxNbOfPagesAfter * _constants__WEBPACK_IMPORTED_MODULE_8__["maxShareOfPagesBefore"]);
-      this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore;
-    }
-  }, {
-    key: "_createResourceManager",
-    value: function _createResourceManager(textureSource) {
-      var _this3 = this;
-
-      var doWithLoadPercent = function doWithLoadPercent(loadPercent) {
-        if (_this3._textManager) {
-          _this3._textManager.showMessage({
-            type: "loading",
-            data: loadPercent
-          });
-        }
-      };
-
-      this._resourceManager = new _ResourceManager__WEBPACK_IMPORTED_MODULE_4__["default"](doWithLoadPercent, textureSource, this);
-    }
-  }, {
-    key: "_buildStoryFromStoryData",
-    value: function _buildStoryFromStoryData(storyData) {
-      this._storyData = storyData;
-      var metadata = storyData.metadata,
-          mainLinkObjectsArray = storyData.mainLinkObjectsArray,
-          guidedLinkObjectsArray = storyData.guidedLinkObjectsArray;
-
-      var _ref4 = metadata || {},
-          spread = _ref4.spread,
-          viewportRatio = _ref4.viewportRatio; // Set spread (used to check whether the double reading mode is available)
-
-
-      this._spread = spread; // Update HTML canvas size to conform to viewportRatio constraints (will trigger a resize)
-
-      this._setRatioConstraint(viewportRatio); // Store all slices
-
-
-      this._slices = this._getSlices(mainLinkObjectsArray, guidedLinkObjectsArray); // Store all tags
-
-      var languagesArray = metadata.languagesArray;
-      this._tags = {
-        language: {
-          array: languagesArray,
-          index: null
-        }
-      };
-      Player.addTagsForSlices(this._tags, this._slices); // Now create build info for all available page navigators
-      // (note that _pageNavigatorsInfo.metadata will be a (c)leaner version of the above metadata)
-
-      this._pageNavigatorsInfo = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigatorsInfo(storyData); // If required, do something with the information on available reading modes and languages
-
-      var actualReadingModes = _objectSpread({}, this._pageNavigatorsInfo);
-
       delete actualReadingModes.metadata;
 
-      if (this._pageNavigatorsInfo["double"]) {
-        if (this._isDoublePageReadingModeAvailable() === true) {
-          this._wasDoublePageReadingModeAvailable = true;
-        } else {
-          this._wasDoublePageReadingModeAvailable = false;
-          delete actualReadingModes["double"];
-        }
+      if (this._wasDoublePageReadingModeAvailable === true) {
+        delete actualReadingModes.double;
+        this.setReadingMode("single");
       }
 
-      var customData = {
-        readingModesArray: Object.keys(actualReadingModes),
-        languagesArray: languagesArray
+      customData.readingModesArray = Object.keys(actualReadingModes);
+
+      this._eventEmitter.emit("readingmodesupdate", customData);
+
+      this._wasDoublePageReadingModeAvailable = !this._wasDoublePageReadingModeAvailable;
+    }
+  } // _getApplicableRatio computes the (target) ratio that conforms to viewportRatio constraints
+  // Reminder: viewportRatio = { min, max } where both min and max are written as "width:height"
+
+
+  _getApplicableRatio(width, height) {
+    // The default ratio is that of the rootElement's dimensions
+    const currentRatio = width / height; // If there are no viewportRatio constraints, then keep the rootElement's ratio
+
+    if (!this._minRatio && !this._maxRatio) {
+      return currentRatio;
+    } // If there's only a min, or only a max, then apply the constraint
+
+
+    if (this._minRatio && !this._maxRatio) {
+      return Math.max(this._minRatio, currentRatio);
+    }
+
+    if (this._maxRatio && !this._minRatio) {
+      return Math.min(this._maxRatio, currentRatio);
+    } // If both a min and max are defined, then apply both constraints
+
+
+    return Math.min(Math.max(currentRatio, this._minRatio), this._maxRatio);
+  } // Used above (after a resize) and in Camera (when changing zoom)
+
+
+  updateDisplayForZoomFactor(zoomFactor, viewportRect = this._viewportRect) {
+    this._renderer.updateDisplay(viewportRect, zoomFactor);
+  }
+
+  _isDoublePageReadingModeAvailable() {
+    return this._spread === "both" || this._spread === "landscape" && this._viewportRect.width >= this._viewportRect.height;
+  } // For loading the divina data from a folder path
+
+
+  openDivinaFromPath(folderPath, href = null, options = null) {
+    const textureSource = {
+      folderPath
+    };
+
+    const parseAndHandleDivinaData = divinaParser => {
+      divinaParser.loadFromPath(folderPath);
+    };
+
+    this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
+  } // For loading the divina data from a json and its file URLs (via folder path)
+
+
+  openDivinaFromJsonAndPath(json, folderPath, href = null, options = null) {
+    const textureSource = {
+      folderPath
+    };
+
+    const parseAndHandleDivinaData = divinaParser => {
+      divinaParser.loadFromJsonAndPath(json);
+    };
+
+    this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
+  } // For loading the divina data from data = { json, base64DataByHref }
+
+
+  openDivinaFromData(data, href = null, options = null) {
+    const textureSource = {
+      data
+    };
+
+    const parseAndHandleDivinaData = divinaParser => {
+      divinaParser.loadFromData(data);
+    };
+
+    this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
+  }
+
+  _parseDivina(href = null, textureSource, options, parseAndHandleDivinaData) {
+    this._startHref = href;
+    this._options = options || {}; // Set loading properties, which shall be common to all page navigators
+
+    this._setLoadingProperties(); // Set allowed story interactions based on options
+
+
+    this._interactionManager.setStoryInteractions(options); // Create resource manager (now that options and possibly data exist)
+
+
+    this._createResourceManager(textureSource);
+
+    const doWithParsedDivinaData = parsedDivinaData => {
+      const {
+        metadata
+      } = parsedDivinaData || {};
+      const {
+        readingProgression,
+        orientation
+      } = metadata || {};
+      const customData = {
+        readingProgression,
+        orientation
       };
 
-      this._eventEmitter.emit("pagenavigatorscreation", customData); // Now build (and set) the page navigator to start with
+      this._eventEmitter.emit("jsonload", customData);
 
+      this._buildStoryFromStoryData(parsedDivinaData);
+    };
 
-      if (this._pageNavigatorsInfo.single) {
-        this._setPageNavigator("single");
-      } else if (this._pageNavigatorsInfo.scroll) {
-        this._setPageNavigator("scroll");
-      }
-    }
-  }, {
-    key: "_setRatioConstraint",
-    value: function _setRatioConstraint(viewportRatio) {
-      if (!viewportRatio) {
-        return;
-      } // Parse viewportRatio properties to compute the applicable min and max ratio
+    const divinaParser = new _DivinaParser__WEBPACK_IMPORTED_MODULE_3__["default"](this, this._textManager, doWithParsedDivinaData);
+    parseAndHandleDivinaData(divinaParser);
+  }
 
+  _setLoadingProperties() {
+    const {
+      maxNbOfPagesAfter
+    } = this._options || {};
+    const nbOfPages = maxNbOfPagesAfter > 0 ? maxNbOfPagesAfter : _constants__WEBPACK_IMPORTED_MODULE_8__["defaultMaxNbOfPagesAfter"];
+    this._maxNbOfPagesAfter = Math.ceil(nbOfPages);
+    this._maxNbOfPagesBefore = Math.ceil(this._maxNbOfPagesAfter * _constants__WEBPACK_IMPORTED_MODULE_8__["maxShareOfPagesBefore"]);
+    this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore;
+  }
 
-      var minRatio;
-      var maxRatio;
-      var aspectRatio = viewportRatio.aspectRatio,
-          constraint = viewportRatio.constraint;
-      var ratio = _utils__WEBPACK_IMPORTED_MODULE_7__["parseAspectRatio"](aspectRatio);
-
-      switch (constraint) {
-        case "min":
-          minRatio = ratio;
-          break;
-
-        case "max":
-          maxRatio = ratio;
-          break;
-
-        case "exact":
-          minRatio = ratio;
-          maxRatio = ratio;
-          break;
-
-        default:
-          return;
-      } // If the min and max values are contradictory, then discard them
-
-
-      if (minRatio && maxRatio && minRatio > maxRatio) {
-        return;
-      } // Now store those min and max values and resize the viewport
-
-
-      this._minRatio = minRatio;
-      this._maxRatio = maxRatio;
-      var shouldResizeImmediately = true;
-      this.resize(shouldResizeImmediately);
-    }
-  }, {
-    key: "_getSlices",
-    value: function _getSlices(mainLinkObjectsArray) {
-      var guidedLinkObjectsArray = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var slices = {};
-
-      var mainSlices = this._getSlicesFromLinkObjectsArray(mainLinkObjectsArray);
-
-      slices = _objectSpread({}, mainSlices);
-
-      if (guidedLinkObjectsArray) {
-        var guidedSlices = this._getSlicesFromLinkObjectsArray(guidedLinkObjectsArray);
-
-        slices = _objectSpread({}, slices, {}, guidedSlices);
-      }
-
-      return slices;
-    }
-  }, {
-    key: "_getSlicesFromLinkObjectsArray",
-    value: function _getSlicesFromLinkObjectsArray(linkObjectsArray) {
-      var _this4 = this;
-
-      var slices = {};
-      linkObjectsArray.forEach(function (linkObject) {
-        var newSlices = _this4._getSlicesFromLinkObject(linkObject);
-
-        slices = _objectSpread({}, slices, {}, newSlices);
-      });
-      return slices;
-    }
-  }, {
-    key: "_getSlicesFromLinkObject",
-    value: function _getSlicesFromLinkObject(linkObject) {
-      var _this5 = this;
-
-      var slices = {};
-      var slice = linkObject.slice,
-          transitionForward = linkObject.transitionForward,
-          transitionBackward = linkObject.transitionBackward,
-          children = linkObject.children;
-      var id = slice.id;
-      slices[id] = slice;
-
-      if (transitionForward && transitionForward.slice) {
-        slices[transitionForward.slice.id] = transitionForward.slice;
-      }
-
-      if (transitionBackward && transitionBackward.slice) {
-        slices[transitionBackward.slice.id] = transitionBackward.slice;
-      }
-
-      children.forEach(function (child) {
-        var childSlices = _this5._getSlicesFromLinkObject(child.linkObject);
-
-        slices = _objectSpread({}, slices, {}, childSlices);
-      });
-      return slices;
-    }
-  }, {
-    key: "_setPageNavigator",
-    // Set the pageNavigator, load its first resources and start playing the story
-    value: function _setPageNavigator(pageNavigatorType) {
-      var _this6 = this;
-
-      var oldPageNavigator = this._pageNavigator;
-      var pageNavigatorInfo = this._pageNavigatorsInfo[pageNavigatorType];
-      var defaultMetadata = this._pageNavigatorsInfo.metadata;
-      var _this$_storyData = this._storyData,
-          mainLinkObjectsArray = _this$_storyData.mainLinkObjectsArray,
-          guidedLinkObjectsArray = _this$_storyData.guidedLinkObjectsArray;
-
-      if (pageNavigatorType === "guided") {
-        this._pageNavigator = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigator(pageNavigatorType, guidedLinkObjectsArray, pageNavigatorInfo, defaultMetadata, this);
-      } else {
-        this._pageNavigator = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigator(pageNavigatorType, mainLinkObjectsArray, pageNavigatorInfo, defaultMetadata, this);
-      }
-
-      this._pageNavigator.setLoadingProperties(this._maxNbOfPagesBefore, this._maxNbOfPagesAfter); // Set language if none has been defined yet (otherwise keep it)
-
-
-      var _this$_tags$language = this._tags.language,
-          index = _this$_tags$language.index,
-          array = _this$_tags$language.array;
-
-      if (index === null) {
-        var languageIndex = 0; // The language array is always at least ["unspecified"]
-
-        if (this._options.language) {
-          var language = this._options.language;
-          var foundLanguageIndex = array.indexOf(language);
-
-          if (foundLanguageIndex >= 0) {
-            languageIndex = foundLanguageIndex;
-          }
-        }
-
-        var currentLanguage = array[languageIndex];
-        var shouldUpdatePageNavigator = false;
-        this.setLanguage(currentLanguage, shouldUpdatePageNavigator);
-      } // Repopulate the main container
-
-
-      this._renderer.mainContainer.addChild(this._pageNavigator); // Configure _interactionManager depending on the divina's features
-
-
-      this._interactionManager.setPageNavigator(this._pageNavigator); // Create (or update) the _resourceManager's priority function based on the number of pages,
-      // while also (killing tasks and re)building the async task queue (and clearing sliceIdsSets
-      // so they can be populated again for the considered pageNavigatorType)
-
-
-      var maxPriority = this._maxNbOfPagesAfter || this._pageNavigator.nbOfPages;
-
-      this._resourceManager.reset(maxPriority, this._priorityFactor); // Get target page and segment indices
-
-
-      var href = this._startHref;
-
-      if (this._haveFirstResourcesLoaded === true) {
-        href = oldPageNavigator ? oldPageNavigator.getFirstHrefInCurrentPage() : null;
-      }
-
-      var canUseShortenedHref = true;
-
-      var target = this._getTargetPageAndSegmentIndices(href, canUseShortenedHref); // Now clean old story navigator
-
-
-      if (oldPageNavigator) {
-        oldPageNavigator.finalizeExit(); // Will also remove its container from its parent
-      }
-
-      this._resourceManager.killPendingLoads(); // Store a list (Set) of used paths
-
-
-      var oldPathsSet = new Set();
-      Object.values(this._slices).forEach(function (slice) {
-        var pathsArray = slice.unlinkTexturesAndGetPaths();
-        pathsArray.forEach(function (path) {
-          oldPathsSet.add(path);
+  _createResourceManager(textureSource) {
+    const doWithLoadPercent = loadPercent => {
+      if (this._textManager) {
+        this._textManager.showMessage({
+          type: "loading",
+          data: loadPercent
         });
-      }); // Do any required updates on the calling app side (e.g. color loadViewer cells differently)
+      }
+    };
 
-      var customData = {
-        readingMode: pageNavigatorType,
-        nbOfPages: this._pageNavigator.nbOfPages
+    this._resourceManager = new _ResourceManager__WEBPACK_IMPORTED_MODULE_4__["default"](doWithLoadPercent, textureSource, this);
+  }
+
+  _buildStoryFromStoryData(storyData) {
+    this._storyData = storyData;
+    const {
+      metadata,
+      mainLinkObjectsArray,
+      guidedLinkObjectsArray
+    } = storyData;
+    const {
+      spread,
+      viewportRatio
+    } = metadata || {}; // Set spread (used to check whether the double reading mode is available)
+
+    this._spread = spread; // Update HTML canvas size to conform to viewportRatio constraints (will trigger a resize)
+
+    this._setRatioConstraint(viewportRatio); // Store all slices
+
+
+    this._slices = this._getSlices(mainLinkObjectsArray, guidedLinkObjectsArray); // Store all tags
+
+    const {
+      languagesArray
+    } = metadata;
+    this._tags = {
+      language: {
+        array: languagesArray,
+        index: null
+      }
+    };
+    Player.addTagsForSlices(this._tags, this._slices); // Now create build info for all available page navigators
+    // (note that _pageNavigatorsInfo.metadata will be a (c)leaner version of the above metadata)
+
+    this._pageNavigatorsInfo = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigatorsInfo(storyData); // If required, do something with the information on available reading modes and languages
+
+    const actualReadingModes = { ...this._pageNavigatorsInfo
+    };
+    delete actualReadingModes.metadata;
+
+    if (this._pageNavigatorsInfo.double) {
+      if (this._isDoublePageReadingModeAvailable() === true) {
+        this._wasDoublePageReadingModeAvailable = true;
+      } else {
+        this._wasDoublePageReadingModeAvailable = false;
+        delete actualReadingModes.double;
+      }
+    }
+
+    const customData = {
+      readingModesArray: Object.keys(actualReadingModes),
+      languagesArray
+    };
+
+    this._eventEmitter.emit("pagenavigatorscreation", customData); // Now build (and set) the page navigator to start with
+
+
+    if (this._pageNavigatorsInfo.single) {
+      this._setPageNavigator("single");
+    } else if (this._pageNavigatorsInfo.scroll) {
+      this._setPageNavigator("scroll");
+    }
+  }
+
+  _setRatioConstraint(viewportRatio) {
+    if (!viewportRatio) {
+      return;
+    } // Parse viewportRatio properties to compute the applicable min and max ratio
+
+
+    let minRatio;
+    let maxRatio;
+    const {
+      aspectRatio,
+      constraint
+    } = viewportRatio;
+    const ratio = _utils__WEBPACK_IMPORTED_MODULE_7__["parseAspectRatio"](aspectRatio);
+
+    switch (constraint) {
+      case "min":
+        minRatio = ratio;
+        break;
+
+      case "max":
+        maxRatio = ratio;
+        break;
+
+      case "exact":
+        minRatio = ratio;
+        maxRatio = ratio;
+        break;
+
+      default:
+        return;
+    } // If the min and max values are contradictory, then discard them
+
+
+    if (minRatio && maxRatio && minRatio > maxRatio) {
+      return;
+    } // Now store those min and max values and resize the viewport
+
+
+    this._minRatio = minRatio;
+    this._maxRatio = maxRatio;
+    const shouldResizeImmediately = true;
+    this.resize(shouldResizeImmediately);
+  }
+
+  _getSlices(mainLinkObjectsArray, guidedLinkObjectsArray = null) {
+    let slices = {};
+
+    const mainSlices = this._getSlicesFromLinkObjectsArray(mainLinkObjectsArray);
+
+    slices = { ...mainSlices
+    };
+
+    if (guidedLinkObjectsArray) {
+      const guidedSlices = this._getSlicesFromLinkObjectsArray(guidedLinkObjectsArray);
+
+      slices = { ...slices,
+        ...guidedSlices
+      };
+    }
+
+    return slices;
+  }
+
+  _getSlicesFromLinkObjectsArray(linkObjectsArray) {
+    let slices = {};
+    linkObjectsArray.forEach(linkObject => {
+      const newSlices = this._getSlicesFromLinkObject(linkObject);
+
+      slices = { ...slices,
+        ...newSlices
+      };
+    });
+    return slices;
+  }
+
+  _getSlicesFromLinkObject(linkObject) {
+    let slices = {};
+    const {
+      slice,
+      transitionForward,
+      transitionBackward,
+      children
+    } = linkObject;
+    const {
+      id
+    } = slice;
+    slices[id] = slice;
+
+    if (transitionForward && transitionForward.slice) {
+      slices[transitionForward.slice.id] = transitionForward.slice;
+    }
+
+    if (transitionBackward && transitionBackward.slice) {
+      slices[transitionBackward.slice.id] = transitionBackward.slice;
+    }
+
+    children.forEach(child => {
+      const childSlices = this._getSlicesFromLinkObject(child.linkObject);
+
+      slices = { ...slices,
+        ...childSlices
+      };
+    });
+    return slices;
+  }
+
+  static addTagsForSlices(tags, slices) {
+    Object.values(slices).forEach(slice => {
+      const {
+        resource,
+        resourcesArray
+      } = slice;
+
+      if (resource) {
+        Player.updateTagsArrayForResource(tags, resource);
+      } else if (resourcesArray) {
+        resourcesArray.forEach(sequenceResource => {
+          Player.updateTagsArrayForResource(tags, sequenceResource);
+        });
+      }
+    });
+  }
+
+  static updateTagsArrayForResource(tags, sliceResource) {
+    const updatedTags = { ...tags
+    };
+
+    if (sliceResource && sliceResource.usedTags) {
+      Object.entries(sliceResource.usedTags).forEach(([tagName, possibleTagValues]) => {
+        if (!updatedTags[tagName]) {
+          updatedTags[tagName] = {
+            array: [],
+            index: null
+          };
+        }
+
+        possibleTagValues.forEach(tagValue => {
+          if (updatedTags[tagName].array.indexOf(tagValue) < 0) {
+            updatedTags[tagName].array.push(tagValue);
+          }
+        });
+      });
+    }
+
+    return tags;
+  } // Set the pageNavigator, load its first resources and start playing the story
+
+
+  _setPageNavigator(pageNavigatorType) {
+    const oldPageNavigator = this._pageNavigator;
+    const pageNavigatorInfo = this._pageNavigatorsInfo[pageNavigatorType];
+    const defaultMetadata = this._pageNavigatorsInfo.metadata;
+    const {
+      mainLinkObjectsArray,
+      guidedLinkObjectsArray
+    } = this._storyData;
+
+    if (pageNavigatorType === "guided") {
+      this._pageNavigator = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigator(pageNavigatorType, guidedLinkObjectsArray, pageNavigatorInfo, defaultMetadata, this);
+    } else {
+      this._pageNavigator = _StoryBuilder__WEBPACK_IMPORTED_MODULE_5__["default"].createPageNavigator(pageNavigatorType, mainLinkObjectsArray, pageNavigatorInfo, defaultMetadata, this);
+    }
+
+    this._pageNavigator.setLoadingProperties(this._maxNbOfPagesBefore, this._maxNbOfPagesAfter); // Set language if none has been defined yet (otherwise keep it)
+
+
+    const {
+      index,
+      array
+    } = this._tags.language;
+
+    if (index === null) {
+      let languageIndex = 0; // The language array is always at least ["unspecified"]
+
+      if (this._options.language) {
+        const {
+          language
+        } = this._options;
+        const foundLanguageIndex = array.indexOf(language);
+
+        if (foundLanguageIndex >= 0) {
+          languageIndex = foundLanguageIndex;
+        }
+      }
+
+      const currentLanguage = array[languageIndex];
+      const shouldUpdatePageNavigator = false;
+      this.setLanguage(currentLanguage, shouldUpdatePageNavigator);
+    } // Repopulate the main container
+
+
+    this._renderer.mainContainer.addChild(this._pageNavigator); // Configure _interactionManager depending on the divina's features
+
+
+    this._interactionManager.setPageNavigator(this._pageNavigator); // Create (or update) the _resourceManager's priority function based on the number of pages,
+    // while also (killing tasks and re)building the async task queue (and clearing sliceIdsSets
+    // so they can be populated again for the considered pageNavigatorType)
+
+
+    const maxPriority = this._maxNbOfPagesAfter || this._pageNavigator.nbOfPages;
+
+    this._resourceManager.reset(maxPriority, this._priorityFactor); // Get target page and segment indices
+
+
+    let href = this._startHref;
+
+    if (this._haveFirstResourcesLoaded === true) {
+      href = oldPageNavigator ? oldPageNavigator.getFirstHrefInCurrentPage() : null;
+    }
+
+    const canUseShortenedHref = true;
+
+    const target = this._getTargetPageAndSegmentIndices(href, canUseShortenedHref); // Now clean old story navigator
+
+
+    if (oldPageNavigator) {
+      oldPageNavigator.finalizeExit(); // Will also remove its container from its parent
+    }
+
+    this._resourceManager.killPendingLoads(); // Store a list (Set) of used paths
+
+
+    const oldPathsSet = new Set();
+    Object.values(this._slices).forEach(slice => {
+      const pathsArray = slice.unlinkTexturesAndGetPaths();
+      pathsArray.forEach(path => {
+        oldPathsSet.add(path);
+      });
+    }); // Do any required updates on the calling app side (e.g. color loadViewer cells differently)
+
+    const customData = {
+      readingMode: pageNavigatorType,
+      nbOfPages: this._pageNavigator.nbOfPages
+    };
+
+    this._eventEmitter.emit("readingmodechange", customData); // Populate the resourceManager's textureResources with relevant sliceIds,
+    // i.e. only for those slices actually used in this page navigator
+
+
+    Object.values(this._slices).forEach(slice => {
+      const {
+        pageNavInfo,
+        id,
+        resource,
+        resourcesArray
+      } = slice;
+
+      if (pageNavInfo[pageNavigatorType]) {
+        // If slice used in this PageNavigator
+        const virtualResourcesArray = resourcesArray || [resource];
+        virtualResourcesArray.forEach(virtualResource => {
+          this._resourceManager.storeResourceInfo(virtualResource, id);
+        });
+      }
+    }); // Create async tasks for destroying and loading resources
+
+    this._pageNavigator.updateLoadTasks(target.pageIndex, oldPathsSet); // If the story navigator change occurred before the first resources were loaded
+
+
+    if (this._haveFirstResourcesLoaded === false) {
+      // Add a last task to trigger to start async queue (if not already running)
+      const doAfterLoadingFirstPagesOrSegments = () => {
+        this._haveFirstResourcesLoaded = true; // Remove the _textManager
+
+        if (this._textManager) {
+          this._textManager.destroy();
+
+          this._textManager = null;
+        } // Signal the end of the initial load
+
+
+        this._eventEmitter.emit("initialload", {}); // Now go to required resource in current story navigator
+
+
+        this._goToTargetPageAndSegmentIndices(target);
       };
 
-      this._eventEmitter.emit("readingmodechange", customData); // Populate the resourceManager's textureResources with relevant sliceIds,
-      // i.e. only for those slices actually used in this page navigator
+      this._resourceManager.addStoryOpenTaskAndLoad(doAfterLoadingFirstPagesOrSegments, maxPriority); // Otherwise determine what page the new story navigator should start on by getting the href
+      // of the first resource in the page (in the old story navigator)
 
-
-      Object.values(this._slices).forEach(function (slice) {
-        var pageNavInfo = slice.pageNavInfo,
-            id = slice.id,
-            resource = slice.resource,
-            resourcesArray = slice.resourcesArray;
-
-        if (pageNavInfo[pageNavigatorType]) {
-          // If slice used in this PageNavigator
-          var virtualResourcesArray = resourcesArray || [resource];
-          virtualResourcesArray.forEach(function (virtualResource) {
-            _this6._resourceManager.storeResourceInfo(virtualResource, id);
-          });
-        }
-      }); // Create async tasks for destroying and loading resources
-
-      this._pageNavigator.updateLoadTasks(target.pageIndex, oldPathsSet); // If the story navigator change occurred before the first resources were loaded
-
-
-      if (this._haveFirstResourcesLoaded === false) {
-        // Add a last task to trigger to start async queue (if not already running)
-        var doAfterLoadingFirstPagesOrSegments = function doAfterLoadingFirstPagesOrSegments() {
-          _this6._haveFirstResourcesLoaded = true; // Remove the _textManager
-
-          if (_this6._textManager) {
-            _this6._textManager.destroy();
-
-            _this6._textManager = null;
-          } // Signal the end of the initial load
-
-
-          _this6._eventEmitter.emit("initialload", {}); // Now go to required resource in current story navigator
-
-
-          _this6._goToTargetPageAndSegmentIndices(target);
-        };
-
-        this._resourceManager.addStoryOpenTaskAndLoad(doAfterLoadingFirstPagesOrSegments, maxPriority); // Otherwise determine what page the new story navigator should start on by getting the href
-        // of the first resource in the page (in the old story navigator)
-
-      } else {
-        this._goToTargetPageAndSegmentIndices(target);
-      }
-    } // For reaching a specific resource directly in the story (typically via a table of contents,
-    // however it is also used as the first step into the story navigation)
-
-  }, {
-    key: "_getTargetPageAndSegmentIndices",
-    value: function _getTargetPageAndSegmentIndices(targetHref) {
-      var canUseShortenedHref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      if (!this._pageNavigator) {
-        return {
-          pageIndex: 0,
-          segmentIndex: 0
-        };
-      }
-
-      var _this$_storyData2 = this._storyData,
-          mainLinkObjectsArray = _this$_storyData2.mainLinkObjectsArray,
-          guidedLinkObjectsArray = _this$_storyData2.guidedLinkObjectsArray;
-
-      if (this._pageNavigator.type === "guided") {
-        return this._getTargetInLinkObjectsArray(targetHref, canUseShortenedHref, guidedLinkObjectsArray);
-      }
-
-      return this._getTargetInLinkObjectsArray(targetHref, canUseShortenedHref, mainLinkObjectsArray);
+    } else {
+      this._goToTargetPageAndSegmentIndices(target);
     }
-  }, {
-    key: "_getTargetInLinkObjectsArray",
-    value: function _getTargetInLinkObjectsArray(targetHref) {
-      var _this7 = this;
+  } // For reaching a specific resource directly in the story (typically via a table of contents,
+  // however it is also used as the first step into the story navigation)
 
-      var canUseShortenedHref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      var linkObjectsArray = arguments.length > 2 ? arguments[2] : undefined;
-      var targetPath = canUseShortenedHref === true ? _utils__WEBPACK_IMPORTED_MODULE_7__["getShortenedHref"](targetHref) // Which is actually the resource path
-      : null;
-      var hardTarget = null;
-      var softTarget = null;
-      linkObjectsArray.forEach(function (linkObject) {
-        var _ref5 = linkObject || {},
-            slice = _ref5.slice;
 
-        var _ref6 = slice || {},
-            resource = _ref6.resource,
-            pageNavInfo = _ref6.pageNavInfo;
-
-        var _ref7 = resource || {},
-            href = _ref7.href,
-            path = _ref7.path;
-
-        if (hardTarget === null && targetHref === href) {
-          hardTarget = pageNavInfo[_this7._pageNavigator.type];
-        } else if (softTarget === null && targetPath === path) {
-          softTarget = pageNavInfo[_this7._pageNavigator.type];
-        }
-      });
-
-      if (hardTarget) {
-        return hardTarget;
-      }
-
-      if (softTarget) {
-        return softTarget;
-      }
-
+  _getTargetPageAndSegmentIndices(targetHref, canUseShortenedHref = false) {
+    if (!this._pageNavigator) {
       return {
         pageIndex: 0,
         segmentIndex: 0
       };
     }
-  }, {
-    key: "_goToTargetPageAndSegmentIndices",
-    value: function _goToTargetPageAndSegmentIndices(target) {
-      var pageIndex = target.pageIndex,
-          segmentIndex = target.segmentIndex;
-      var shouldCancelTransition = true;
 
-      this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldCancelTransition);
+    const {
+      mainLinkObjectsArray,
+      guidedLinkObjectsArray
+    } = this._storyData;
+
+    if (this._pageNavigator.type === "guided") {
+      return this._getTargetInLinkObjectsArray(targetHref, canUseShortenedHref, guidedLinkObjectsArray);
     }
-  }, {
-    key: "setReadingMode",
-    value: function setReadingMode(readingMode) {
-      // Called externally
-      if (!readingMode || readingMode === this._pageNavigator.type) {
-        return;
+
+    return this._getTargetInLinkObjectsArray(targetHref, canUseShortenedHref, mainLinkObjectsArray);
+  }
+
+  _getTargetInLinkObjectsArray(targetHref, canUseShortenedHref = false, linkObjectsArray) {
+    const targetPath = canUseShortenedHref === true ? _utils__WEBPACK_IMPORTED_MODULE_7__["getShortenedHref"](targetHref) // Which is actually the resource path
+    : null;
+    let hardTarget = null;
+    let softTarget = null;
+    linkObjectsArray.forEach(linkObject => {
+      const {
+        slice
+      } = linkObject || {};
+      const {
+        resource,
+        pageNavInfo
+      } = slice || {};
+      const {
+        href,
+        path
+      } = resource || {};
+
+      if (hardTarget === null && targetHref === href) {
+        hardTarget = pageNavInfo[this._pageNavigator.type];
+      } else if (softTarget === null && targetPath === path) {
+        softTarget = pageNavInfo[this._pageNavigator.type];
       }
+    });
 
-      this._setPageNavigator(readingMode);
-    } // Used above or externally (in the latter case the change will be validated here)
-
-  }, {
-    key: "setLanguage",
-    value: function setLanguage(language, shouldUpdatePageNavigator) {
-      this.setTag("language", language, shouldUpdatePageNavigator);
+    if (hardTarget) {
+      return hardTarget;
     }
-  }, {
-    key: "setTag",
-    value: function setTag(tagName, tagValue) {
-      var shouldUpdatePageNavigator = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : true;
 
-      if (!this._tags[tagName]) {
-        return;
-      }
-
-      var array = this._tags[tagName].array;
-      var index = array.indexOf(tagValue);
-
-      if (index < 0) {
-        return;
-      }
-
-      this._tags[tagName].index = index;
-
-      if (shouldUpdatePageNavigator === true) {
-        this._resourceManager.killPendingLoads();
-
-        var oldPathsSet = new Set();
-        Object.values(this._slices).forEach(function (slice) {
-          var pathsArray = slice.unlinkTexturesAndGetPaths();
-          pathsArray.forEach(function (path) {
-            oldPathsSet.add(path);
-          });
-        }); // Create async tasks for destroying and loading resources
-
-        var targetPageIndex = null; // Keep the same page index
-
-        this._pageNavigator.updateLoadTasks(targetPageIndex, oldPathsSet);
-      }
-
-      if (tagName === "language") {
-        var customData = {
-          language: tagValue
-        };
-
-        this._eventEmitter.emit("languagechange", customData);
-      }
-    } // For accessing a resource in the story from the table of contents
-
-  }, {
-    key: "goTo",
-    value: function goTo(href) {
-      var canUseShortenedHref = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      // Get target page and segment indices
-      var target = this._getTargetPageAndSegmentIndices(href, canUseShortenedHref); // Now go to target page and segment indices
-
-
-      this._goToTargetPageAndSegmentIndices(target);
+    if (softTarget) {
+      return softTarget;
     }
-  }, {
-    key: "goToPageWithIndex",
-    value: function goToPageWithIndex(pageIndex) {
-      if (!this._pageNavigator || pageIndex === null || pageIndex === undefined) {
-        return;
-      }
 
-      var segmentIndex = null;
-      var shouldCancelTransition = true;
+    return {
+      pageIndex: 0,
+      segmentIndex: 0
+    };
+  }
 
-      this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldCancelTransition);
+  _goToTargetPageAndSegmentIndices(target) {
+    const {
+      pageIndex,
+      segmentIndex
+    } = target;
+    const shouldCancelTransition = true;
+
+    this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldCancelTransition);
+  }
+
+  setReadingMode(readingMode) {
+    // Called externally
+    if (!readingMode || readingMode === this._pageNavigator.type) {
+      return;
     }
-  }, {
-    key: "goRight",
-    value: function goRight() {
-      if (!this._pageNavigator) {
-        return;
-      }
 
-      var shouldGoToTheMax = false;
+    this._setPageNavigator(readingMode);
+  } // Used above or externally (in the latter case the change will be validated here)
 
-      this._pageNavigator.go("right", shouldGoToTheMax);
+
+  setLanguage(language, shouldUpdatePageNavigator) {
+    this.setTag("language", language, shouldUpdatePageNavigator);
+  }
+
+  setTag(tagName, tagValue, shouldUpdatePageNavigator = true) {
+    if (!this._tags[tagName]) {
+      return;
     }
-  }, {
-    key: "goLeft",
-    value: function goLeft() {
-      if (!this._pageNavigator) {
-        return;
-      }
 
-      var shouldGoToTheMax = false;
+    const {
+      array
+    } = this._tags[tagName];
+    const index = array.indexOf(tagValue);
 
-      this._pageNavigator.go("left", shouldGoToTheMax);
+    if (index < 0) {
+      return;
     }
-  }, {
-    key: "goDown",
-    value: function goDown() {
-      if (!this._pageNavigator) {
-        return;
-      }
 
-      var shouldGoToTheMax = false;
+    this._tags[tagName].index = index;
 
-      this._pageNavigator.go("down", shouldGoToTheMax);
-    }
-  }, {
-    key: "goUp",
-    value: function goUp() {
-      if (!this._pageNavigator) {
-        return;
-      }
+    if (shouldUpdatePageNavigator === true) {
+      this._resourceManager.killPendingLoads();
 
-      var shouldGoToTheMax = false;
-
-      this._pageNavigator.go("up", shouldGoToTheMax);
-    }
-  }, {
-    key: "goToMaxRight",
-    value: function goToMaxRight() {
-      if (!this._pageNavigator) {
-        return;
-      }
-
-      var shouldGoToTheMax = true;
-
-      this._pageNavigator.go("right", shouldGoToTheMax);
-    }
-  }, {
-    key: "goToMaxLeft",
-    value: function goToMaxLeft() {
-      if (!this._pageNavigator) {
-        return;
-      }
-
-      var shouldGoToTheMax = true;
-
-      this._pageNavigator.go("left", shouldGoToTheMax);
-    }
-  }, {
-    key: "goToMaxDown",
-    value: function goToMaxDown() {
-      if (!this._pageNavigator) {
-        return;
-      }
-
-      var shouldGoToTheMax = true;
-
-      this._pageNavigator.go("down", shouldGoToTheMax);
-    }
-  }, {
-    key: "goToMaxUp",
-    value: function goToMaxUp() {
-      if (!this._pageNavigator) {
-        return;
-      }
-
-      var shouldGoToTheMax = true;
-
-      this._pageNavigator.go("up", shouldGoToTheMax);
-    }
-  }, {
-    key: "setPercentInPage",
-    value: function setPercentInPage(percent) {
-      if (!this._pageNavigator) {
-        return;
-      }
-
-      this._pageNavigator.setPercentInCurrentPage(percent);
-    } // For exiting the application
-
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      window.removeEventListener("resize", this.resize);
-
-      if (this._pageNavigator) {
-        this._pageNavigator.destroy();
-      } // Remove textures and event listeners from slices
-
-
-      Object.values(this._slices).forEach(function (slice) {
-        slice.destroy();
-      });
-
-      if (this._resourceManager) {
-        this._resourceManager.destroy();
-
-        this._resourceManager = null;
-      }
-
-      if (this._interactionManager) {
-        this._interactionManager.destroy();
-
-        this._interactionManager = null;
-      }
-
-      if (this._textManager) {
-        this._textManager.destroy();
-
-        this._textManager = null;
-      }
-
-      this._renderer.destroy();
-
-      this._renderer = null;
-    }
-  }], [{
-    key: "addTagsForSlices",
-    value: function addTagsForSlices(tags, slices) {
-      Object.values(slices).forEach(function (slice) {
-        var resource = slice.resource,
-            resourcesArray = slice.resourcesArray;
-
-        if (resource) {
-          Player.updateTagsArrayForResource(tags, resource);
-        } else if (resourcesArray) {
-          resourcesArray.forEach(function (sequenceResource) {
-            Player.updateTagsArrayForResource(tags, sequenceResource);
-          });
-        }
-      });
-    }
-  }, {
-    key: "updateTagsArrayForResource",
-    value: function updateTagsArrayForResource(tags, sliceResource) {
-      var updatedTags = _objectSpread({}, tags);
-
-      if (sliceResource && sliceResource.usedTags) {
-        Object.entries(sliceResource.usedTags).forEach(function (_ref8) {
-          var _ref9 = _slicedToArray(_ref8, 2),
-              tagName = _ref9[0],
-              possibleTagValues = _ref9[1];
-
-          if (!updatedTags[tagName]) {
-            updatedTags[tagName] = {
-              array: [],
-              index: null
-            };
-          }
-
-          possibleTagValues.forEach(function (tagValue) {
-            if (updatedTags[tagName].array.indexOf(tagValue) < 0) {
-              updatedTags[tagName].array.push(tagValue);
-            }
-          });
+      const oldPathsSet = new Set();
+      Object.values(this._slices).forEach(slice => {
+        const pathsArray = slice.unlinkTexturesAndGetPaths();
+        pathsArray.forEach(path => {
+          oldPathsSet.add(path);
         });
-      }
+      }); // Create async tasks for destroying and loading resources
 
-      return tags;
+      const targetPageIndex = null; // Keep the same page index
+
+      this._pageNavigator.updateLoadTasks(targetPageIndex, oldPathsSet);
     }
-  }]);
 
-  return Player;
-}();
+    if (tagName === "language") {
+      const customData = {
+        language: tagValue
+      };
+
+      this._eventEmitter.emit("languagechange", customData);
+    }
+  } // For accessing a resource in the story from the table of contents
 
 
+  goTo(href, canUseShortenedHref = false) {
+    // Get target page and segment indices
+    const target = this._getTargetPageAndSegmentIndices(href, canUseShortenedHref); // Now go to target page and segment indices
+
+
+    this._goToTargetPageAndSegmentIndices(target);
+  }
+
+  goToPageWithIndex(pageIndex) {
+    if (!this._pageNavigator || pageIndex === null || pageIndex === undefined) {
+      return;
+    }
+
+    const segmentIndex = null;
+    const shouldCancelTransition = true;
+
+    this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldCancelTransition);
+  }
+
+  goRight() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = false;
+
+    this._pageNavigator.go("right", shouldGoToTheMax);
+  }
+
+  goLeft() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = false;
+
+    this._pageNavigator.go("left", shouldGoToTheMax);
+  }
+
+  goDown() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = false;
+
+    this._pageNavigator.go("down", shouldGoToTheMax);
+  }
+
+  goUp() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = false;
+
+    this._pageNavigator.go("up", shouldGoToTheMax);
+  }
+
+  goToMaxRight() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = true;
+
+    this._pageNavigator.go("right", shouldGoToTheMax);
+  }
+
+  goToMaxLeft() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = true;
+
+    this._pageNavigator.go("left", shouldGoToTheMax);
+  }
+
+  goToMaxDown() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = true;
+
+    this._pageNavigator.go("down", shouldGoToTheMax);
+  }
+
+  goToMaxUp() {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    const shouldGoToTheMax = true;
+
+    this._pageNavigator.go("up", shouldGoToTheMax);
+  }
+
+  setPercentInPage(percent) {
+    if (!this._pageNavigator) {
+      return;
+    }
+
+    this._pageNavigator.setPercentInCurrentPage(percent);
+  } // For exiting the application
+
+
+  destroy() {
+    window.removeEventListener("resize", this.resize);
+
+    if (this._pageNavigator) {
+      this._pageNavigator.destroy();
+    } // Remove textures and event listeners from slices
+
+
+    Object.values(this._slices).forEach(slice => {
+      slice.destroy();
+    });
+
+    if (this._resourceManager) {
+      this._resourceManager.destroy();
+
+      this._resourceManager = null;
+    }
+
+    if (this._interactionManager) {
+      this._interactionManager.destroy();
+
+      this._interactionManager = null;
+    }
+
+    if (this._textManager) {
+      this._textManager.destroy();
+
+      this._textManager = null;
+    }
+
+    this._renderer.destroy();
+
+    this._renderer = null;
+  }
+
+}
 
 /***/ }),
 
@@ -54833,58 +54562,29 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Container; });
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+class Container {
+  // Used in TextureElement
+  get name() {
+    return this._name;
+  } // Used in LayerPile (note that parent below is a Container, not a PIXIContainer)
 
 
+  get parent() {
+    return this._parent;
+  } // Used in Camera
 
-var Container =
-/*#__PURE__*/
-function () {
-  _createClass(Container, [{
-    key: "name",
-    // Used in TextureElement
-    get: function get() {
-      return this._name;
-    } // Used in LayerPile (note that parent below is a Container, not a PIXIContainer)
 
-  }, {
-    key: "parent",
-    get: function get() {
-      return this._parent;
-    } // Used in Camera
+  get positionInSegmentLine() {
+    return this._positionInSegmentLine;
+  } // Used below
 
-  }, {
-    key: "positionInSegmentLine",
-    get: function get() {
-      return this._positionInSegmentLine;
-    } // Used below
 
-  }, {
-    key: "pixiContainer",
-    get: function get() {
-      return this._pixiContainer;
-    }
-  }]);
+  get pixiContainer() {
+    return this._pixiContainer;
+  }
 
-  function Container() {
-    var name = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-    var pixiContainer = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
-    _classCallCheck(this, Container);
-
+  constructor(name = null, parent = null, pixiContainer = null) {
     this._pixiContainer = pixiContainer || new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Container"]();
 
     this._setName(name);
@@ -54908,211 +54608,188 @@ function () {
     this._isYPositionUpdating = false;
   }
 
-  _createClass(Container, [{
-    key: "_setName",
-    value: function _setName(name) {
-      var suffix = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      this._name = name;
+  _setName(name, suffix = null) {
+    this._name = name;
 
-      if (this._pixiContainer) {
-        this._pixiContainer.name = name;
+    if (this._pixiContainer) {
+      this._pixiContainer.name = name;
 
-        if (suffix !== null) {
-          this._pixiContainer.name += suffix;
-        }
-      }
-
-      if (this._maskingPixiContainer) {
-        this._setMaskingPixiContainerName();
-
-        this._setMaskName();
+      if (suffix !== null) {
+        this._pixiContainer.name += suffix;
       }
     }
-  }, {
-    key: "_setMaskingPixiContainerName",
-    value: function _setMaskingPixiContainerName() {
-      this._maskingPixiContainer.name = "".concat(this._name, "MaskingContainer");
-    }
-  }, {
-    key: "_setMaskName",
-    value: function _setMaskName() {
-      this._mask.name = "".concat(this._name, "Mask");
-    } // Used here and in Player (on changing page navigators)
 
-  }, {
-    key: "addChild",
-    value: function addChild(child) {
-      var pixiContainer = child.pixiContainer;
-
-      this._pixiContainer.addChild(pixiContainer);
-
-      child.setParent(this);
-    } // Used here, in TextureElement and LayerPile
-
-  }, {
-    key: "setParent",
-    value: function setParent(parent) {
-      this._parent = parent;
-    } // Mask functions are used in Renderer and TextureElement
-
-  }, {
-    key: "addMask",
-    value: function addMask() {
-      this._maskingPixiContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Container"]();
-
+    if (this._maskingPixiContainer) {
       this._setMaskingPixiContainerName();
 
-      this._pixiContainer.addChild(this._maskingPixiContainer);
-    }
-  }, {
-    key: "setMaskRect",
-    value: function setMaskRect(x, y, w, h) {
-      // The mask is recreated with each resize (it works better)
-      // Remove the mask and create it again
-      this._maskingPixiContainer.removeChildren();
-
-      this._mask = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Graphics"]();
-
       this._setMaskName();
+    }
+  }
 
-      this._maskingPixiContainer.addChild(this._mask);
+  _setMaskingPixiContainerName() {
+    this._maskingPixiContainer.name = `${this._name}MaskingContainer`;
+  }
 
-      this._pixiContainer.mask = this._mask; // Redraw the mask at the right size
+  _setMaskName() {
+    this._mask.name = `${this._name}Mask`;
+  } // Used here and in Player (on changing page navigators)
 
-      this._mask.beginFill(0x000000);
 
-      this._mask.drawRect(x, y, w, h);
+  addChild(child) {
+    const {
+      pixiContainer
+    } = child;
 
-      this._mask.endFill();
-    } // Used in Renderer to update the content container on a resize
+    this._pixiContainer.addChild(pixiContainer);
 
-  }, {
-    key: "setPivot",
-    value: function setPivot(pivot) {
-      this._pixiContainer.pivot = pivot;
-    } // Used on destroying TextManager, on changing page navigators and in StateHandler
+    child.setParent(this);
+  } // Used here, in TextureElement and LayerPile
 
-  }, {
-    key: "removeFromParent",
-    value: function removeFromParent() {
-      if (!this._parent) {
-        return;
-      }
 
-      var pixiContainer = this._parent.pixiContainer;
-      this.setParent(null);
+  setParent(parent) {
+    this._parent = parent;
+  } // Mask functions are used in Renderer and TextureElement
 
-      if (!pixiContainer || !this._pixiContainer) {
-        return;
-      }
 
-      pixiContainer.removeChild(this._pixiContainer);
-    } // Used in StateHandler and LayerPile
+  addMask() {
+    this._maskingPixiContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Container"]();
 
-  }, {
-    key: "addChildAtIndex",
-    value: function addChildAtIndex(container, index) {
-      var _this = this;
+    this._setMaskingPixiContainerName();
 
-      // First store child PIXI containers above index value away
-      var children = this._pixiContainer.children;
-      var i = children.length;
-      var zIndex = Math.min(Math.max(index, 0), i);
-      var tmpPixiContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Container"]();
+    this._pixiContainer.addChild(this._maskingPixiContainer);
+  }
+
+  setMaskRect(x, y, w, h) {
+    // The mask is recreated with each resize (it works better)
+    // Remove the mask and create it again
+    this._maskingPixiContainer.removeChildren();
+
+    this._mask = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Graphics"]();
+
+    this._setMaskName();
+
+    this._maskingPixiContainer.addChild(this._mask);
+
+    this._pixiContainer.mask = this._mask; // Redraw the mask at the right size
+
+    this._mask.beginFill(0x000000);
+
+    this._mask.drawRect(x, y, w, h);
+
+    this._mask.endFill();
+  } // Used in Renderer to update the content container on a resize
+
+
+  setPivot(pivot) {
+    this._pixiContainer.pivot = pivot;
+  } // Used on destroying TextManager, on changing page navigators and in StateHandler
+
+
+  removeFromParent() {
+    if (!this._parent) {
+      return;
+    }
+
+    const {
+      pixiContainer
+    } = this._parent;
+    this.setParent(null);
+
+    if (!pixiContainer || !this._pixiContainer) {
+      return;
+    }
+
+    pixiContainer.removeChild(this._pixiContainer);
+  } // Used in StateHandler and LayerPile
+
+
+  addChildAtIndex(container, index) {
+    // First store child PIXI containers above index value away
+    const {
+      children
+    } = this._pixiContainer;
+    let i = children.length;
+    const zIndex = Math.min(Math.max(index, 0), i);
+    const tmpPixiContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Container"]();
+    i -= 1;
+
+    while (i >= 0 && zIndex <= i) {
+      const child = children[i];
+      tmpPixiContainer.addChild(child);
       i -= 1;
-
-      while (i >= 0 && zIndex <= i) {
-        var child = children[i];
-        tmpPixiContainer.addChild(child);
-        i -= 1;
-      } // Now add the new child
+    } // Now add the new child
 
 
-      this.addChild(container); // Finally put child PIXI containers back
+    this.addChild(container); // Finally put child PIXI containers back
 
-      var childrenToPutBack = _toConsumableArray(tmpPixiContainer.children).reverse();
+    const childrenToPutBack = [...tmpPixiContainer.children].reverse();
+    childrenToPutBack.forEach(child => {
+      this._pixiContainer.addChild(child);
+    });
+  } // Functions used in OverflowHandler to layout segments
 
-      childrenToPutBack.forEach(function (child) {
-        _this._pixiContainer.addChild(child);
-      });
-    } // Functions used in OverflowHandler to layout segments
 
-  }, {
-    key: "setPositionInSegmentLine",
-    value: function setPositionInSegmentLine(positionInSegmentLine) {
-      this._positionInSegmentLine = positionInSegmentLine;
+  setPositionInSegmentLine(positionInSegmentLine) {
+    this._positionInSegmentLine = positionInSegmentLine;
+  }
+
+  setPosition(position) {
+    if (!position) {
+      return;
     }
-  }, {
-    key: "setPosition",
-    value: function setPosition(position) {
-      if (!position) {
-        return;
-      }
 
-      this._position = position;
+    this._position = position;
 
-      if (this._isXPositionUpdating === false) {
-        this._pixiContainer.position.x = position.x;
-      }
-
-      if (this._isYPositionUpdating === false) {
-        this._pixiContainer.position.y = position.y;
-      }
-    } // Functions used in StateHandler to handle transitions
-
-  }, {
-    key: "resetPosition",
-    value: function resetPosition() {
-      this.setPosition(this._position);
+    if (this._isXPositionUpdating === false) {
+      this._pixiContainer.position.x = position.x;
     }
-  }, {
-    key: "setIsXPositionUpdating",
-    value: function setIsXPositionUpdating(isXPositionUpdating) {
-      this._isXPositionUpdating = isXPositionUpdating;
-    }
-  }, {
-    key: "setIsYPositionUpdating",
-    value: function setIsYPositionUpdating(isYPositionUpdating) {
-      this._isYPositionUpdating = isYPositionUpdating;
-    }
-  }, {
-    key: "setXOffset",
-    value: function setXOffset(xOffset) {
-      this._pixiContainer.position.x = this._position.x + xOffset;
-    }
-  }, {
-    key: "setYOffset",
-    value: function setYOffset(yOffset) {
-      this._pixiContainer.position.y = this._position.y + yOffset;
-    }
-  }, {
-    key: "setAlpha",
-    value: function setAlpha(alpha) {
-      this._pixiContainer.alpha = alpha;
-    }
-  }, {
-    key: "setVisibility",
-    value: function setVisibility(shouldBeVisible) {
-      this._pixiContainer.visible = shouldBeVisible;
-    } // Used in Layer to handle (a multi-layered segment's) slice layers
 
-  }, {
-    key: "setScale",
-    value: function setScale(scale) {
-      if (!scale) {
-        return;
-      }
-
-      this._pixiContainer.scale.set(scale);
-
-      this._scale = scale;
+    if (this._isYPositionUpdating === false) {
+      this._pixiContainer.position.y = position.y;
     }
-  }]);
-
-  return Container;
-}();
+  } // Functions used in StateHandler to handle transitions
 
 
+  resetPosition() {
+    this.setPosition(this._position);
+  }
+
+  setIsXPositionUpdating(isXPositionUpdating) {
+    this._isXPositionUpdating = isXPositionUpdating;
+  }
+
+  setIsYPositionUpdating(isYPositionUpdating) {
+    this._isYPositionUpdating = isYPositionUpdating;
+  }
+
+  setXOffset(xOffset) {
+    this._pixiContainer.position.x = this._position.x + xOffset;
+  }
+
+  setYOffset(yOffset) {
+    this._pixiContainer.position.y = this._position.y + yOffset;
+  }
+
+  setAlpha(alpha) {
+    this._pixiContainer.alpha = alpha;
+  }
+
+  setVisibility(shouldBeVisible) {
+    this._pixiContainer.visible = shouldBeVisible;
+  } // Used in Layer to handle (a multi-layered segment's) slice layers
+
+
+  setScale(scale) {
+    if (!scale) {
+      return;
+    }
+
+    this._pixiContainer.scale.set(scale);
+
+    this._scale = scale;
+  }
+
+}
 
 /***/ }),
 
@@ -55127,95 +54804,73 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Loader; });
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
  // Note that the Loader will necessarily store and handle PIXI Textures
 // All functions are used in ResourceManager
 
-var Loader =
-/*#__PURE__*/
-function () {
-  _createClass(Loader, [{
-    key: "hasTasks",
-    get: function get() {
-      return Object.values(this._pathsToLoad).length > 0;
-    }
-  }]);
+class Loader {
+  get hasTasks() {
+    return Object.values(this._pathsToLoad).length > 0;
+  }
 
-  function Loader() {
-    var _this = this;
-
-    _classCallCheck(this, Loader);
-
+  constructor() {
     this._pathsToLoad = {};
     this._loader = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Loader"]();
 
-    this._loader.onError.add(function (error, loader, resource) {
-      var name = resource.name;
-      _this._pathsToLoad[name] = false;
+    this._loader.onError.add((error, loader, resource) => {
+      const {
+        name
+      } = resource;
+      this._pathsToLoad[name] = false;
     });
   } // Kill the ongoing loading operation (if there is one)
 
 
-  _createClass(Loader, [{
-    key: "reset",
-    value: function reset() {
-      this._pathsToLoad = {};
+  reset() {
+    this._pathsToLoad = {};
 
-      this._loader.reset();
-    } // Add a sourcePath to the list of source paths to load
+    this._loader.reset();
+  } // Add a sourcePath to the list of source paths to load
 
-  }, {
-    key: "add",
-    value: function add(name, sourcePath) {
-      this._pathsToLoad[name] = true;
 
-      this._loader.add(name, sourcePath);
-    } // Load stored source paths
+  add(name, sourcePath) {
+    this._pathsToLoad[name] = true;
 
-  }, {
-    key: "load",
-    value: function load() {
-      this._loader.load();
-    } // For each array of resources (source paths) that have been correctly loaded...
+    this._loader.add(name, sourcePath);
+  } // Load stored source paths
 
-  }, {
-    key: "onComplete",
-    value: function onComplete(doWithTextureDataArray) {
-      var _this2 = this;
 
-      if (!doWithTextureDataArray) {
-        return;
-      }
+  load() {
+    this._loader.load();
+  } // For each array of resources (source paths) that have been correctly loaded...
 
-      this._loader.onComplete.add(function (_, resources) {
-        var textureDataArray = [];
-        Object.values(resources).forEach(function (resource) {
-          var name = resource.name,
-              texture = resource.texture;
 
-          if (_this2._pathsToLoad[name] === true && texture && texture.baseTexture) {
-            var textureData = {
-              name: name,
-              baseTexture: texture.baseTexture,
-              texture: texture
-            };
-            textureDataArray.push(textureData);
-          }
-        });
-        doWithTextureDataArray(textureDataArray);
-      });
+  onComplete(doWithTextureDataArray) {
+    if (!doWithTextureDataArray) {
+      return;
     }
-  }]);
 
-  return Loader;
-}();
+    this._loader.onComplete.add((_, resources) => {
+      const textureDataArray = [];
+      Object.values(resources).forEach(resource => {
+        const {
+          name,
+          texture
+        } = resource;
 
+        if (this._pathsToLoad[name] === true && texture && texture.baseTexture) {
+          const textureData = {
+            name,
+            baseTexture: texture.baseTexture,
+            texture
+          };
+          textureDataArray.push(textureData);
+        }
+      });
+      doWithTextureDataArray(textureDataArray);
+    });
+  }
 
+}
 
 /***/ }),
 
@@ -55231,43 +54886,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Renderer; });
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
 /* harmony import */ var _Container__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Container */ "./src/Renderer/Container.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
+class Renderer {
+  // Used in Player
+  get mainContainer() {
+    return this._contentContainer;
+  }
 
+  get size() {
+    const {
+      width,
+      height
+    } = this._app.renderer;
+    return {
+      width,
+      height
+    };
+  }
 
-var Renderer =
-/*#__PURE__*/
-function () {
-  _createClass(Renderer, [{
-    key: "mainContainer",
-    // Used in Player
-    get: function get() {
-      return this._contentContainer;
-    }
-  }, {
-    key: "size",
-    get: function get() {
-      var _this$_app$renderer = this._app.renderer,
-          width = _this$_app$renderer.width,
-          height = _this$_app$renderer.height;
-      return {
-        width: width,
-        height: height
-      };
-    }
-  }]);
-
-  function Renderer(rootElement, backgroundColor) {
-    _classCallCheck(this, Renderer);
-
+  constructor(rootElement, backgroundColor) {
     // Create the PIXI application with a default background color
     this._app = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Application"]({
-      backgroundColor: backgroundColor,
+      backgroundColor,
       resolution: window.devicePixelRatio || 1 // Will improve resolution on Retina displays
 
     });
@@ -55275,7 +54916,7 @@ function () {
 
     rootElement.appendChild(this._app.view); // Create root container
 
-    var parent = null;
+    const parent = null;
     this._rootContainer = new _Container__WEBPACK_IMPORTED_MODULE_1__["default"]("stage", parent, this._app.stage); // Create the container that will hold content (i.e. the current pageNavigator's pages)
 
     this._contentContainer = new _Container__WEBPACK_IMPORTED_MODULE_1__["default"]("content", this._rootContainer); // Add a global mask (which will be used to express viewportRatio constraints)
@@ -55284,57 +54925,49 @@ function () {
   } // Used in Player on a resize
 
 
-  _createClass(Renderer, [{
-    key: "setSize",
-    value: function setSize(width, height) {
-      // Resize the canvas using PIXI's built-in function
-      this._app.renderer.resize(width, height);
+  setSize(width, height) {
+    // Resize the canvas using PIXI's built-in function
+    this._app.renderer.resize(width, height);
 
-      this._app.render(); // To avoid flickering
+    this._app.render(); // To avoid flickering
 
-    } // Used in Player on a resize or as a consequence of a zoomFactor change
-
-  }, {
-    key: "updateDisplay",
-    value: function updateDisplay(viewportRect) {
-      var zoomFactor = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 1;
-      var _this$size = this.size,
-          width = _this$size.width,
-          height = _this$size.height;
-      var actualWidth = Math.min(Math.max(viewportRect.width * zoomFactor, 0), width);
-      var actualHeight = Math.min(Math.max(viewportRect.height * zoomFactor, 0), height);
-      var x = (width - actualWidth) / 2;
-      var y = (height - actualHeight) / 2;
-
-      this._rootContainer.setMaskRect(x, y, actualWidth, actualHeight); // Update the pivot used to center containers by default
+  } // Used in Player on a resize or as a consequence of a zoomFactor change
 
 
-      this._contentContainer.setPivot({
-        x: -width / 2,
-        y: -height / 2
-      });
-    } // Used in Player
+  updateDisplay(viewportRect, zoomFactor = 1) {
+    const {
+      width,
+      height
+    } = this.size;
+    const actualWidth = Math.min(Math.max(viewportRect.width * zoomFactor, 0), width);
+    const actualHeight = Math.min(Math.max(viewportRect.height * zoomFactor, 0), height);
+    const x = (width - actualWidth) / 2;
+    const y = (height - actualHeight) / 2;
 
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this._rootContainer = null;
-      this._contentContainer = null;
-
-      this._app.view.remove();
-
-      var shouldRemoveView = true;
-
-      this._app.destroy(shouldRemoveView);
-
-      this._app = null;
-    }
-  }]);
-
-  return Renderer;
-}();
+    this._rootContainer.setMaskRect(x, y, actualWidth, actualHeight); // Update the pivot used to center containers by default
 
 
+    this._contentContainer.setPivot({
+      x: -width / 2,
+      y: -height / 2
+    });
+  } // Used in Player
+
+
+  destroy() {
+    this._rootContainer = null;
+    this._contentContainer = null;
+
+    this._app.view.remove();
+
+    const shouldRemoveView = true;
+
+    this._app.destroy(shouldRemoveView);
+
+    this._app = null;
+  }
+
+}
 
 /***/ }),
 
@@ -55351,73 +54984,44 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
 /* harmony import */ var _Container__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Container */ "./src/Renderer/Container.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
 
 
  // All functions are used in TextManager
 
-var TextElement =
-/*#__PURE__*/
-function (_Container) {
-  _inherits(TextElement, _Container);
-
-  function TextElement(name, parent) {
-    _classCallCheck(this, TextElement);
-
-    var textFontFamily = _constants__WEBPACK_IMPORTED_MODULE_2__["textFontFamily"],
-        textFontSize = _constants__WEBPACK_IMPORTED_MODULE_2__["textFontSize"],
-        textFillColor = _constants__WEBPACK_IMPORTED_MODULE_2__["textFillColor"],
-        wordWrapWidth = _constants__WEBPACK_IMPORTED_MODULE_2__["wordWrapWidth"];
-    var pixiTextContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Text"]("", {
+class TextElement extends _Container__WEBPACK_IMPORTED_MODULE_1__["default"] {
+  constructor(name, parent) {
+    const {
+      textFontFamily,
+      textFontSize,
+      textFillColor,
+      wordWrapWidth
+    } = _constants__WEBPACK_IMPORTED_MODULE_2__;
+    const pixiTextContainer = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Text"]("", {
       fontFamily: textFontFamily,
       fontSize: textFontSize,
       fill: textFillColor,
       wordWrap: true,
-      wordWrapWidth: wordWrapWidth
+      wordWrapWidth
     });
     pixiTextContainer.anchor.set(0.5);
-    return _possibleConstructorReturn(this, _getPrototypeOf(TextElement).call(this, name, parent, pixiTextContainer));
+    super(name, parent, pixiTextContainer);
   }
 
-  _createClass(TextElement, [{
-    key: "setText",
-    value: function setText(text) {
-      this._pixiContainer.text = text;
-    }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this._pixiContainer.destroy({
-        children: true,
-        texture: true,
-        baseTexture: true
-      });
+  setText(text) {
+    this._pixiContainer.text = text;
+  }
 
-      this.removeFromParent();
-    }
-  }]);
+  destroy() {
+    this._pixiContainer.destroy({
+      children: true,
+      texture: true,
+      baseTexture: true
+    });
 
-  return TextElement;
-}(_Container__WEBPACK_IMPORTED_MODULE_1__["default"]);
+    this.removeFromParent();
+  }
 
-
+}
 
 /***/ }),
 
@@ -55433,63 +55037,46 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Texture; });
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
 
  // A texture stored in the loader will need to have the following properties:
 // - If it corresponds to an image: .frame.width and .frame.height
 // - If it corresponds to a video: .video (the video itself will need to be a videoElement,
 //   i.e. it should include videoWidth, videoHeight and duration properties)
 
-var Texture =
-/*#__PURE__*/
-function () {
-  function Texture() {
-    _classCallCheck(this, Texture);
+class Texture {
+  // Used in TextureResource
+  static createVideoTexture(videoPath) {
+    const texture = pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].from(videoPath); // Prevent autoplay at start
+
+    texture.baseTexture.resource.autoPlay = false; // Store a reference to video at texture level for convenience
+
+    const video = texture.baseTexture.resource.source;
+    texture.baseTexture.video = video;
+    texture.video = video;
+    return texture;
+  } // Used in TextureResource
+
+
+  static cropToFragment(uncroppedTexture, mediaFragment) {
+    const texture = uncroppedTexture.clone();
+    const rect = _utils__WEBPACK_IMPORTED_MODULE_1__["getRectForMediaFragmentAndSize"](mediaFragment, texture);
+
+    if (rect) {
+      const {
+        x,
+        y,
+        width,
+        height
+      } = rect;
+      const frame = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Rectangle"](x, y, width, height);
+      texture.frame = frame;
+      texture.updateUvs();
+    }
+
+    return texture;
   }
 
-  _createClass(Texture, null, [{
-    key: "createVideoTexture",
-    // Used in TextureResource
-    value: function createVideoTexture(videoPath) {
-      var texture = pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].from(videoPath); // Prevent autoplay at start
-
-      texture.baseTexture.resource.autoPlay = false; // Store a reference to video at texture level for convenience
-
-      var video = texture.baseTexture.resource.source;
-      texture.baseTexture.video = video;
-      texture.video = video;
-      return texture;
-    } // Used in TextureResource
-
-  }, {
-    key: "cropToFragment",
-    value: function cropToFragment(uncroppedTexture, mediaFragment) {
-      var texture = uncroppedTexture.clone();
-      var rect = _utils__WEBPACK_IMPORTED_MODULE_1__["getRectForMediaFragmentAndSize"](mediaFragment, texture);
-
-      if (rect) {
-        var x = rect.x,
-            y = rect.y,
-            width = rect.width,
-            height = rect.height;
-        var frame = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Rectangle"](x, y, width, height);
-        texture.frame = frame;
-        texture.updateUvs();
-      }
-
-      return texture;
-    }
-  }]);
-
-  return Texture;
-}();
-
-
+}
 
 /***/ }),
 
@@ -55506,426 +55093,377 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! pixi.js-legacy */ "./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js");
 /* harmony import */ var _Container__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Container */ "./src/Renderer/Container.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 
 
+class TextureElement extends _Container__WEBPACK_IMPORTED_MODULE_1__["default"] {
+  // Used in Slice
+  get role() {
+    return this._role;
+  }
 
+  get resourceManager() {
+    return this._player ? this._player.resourceManager : null;
+  }
 
-var TextureElement =
-/*#__PURE__*/
-function (_Container) {
-  _inherits(TextureElement, _Container);
-
-  _createClass(TextureElement, [{
-    key: "role",
-    // Used in Slice
-    get: function get() {
-      return this._role;
+  get texture() {
+    // Not relevant to a sequence slice
+    if (this._playableSprite && this._playableSprite.texture) {
+      return this._playableSprite.texture;
     }
-  }, {
-    key: "resourceManager",
-    get: function get() {
-      return this._player ? this._player.resourceManager : null;
-    }
-  }, {
-    key: "texture",
-    get: function get() {
-      // Not relevant to a sequence slice
-      if (this._playableSprite && this._playableSprite.texture) {
-        return this._playableSprite.texture;
-      }
 
-      return this._sprite.texture;
-    } // Used in LayerPile
-
-  }, {
-    key: "scale",
-    get: function get() {
-      return this._scale;
-    } // For a parent slice (i.e. when role is "layersParent")
-
-  }, {
-    key: "size",
-    get: function get() {
-      // If the resource is (possibly) clipped, return the (possibly) clipped size
-      if (this._clipped === true) {
-        var viewportRect = this._player.viewportRect;
-        return {
-          width: Math.min(this._width * this._scale, viewportRect.width),
-          height: Math.min(this._height * this._scale, viewportRect.height)
-        };
-      } // Otherwise just return the actual size of the sprite in the viewport
+    return this._sprite.texture;
+  } // Used in LayerPile
 
 
+  get scale() {
+    return this._scale;
+  } // For a parent slice (i.e. when role is "layersParent")
+
+
+  get size() {
+    // If the resource is (possibly) clipped, return the (possibly) clipped size
+    if (this._clipped === true) {
+      const {
+        viewportRect
+      } = this._player;
       return {
-        width: this._width * this._scale,
-        height: this._height * this._scale
+        width: Math.min(this._width * this._scale, viewportRect.width),
+        height: Math.min(this._height * this._scale, viewportRect.height)
       };
-    } // Used below
+    } // Otherwise just return the actual size of the sprite in the viewport
 
-  }, {
-    key: "unclippedSize",
-    get: function get() {
-      if (this._clipped === false) {
-        return this.size;
-      }
 
-      return {
-        width: this._width * this._scale,
-        height: this._height * this._scale
-      };
+    return {
+      width: this._width * this._scale,
+      height: this._height * this._scale
+    };
+  } // Used below
+
+
+  get unclippedSize() {
+    if (this._clipped === false) {
+      return this.size;
     }
-  }]);
 
-  function TextureElement(resource, player) {
-    var _this;
+    return {
+      width: this._width * this._scale,
+      height: this._height * this._scale
+    };
+  }
 
-    var parentInfo = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    var neighbor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+  constructor(resource, player, parentInfo = null, neighbor = null) {
+    super();
+    this._role = resource ? resource.role : null;
+    this._player = player;
+    this._parentInfo = parentInfo;
+    this._neighbor = neighbor;
+    this._sprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Sprite"]();
 
-    _classCallCheck(this, TextureElement);
+    this._sprite.anchor.set(0.5);
 
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TextureElement).call(this));
-    _this._role = resource ? resource.role : null;
-    _this._player = player;
-    _this._parentInfo = parentInfo;
-    _this._neighbor = neighbor;
-    _this._sprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Sprite"]();
+    this._pixiContainer.addChild(this._sprite);
 
-    _this._sprite.anchor.set(0.5);
+    this._playableSprite = null;
+    this._namePrefix = null;
+    this._width = 0;
+    this._height = 0;
+    this._scale = 1;
+    this._clipped = false;
+    this._duration = 0; // Set a (surely temporary) size
 
-    _this._pixiContainer.addChild(_this._sprite);
+    const {
+      viewportRect
+    } = player;
+    const {
+      width,
+      height
+    } = resource || {};
+    const actualWidth = width > 0 ? width : viewportRect.width;
+    const actualHeight = height > 0 ? height : viewportRect.height;
 
-    _this._playableSprite = null;
-    _this._namePrefix = null;
-    _this._width = 0;
-    _this._height = 0;
-    _this._scale = 1;
-    _this._clipped = false;
-    _this._duration = 0; // Set a (surely temporary) size
-
-    var viewportRect = player.viewportRect;
-
-    var _ref = resource || {},
-        width = _ref.width,
-        height = _ref.height;
-
-    var actualWidth = width > 0 ? width : viewportRect.width;
-    var actualHeight = height > 0 ? height : viewportRect.height;
-
-    _this._setSize({
+    this._setSize({
       width: actualWidth,
       height: actualHeight
     });
 
-    if (_this._role === "layersParent") {
-      _this._sprite.visible = false;
+    if (this._role === "layersParent") {
+      this._sprite.visible = false;
     }
-
-    return _this;
   }
 
-  _createClass(TextureElement, [{
-    key: "_setSize",
-    value: function _setSize(size) {
-      var width = size.width,
-          height = size.height;
-      this._width = width;
-      this._height = height;
-      this._sprite.width = width;
-      this._sprite.height = height;
+  _setSize(size) {
+    const {
+      width,
+      height
+    } = size;
+    this._width = width;
+    this._height = height;
+    this._sprite.width = width;
+    this._sprite.height = height;
+
+    if (this._playableSprite) {
+      this._playableSprite.width = this._width;
+      this._playableSprite.height = this._height;
+    }
+  }
+
+  _assignDummyTexture() {
+    this._setTexture(pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].WHITE);
+
+    this._setTint(_constants__WEBPACK_IMPORTED_MODULE_2__["defaultDummyColor"]);
+  }
+
+  _setTexture(texture) {
+    // No need to add a texture to a parent slice
+    if (this._role === "layersParent") {
+      return;
+    }
+
+    if (!texture) {
+      this._assignDummyTexture();
+    } else {
+      this._sprite.texture = texture;
+
+      this._setTint(0xFFFFFF);
+    }
+  }
+
+  _setTint(tint) {
+    this._sprite.tint = tint;
+  }
+
+  _assignEmptyTexture() {
+    this._setTexture(pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].WHITE);
+
+    this._setTint(_constants__WEBPACK_IMPORTED_MODULE_2__["defaultBackgroundColor"]);
+  }
+
+  _setVideoTexture(texture) {
+    this._sprite.texture = null;
+
+    if (!this._playableSprite) {
+      this._addPlayableSprite();
+    }
+
+    this._playableSprite.texture = texture;
+  }
+
+  _addPlayableSprite(texturesArray = null) {
+    if (texturesArray && texturesArray.length > 0) {
+      // For a sequence slice
+      this._playableSprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["AnimatedSprite"](texturesArray);
+    } else {
+      // For a video slice
+      this._playableSprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Sprite"]();
+    }
+
+    this._playableSprite.anchor.set(0.5);
+
+    const spriteName = `${this._name}PlayableSprite`;
+    this._playableSprite.name = spriteName;
+
+    this._pixiContainer.addChild(this._playableSprite);
+
+    if (this._maskingPixiContainer) {
+      this._pixiContainer.addChild(this._maskingPixiContainer);
+    }
+  } // Used in SequenceSlice (since clipped forced to true, a mask will necessarily be created)
+
+
+  setTexturesArray(texturesArray) {
+    this._sprite.texture = null; // PixiJS does not allow for a direct assignement (playableSprite.textures = texturesArray),
+    // so remove the sequence sprite before recreating it
+
+    if (this._playableSprite) {
+      this._pixiContainer.removeChild(this._playableSprite);
+
+      this._playableSprite = null;
+    }
+
+    this._addPlayableSprite(texturesArray);
+  } // Used in Container (called with parent = null) and LayerPile (via Slice)
+  // Bear in mind that the parent of a layersLayer slice is a segment (not the parentSlice!)
+
+
+  setParent(parent = null) {
+    super.setParent(parent); // Keep the existing name for a transition slice
+
+    if (!parent || this._name && this._role === "transition") {
+      return;
+    }
+
+    let {
+      name
+    } = parent;
+
+    if (this._parentInfo) {
+      name += `Layer${this._parentInfo.layerIndex}`;
+    }
+
+    if (this._role === "transition") {
+      name += "Transition";
+    }
+
+    this._sprite.name = `${name}Sprite`;
+    const suffix = "Slice";
+
+    this._setName(name, suffix);
+  }
+
+  resize(fit, clipped) {
+    this._clipped = clipped;
+
+    this._applyFit(fit);
+
+    if (clipped === true) {
+      this._applyClip();
+    } // If the slice has a parent slice, position it respective to that parent slice
+
+
+    if (this._role === "layersLayer" && this._parentInfo) {
+      // Used unclippedSize since to ensure that the position is based
+      // on the top left point of the parent slice (instead of the effective viewport)
+      const {
+        unclippedSize
+      } = this._parentInfo.slice;
+      this._sprite.position = {
+        x: (this.size.width - unclippedSize.width) / (2 * this._scale),
+        y: (this.size.height - unclippedSize.height) / (2 * this._scale)
+      };
 
       if (this._playableSprite) {
-        this._playableSprite.width = this._width;
-        this._playableSprite.height = this._height;
+        this._playableSprite.position = this._sprite.position;
       }
-    }
-  }, {
-    key: "_assignDummyTexture",
-    value: function _assignDummyTexture() {
-      this._setTexture(pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].WHITE);
-
-      this._setTint(_constants__WEBPACK_IMPORTED_MODULE_2__["defaultDummyColor"]);
-    }
-  }, {
-    key: "_setTexture",
-    value: function _setTexture(texture) {
-      // No need to add a texture to a parent slice
-      if (this._role === "layersParent") {
-        return;
-      }
-
-      if (!texture) {
-        this._assignDummyTexture();
-      } else {
-        this._sprite.texture = texture;
-
-        this._setTint(0xFFFFFF);
-      }
-    }
-  }, {
-    key: "_setTint",
-    value: function _setTint(tint) {
-      this._sprite.tint = tint;
-    }
-  }, {
-    key: "_assignEmptyTexture",
-    value: function _assignEmptyTexture() {
-      this._setTexture(pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Texture"].WHITE);
-
-      this._setTint(_constants__WEBPACK_IMPORTED_MODULE_2__["defaultBackgroundColor"]);
-    }
-  }, {
-    key: "_setVideoTexture",
-    value: function _setVideoTexture(texture) {
-      this._sprite.texture = null;
-
-      if (!this._playableSprite) {
-        this._addPlayableSprite();
-      }
-
-      this._playableSprite.texture = texture;
-    }
-  }, {
-    key: "_addPlayableSprite",
-    value: function _addPlayableSprite() {
-      var texturesArray = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      if (texturesArray && texturesArray.length > 0) {
-        // For a sequence slice
-        this._playableSprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["AnimatedSprite"](texturesArray);
-      } else {
-        // For a video slice
-        this._playableSprite = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Sprite"]();
-      }
-
-      this._playableSprite.anchor.set(0.5);
-
-      var spriteName = "".concat(this._name, "PlayableSprite");
-      this._playableSprite.name = spriteName;
-
-      this._pixiContainer.addChild(this._playableSprite);
 
       if (this._maskingPixiContainer) {
-        this._pixiContainer.addChild(this._maskingPixiContainer);
-      }
-    } // Used in SequenceSlice (since clipped forced to true, a mask will necessarily be created)
-
-  }, {
-    key: "setTexturesArray",
-    value: function setTexturesArray(texturesArray) {
-      this._sprite.texture = null; // PixiJS does not allow for a direct assignement (playableSprite.textures = texturesArray),
-      // so remove the sequence sprite before recreating it
-
-      if (this._playableSprite) {
-        this._pixiContainer.removeChild(this._playableSprite);
-
-        this._playableSprite = null;
-      }
-
-      this._addPlayableSprite(texturesArray);
-    } // Used in Container (called with parent = null) and LayerPile (via Slice)
-    // Bear in mind that the parent of a layersLayer slice is a segment (not the parentSlice!)
-
-  }, {
-    key: "setParent",
-    value: function setParent() {
-      var parent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-      _get(_getPrototypeOf(TextureElement.prototype), "setParent", this).call(this, parent); // Keep the existing name for a transition slice
-
-
-      if (!parent || this._name && this._role === "transition") {
-        return;
-      }
-
-      var name = parent.name;
-
-      if (this._parentInfo) {
-        name += "Layer".concat(this._parentInfo.layerIndex);
-      }
-
-      if (this._role === "transition") {
-        name += "Transition";
-      }
-
-      this._sprite.name = "".concat(name, "Sprite");
-      var suffix = "Slice";
-
-      this._setName(name, suffix);
-    }
-  }, {
-    key: "resize",
-    value: function resize(fit, clipped) {
-      this._clipped = clipped;
-
-      this._applyFit(fit);
-
-      if (clipped === true) {
-        this._applyClip();
-      } // If the slice has a parent slice, position it respective to that parent slice
-
-
-      if (this._role === "layersLayer" && this._parentInfo) {
-        // Used unclippedSize since to ensure that the position is based
-        // on the top left point of the parent slice (instead of the effective viewport)
-        var unclippedSize = this._parentInfo.slice.unclippedSize;
-        this._sprite.position = {
-          x: (this.size.width - unclippedSize.width) / (2 * this._scale),
-          y: (this.size.height - unclippedSize.height) / (2 * this._scale)
-        };
-
-        if (this._playableSprite) {
-          this._playableSprite.position = this._sprite.position;
-        }
-
-        if (this._maskingPixiContainer) {
-          this._maskingPixiContainer.position = this._sprite.position;
-        }
+        this._maskingPixiContainer.position = this._sprite.position;
       }
     }
-  }, {
-    key: "_applyFit",
-    value: function _applyFit(fit) {
-      if (!this._width || !this._height || this._role === "layersLayer") {
-        // Scale will remain at 1 for a child
-        return;
-      }
+  }
 
-      var ratio = this._width / this._height;
-      var viewportRect = this._player.viewportRect;
-      var height = viewportRect.height;
-      var width = viewportRect.width; // In double reading mode, fit the resource inside a rectangle half the viewport width (maximum)
+  _applyFit(fit) {
+    if (!this._width || !this._height || this._role === "layersLayer") {
+      // Scale will remain at 1 for a child
+      return;
+    }
 
-      if (this._player.readingMode === "double") {
-        width = this._getWidthForHalfSegmentSlice(width);
-      } // Compute the scale to be applied to the container based on fit
+    const ratio = this._width / this._height;
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      height
+    } = viewportRect;
+    let {
+      width
+    } = viewportRect; // In double reading mode, fit the resource inside a rectangle half the viewport width (maximum)
+
+    if (this._player.readingMode === "double") {
+      width = this._getWidthForHalfSegmentSlice(width);
+    } // Compute the scale to be applied to the container based on fit
 
 
-      var viewportRatio = width / height;
-      var scale = 1;
+    const viewportRatio = width / height;
+    let scale = 1;
 
-      switch (fit) {
-        case "height":
-          scale = this._getScaleWhenForcingHeight(height);
-          break;
+    switch (fit) {
+      case "height":
+        scale = this._getScaleWhenForcingHeight(height);
+        break;
 
-        case "width":
+      case "width":
+        scale = this._getScaleWhenForcingWidth(width);
+        break;
+
+      case "contain":
+        if (ratio >= viewportRatio) {
           scale = this._getScaleWhenForcingWidth(width);
-          break;
-
-        case "contain":
-          if (ratio >= viewportRatio) {
-            scale = this._getScaleWhenForcingWidth(width);
-          } else {
-            scale = this._getScaleWhenForcingHeight(height);
-          }
-
-          break;
-
-        case "cover":
-          if (ratio >= viewportRatio) {
-            scale = this._getScaleWhenForcingHeight(height);
-          } else {
-            scale = this._getScaleWhenForcingWidth(width);
-          }
-
-          break;
-
-        default:
-          break;
-      } // Now apply the scale to the container
-
-
-      if (this._role === "layersParent") {
-        if (this._scale !== scale) {
-          // To prevent triggering an infinite loop
-          this.setScale(scale);
-
-          if (this._parent) {
-            this._parent.resizePage();
-          }
+        } else {
+          scale = this._getScaleWhenForcingHeight(height);
         }
-      } else {
+
+        break;
+
+      case "cover":
+        if (ratio >= viewportRatio) {
+          scale = this._getScaleWhenForcingHeight(height);
+        } else {
+          scale = this._getScaleWhenForcingWidth(width);
+        }
+
+        break;
+
+      default:
+        break;
+    } // Now apply the scale to the container
+
+
+    if (this._role === "layersParent") {
+      if (this._scale !== scale) {
+        // To prevent triggering an infinite loop
         this.setScale(scale);
+
+        if (this._parent) {
+          this._parent.resizePage();
+        }
       }
+    } else {
+      this.setScale(scale);
     }
-  }, {
-    key: "_getWidthForHalfSegmentSlice",
-    value: function _getWidthForHalfSegmentSlice(width) {
-      var actualWidth = width;
+  }
 
-      if (this._neighbor) {
-        var size = this._neighbor.size;
-        actualWidth = Math.min(width / 2, size.width);
-      } else {
-        actualWidth /= 2;
-      }
+  _getWidthForHalfSegmentSlice(width) {
+    let actualWidth = width;
 
-      return actualWidth;
+    if (this._neighbor) {
+      const {
+        size
+      } = this._neighbor;
+      actualWidth = Math.min(width / 2, size.width);
+    } else {
+      actualWidth /= 2;
     }
-  }, {
-    key: "_getScaleWhenForcingHeight",
-    value: function _getScaleWhenForcingHeight(viewportHeight) {
-      var scale = viewportHeight / this._height;
-      return scale;
+
+    return actualWidth;
+  }
+
+  _getScaleWhenForcingHeight(viewportHeight) {
+    const scale = viewportHeight / this._height;
+    return scale;
+  }
+
+  _getScaleWhenForcingWidth(viewportWidth) {
+    const scale = viewportWidth / this._width;
+    return scale;
+  } // Size the clipping mask based on viewport size if the resource needs to be clipped
+
+
+  _applyClip() {
+    if (!this._maskingPixiContainer) {
+      this.addMask();
     }
-  }, {
-    key: "_getScaleWhenForcingWidth",
-    value: function _getScaleWhenForcingWidth(viewportWidth) {
-      var scale = viewportWidth / this._width;
-      return scale;
-    } // Size the clipping mask based on viewport size if the resource needs to be clipped
 
-  }, {
-    key: "_applyClip",
-    value: function _applyClip() {
-      if (!this._maskingPixiContainer) {
-        this.addMask();
-      }
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      width,
+      height
+    } = viewportRect;
+    this.setMaskRect(-width / this._scale / 2, -height / this._scale / 2, width / this._scale, height / this._scale);
+  } // Used in Slice on final destroy
 
-      var viewportRect = this._player.viewportRect;
-      var width = viewportRect.width,
-          height = viewportRect.height;
-      this.setMaskRect(-width / this._scale / 2, -height / this._scale / 2, width / this._scale, height / this._scale);
-    } // Used in Slice on final destroy
 
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this._sprite.texture = null;
+  destroy() {
+    this._sprite.texture = null;
 
-      if (this._playableSprite) {
-        this._playableSprite.texture = null;
-      }
+    if (this._playableSprite) {
+      this._playableSprite.texture = null;
     }
-  }]);
+  }
 
-  return TextureElement;
-}(_Container__WEBPACK_IMPORTED_MODULE_1__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -55976,37 +55514,16 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return AsyncTaskQueue; });
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+class AsyncTaskQueue {
+  get nbOfTasks() {
+    return this._tasksArray.length;
+  }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-var AsyncTaskQueue =
-/*#__PURE__*/
-function () {
-  _createClass(AsyncTaskQueue, [{
-    key: "nbOfTasks",
-    get: function get() {
-      return this._tasksArray.length;
-    }
-  }]);
-
-  function AsyncTaskQueue(maxPriority, allowsParallel, getPriorityFunction) {
-    _classCallCheck(this, AsyncTaskQueue);
-
+  constructor(maxPriority, allowsParallel, getPriorityFunction) {
     this._maxPriority = maxPriority;
     this._allowsParallel = allowsParallel;
 
-    this._getPriority = getPriorityFunction || function (task) {
-      return task.priority || 0;
-    };
+    this._getPriority = getPriorityFunction || (task => task.priority || 0);
 
     this._tasksArray = [];
     this.reset();
@@ -56015,186 +55532,165 @@ function () {
     this._hasStarted = false;
   }
 
-  _createClass(AsyncTaskQueue, [{
-    key: "reset",
-    value: function reset() {
-      this._tasksArray.forEach(function (task) {
+  reset() {
+    this._tasksArray.forEach(task => {
+      if (task.isRunning === true && task.kill) {
+        task.kill();
+      }
+    }); // Useful in serial mode only
+
+
+    this._isRunning = false;
+  }
+
+  updatePriorities() {
+    this._tasksArray.forEach((task, i) => {
+      // Allow the task to have a forced priority, otherwise evaluate the priority
+      const priority = task.forcedPriority !== undefined ? task.forcedPriority : this._getPriority(task); // In serial mode, update task priorities
+
+      if (this._allowsParallel === false) {
+        this._tasksArray[i].priority = priority; // Whereas in parallel mode, remove task if relevant
+      } else if (priority > this._maxPriority) {
         if (task.isRunning === true && task.kill) {
           task.kill();
         }
-      }); // Useful in serial mode only
 
+        this._tasksArray.splice(i, 1);
+      }
+    });
+  }
 
-      this._isRunning = false;
-    }
-  }, {
-    key: "updatePriorities",
-    value: function updatePriorities() {
-      var _this = this;
+  addOrUpdateTask(task) {
+    const fullTask = { ...task,
+      isRunning: false
+    };
 
-      this._tasksArray.forEach(function (task, i) {
-        // Allow the task to have a forced priority, otherwise evaluate the priority
-        var priority = task.forcedPriority !== undefined ? task.forcedPriority : _this._getPriority(task); // In serial mode, update task priorities
+    if (this._allowsParallel === true) {
+      this._tasksArray.push(fullTask);
 
-        if (_this._allowsParallel === false) {
-          _this._tasksArray[i].priority = priority; // Whereas in parallel mode, remove task if relevant
-        } else if (priority > _this._maxPriority) {
-          if (task.isRunning === true && task.kill) {
-            task.kill();
-          }
+      if (this._hasStarted === true) {
+        this._runTask(fullTask);
+      }
+    } else {
+      // If in serial mode, only add the task if not already in queue...
+      const {
+        id
+      } = fullTask;
 
-          _this._tasksArray.splice(i, 1);
-        }
-      });
-    }
-  }, {
-    key: "addOrUpdateTask",
-    value: function addOrUpdateTask(task) {
-      var fullTask = _objectSpread({}, task, {
-        isRunning: false
-      });
+      const index = this._tasksArray.findIndex(arrayTask => arrayTask.id === id);
 
-      if (this._allowsParallel === true) {
+      if (index < 0) {
+        // ...and add it with a priority property
+        fullTask.priority = task.forcedPriority !== undefined ? task.forcedPriority : this._getPriority(task);
+
         this._tasksArray.push(fullTask);
 
-        if (this._hasStarted === true) {
-          this._runTask(fullTask);
+        if (this._hasStarted === true && this._isRunning === false) {
+          this._runNextTaskInQueue();
         }
       } else {
-        // If in serial mode, only add the task if not already in queue...
-        var id = fullTask.id;
-
-        var index = this._tasksArray.findIndex(function (arrayTask) {
-          return arrayTask.id === id;
-        });
-
-        if (index < 0) {
-          // ...and add it with a priority property
-          fullTask.priority = task.forcedPriority !== undefined ? task.forcedPriority : this._getPriority(task);
-
-          this._tasksArray.push(fullTask);
-
-          if (this._hasStarted === true && this._isRunning === false) {
-            this._runNextTaskInQueue();
-          }
-        } else {
-          // Otherwise update the task
-          this._tasksArray[index] = task;
-        }
+        // Otherwise update the task
+        this._tasksArray[index] = task;
       }
     }
-  }, {
-    key: "_runTask",
-    value: function _runTask(task) {
-      var _this2 = this;
+  }
 
-      var id = task.id,
-          doAsync = task.doAsync,
-          doOnEnd = task.doOnEnd;
+  _runTask(task) {
+    const {
+      id,
+      doAsync,
+      doOnEnd
+    } = task;
+
+    if (this._allowsParallel === false) {
+      this._isRunning = true;
+    }
+
+    task.isRunning = true;
+
+    const callback = () => {
+      // Remove task from list
+      const index = this._tasksArray.findIndex(arrayTask => arrayTask.id === id);
+
+      this._tasksArray.splice(index, 1);
+
+      if (doOnEnd) {
+        doOnEnd();
+      }
+
+      if (this._doAfterEachInitialTask) {
+        this._doAfterEachInitialTask();
+
+        this._nbOfInitialTasks -= 1;
+
+        if (this._nbOfInitialTasks === 0) {
+          this._doAfterEachInitialTask = null;
+        }
+      }
 
       if (this._allowsParallel === false) {
-        this._isRunning = true;
-      }
+        this._isRunning = false;
 
-      task.isRunning = true;
-
-      var callback = function callback() {
-        // Remove task from list
-        var index = _this2._tasksArray.findIndex(function (arrayTask) {
-          return arrayTask.id === id;
-        });
-
-        _this2._tasksArray.splice(index, 1);
-
-        if (doOnEnd) {
-          doOnEnd();
-        }
-
-        if (_this2._doAfterEachInitialTask) {
-          _this2._doAfterEachInitialTask();
-
-          _this2._nbOfInitialTasks -= 1;
-
-          if (_this2._nbOfInitialTasks === 0) {
-            _this2._doAfterEachInitialTask = null;
-          }
-        }
-
-        if (_this2._allowsParallel === false) {
-          _this2._isRunning = false;
-
-          _this2._runNextTaskInQueue();
-        }
-      };
-
-      if (doAsync) {
-        doAsync().then(callback);
-      } else {
-        callback();
-      }
-    }
-  }, {
-    key: "_runNextTaskInQueue",
-    value: function _runNextTaskInQueue() {
-      // In serial mode only
-      if (this._tasksArray.length === 0 || this._isRunning === true) {
-        return;
-      }
-
-      var nextTask = this._getTaskWithHighestPriority();
-
-      if (!nextTask) {
-        return;
-      }
-
-      this._runTask(nextTask);
-    }
-  }, {
-    key: "_getTaskWithHighestPriority",
-    value: function _getTaskWithHighestPriority() {
-      // Actually the *lowest* possible value for the priority key ;)
-      var nextTask = null;
-
-      this._tasksArray.forEach(function (task) {
-        if (!nextTask || task.priority < nextTask.priority) {
-          nextTask = task;
-        }
-      });
-
-      return nextTask;
-    }
-  }, {
-    key: "start",
-    value: function start(doAfterEachInitialTask) {
-      var _this3 = this;
-
-      this._doAfterEachInitialTask = doAfterEachInitialTask;
-      this._nbOfInitialTasks = this._tasksArray.length;
-      this._hasStarted = true;
-
-      if (this._allowsParallel === true) {
-        this._tasksArray.forEach(function (task) {
-          _this3._runTask(task);
-        });
-      } else {
         this._runNextTaskInQueue();
       }
+    };
+
+    if (doAsync) {
+      doAsync().then(callback);
+    } else {
+      callback();
     }
-  }, {
-    key: "getTaskWithId",
-    value: function getTaskWithId(id) {
-      var foundTask = this._tasksArray.find(function (task) {
-        return task.id === id;
+  }
+
+  _runNextTaskInQueue() {
+    // In serial mode only
+    if (this._tasksArray.length === 0 || this._isRunning === true) {
+      return;
+    }
+
+    const nextTask = this._getTaskWithHighestPriority();
+
+    if (!nextTask) {
+      return;
+    }
+
+    this._runTask(nextTask);
+  }
+
+  _getTaskWithHighestPriority() {
+    // Actually the *lowest* possible value for the priority key ;)
+    let nextTask = null;
+
+    this._tasksArray.forEach(task => {
+      if (!nextTask || task.priority < nextTask.priority) {
+        nextTask = task;
+      }
+    });
+
+    return nextTask;
+  }
+
+  start(doAfterEachInitialTask) {
+    this._doAfterEachInitialTask = doAfterEachInitialTask;
+    this._nbOfInitialTasks = this._tasksArray.length;
+    this._hasStarted = true;
+
+    if (this._allowsParallel === true) {
+      this._tasksArray.forEach(task => {
+        this._runTask(task);
       });
-
-      return foundTask;
+    } else {
+      this._runNextTaskInQueue();
     }
-  }]);
+  }
 
-  return AsyncTaskQueue;
-}();
+  getTaskWithId(id) {
+    const foundTask = this._tasksArray.find(task => task.id === id);
 
+    return foundTask;
+  }
 
+}
 
 /***/ }),
 
@@ -56209,51 +55705,22 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ResourceLoadTaskQueue; });
 /* harmony import */ var _AsyncTaskQueue__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./AsyncTaskQueue */ "./src/ResourceManager/AsyncTaskQueue.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var ResourceLoadTaskQueue =
-/*#__PURE__*/
-function (_AsyncTaskQueue) {
-  _inherits(ResourceLoadTaskQueue, _AsyncTaskQueue);
-
-  function ResourceLoadTaskQueue(maxPriority, priorityFactor, allowsParallel) {
-    var _this;
-
-    _classCallCheck(this, ResourceLoadTaskQueue);
-
+class ResourceLoadTaskQueue extends _AsyncTaskQueue__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  constructor(maxPriority, priorityFactor, allowsParallel) {
     // Task priorities will be evaluated based on page differences
-    var getPriority = function getPriority(task) {
-      if (!task.data || task.data.pageIndex === undefined || _this._targetPageIndex === undefined) {
+    const getPriority = task => {
+      if (!task.data || task.data.pageIndex === undefined || this._targetPageIndex === undefined) {
         return task.priority || 0;
       }
 
-      var taskPageIndex = task.data.pageIndex;
-      var priority = task.priority;
+      const taskPageIndex = task.data.pageIndex;
+      let {
+        priority
+      } = task;
 
-      if (priority === undefined || Math.abs(taskPageIndex - _this._targetPageIndex) < Math.abs(priority)) {
-        priority = taskPageIndex - _this._targetPageIndex;
+      if (priority === undefined || Math.abs(taskPageIndex - this._targetPageIndex) < Math.abs(priority)) {
+        priority = taskPageIndex - this._targetPageIndex;
       }
 
       if (priority < 0) {
@@ -56268,22 +55735,15 @@ function (_AsyncTaskQueue) {
       return priority;
     };
 
-    return _this = _possibleConstructorReturn(this, _getPrototypeOf(ResourceLoadTaskQueue).call(this, maxPriority, allowsParallel, getPriority));
+    super(maxPriority, allowsParallel, getPriority);
   }
 
-  _createClass(ResourceLoadTaskQueue, [{
-    key: "updatePriorities",
-    value: function updatePriorities(targetPageIndex) {
-      this._targetPageIndex = targetPageIndex;
+  updatePriorities(targetPageIndex) {
+    this._targetPageIndex = targetPageIndex;
+    super.updatePriorities();
+  }
 
-      _get(_getPrototypeOf(ResourceLoadTaskQueue.prototype), "updatePriorities", this).call(this);
-    }
-  }]);
-
-  return ResourceLoadTaskQueue;
-}(_AsyncTaskQueue__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -56301,41 +55761,26 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _TextureResource__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TextureResource */ "./src/ResourceManager/TextureResource.js");
 /* harmony import */ var _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ResourceLoadTaskQueue */ "./src/ResourceManager/ResourceLoadTaskQueue.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
 
+class ResourceManager {
+  get resourceTextures() {
+    return this._textureResources;
+  }
 
-
-var ResourceManager =
-/*#__PURE__*/
-function () {
-  _createClass(ResourceManager, [{
-    key: "resourceTextures",
-    get: function get() {
-      return this._textureResources;
-    }
-  }]);
-
-  function ResourceManager(doWithLoadPercentChange, textureSource, player) {
-    _classCallCheck(this, ResourceManager);
-
+  constructor(doWithLoadPercentChange, textureSource, player) {
     this._doWithLoadPercentChange = doWithLoadPercentChange;
     this._textureSource = textureSource;
     this._player = player;
-    var options = player.options;
-
-    var _ref = options || {},
-        _ref$allowsParallel = _ref.allowsParallel,
-        allowsParallel = _ref$allowsParallel === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_3__["defaultAllowsParallel"] : _ref$allowsParallel,
-        _ref$videoLoadTimeout = _ref.videoLoadTimeout,
-        videoLoadTimeout = _ref$videoLoadTimeout === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_3__["defaultVideoLoadTimeout"] : _ref$videoLoadTimeout;
-
+    const {
+      options
+    } = player;
+    const {
+      allowsParallel = _constants__WEBPACK_IMPORTED_MODULE_3__["defaultAllowsParallel"],
+      videoLoadTimeout = _constants__WEBPACK_IMPORTED_MODULE_3__["defaultVideoLoadTimeout"]
+    } = options || {};
     this._allowsParallel = allowsParallel;
     this._videoLoadTimeout = videoLoadTimeout;
     this._textureResources = {};
@@ -56348,380 +55793,344 @@ function () {
   } // Used in Player
 
 
-  _createClass(ResourceManager, [{
-    key: "storeResourceInfo",
-    value: function storeResourceInfo() {
-      var _this = this;
-
-      var resource = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var sliceId = arguments.length > 1 ? arguments[1] : undefined;
-
-      if (!resource || sliceId === undefined) {
-        return;
-      }
-
-      this._storeTextureInfo(resource, sliceId);
-
-      var alternate = resource.alternate;
-
-      if (alternate) {
-        Object.keys(alternate).forEach(function (tagName) {
-          Object.keys(alternate[tagName] || {}).forEach(function (tagValue) {
-            _this._storeTextureInfo(alternate[tagName][tagValue], sliceId);
-          });
-        });
-      }
+  storeResourceInfo(resource = null, sliceId) {
+    if (!resource || sliceId === undefined) {
+      return;
     }
-  }, {
-    key: "_storeTextureInfo",
-    value: function _storeTextureInfo() {
-      var textureInfo = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var sliceId = arguments.length > 1 ? arguments[1] : undefined;
 
-      var _ref2 = textureInfo || {},
-          path = _ref2.path;
+    this._storeTextureInfo(resource, sliceId);
 
-      if (!path) {
-        return;
-      }
+    const {
+      alternate
+    } = resource;
 
-      if (!this._textureResources[path]) {
-        this._textureResources[path] = new _TextureResource__WEBPACK_IMPORTED_MODULE_1__["default"](textureInfo, sliceId);
-      } else {
-        this._textureResources[path].addTextureInfo(textureInfo, sliceId);
-      }
-    } // When setting (including changing) the page navigator (used in Player)
-
-  }, {
-    key: "reset",
-    value: function reset(maxPriority, priorityFactor) {
-      // Build async task queue if there is none...
-      if (!this._taskQueue) {
-        this._taskQueue = new _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_2__["default"](maxPriority, priorityFactor, this._allowsParallel); // ...or stop all loading tasks otherwise
-      } else {
-        this._taskQueue.reset();
-
-        this._nbOfCompletedTasks = 0;
-      } // Clear sliceIdsSets so they can be populated again for the considered reading mode
-
-
-      Object.values(this._textureResources).forEach(function (textureResource) {
-        textureResource.resetSliceIdsSets();
+    if (alternate) {
+      Object.keys(alternate).forEach(tagName => {
+        Object.keys(alternate[tagName] || {}).forEach(tagValue => {
+          this._storeTextureInfo(alternate[tagName][tagValue], sliceId);
+        });
       });
     }
-  }, {
-    key: "updateForTargetPageIndex",
-    value: function updateForTargetPageIndex(targetPageIndex) {
-      // Update priorities for load tasks (if some tasks are still pending)
-      this._taskQueue.updatePriorities(targetPageIndex);
-    } // Used in Slice
+  }
 
-  }, {
-    key: "loadTexturesAtPaths",
-    value: function loadTexturesAtPaths(pathsArray, sliceId, pageIndex) {
-      var _this2 = this;
+  _storeTextureInfo(textureInfo = null, sliceId) {
+    const {
+      path
+    } = textureInfo || {};
 
-      var taskId = null;
-      var pathsToLoadArray = [];
-      pathsArray.forEach(function (path) {
-        if (path && _this2._textureResources[path]) {
-          var textureResource = _this2._textureResources[path];
-          var id = textureResource.id,
-              hasStartedLoading = textureResource.hasStartedLoading;
-
-          if (hasStartedLoading === false) {
-            if (taskId === null) {
-              taskId = id;
-            }
-
-            pathsToLoadArray.push(path);
-          }
-        }
-      });
-
-      var callback = function callback() {
-        var slices = _this2._player.slices;
-        pathsArray.forEach(function (path) {
-          var textureResource = _this2._textureResources[path];
-
-          if (textureResource) {
-            textureResource.applyAllTextures(slices);
-          }
-        });
-      }; // Note that callback will ensure slice.loadStatus = 2 (or -1),
-      // which will prevent re-triggering loadTexturesAtPaths for the slice
-
-
-      if (pathsToLoadArray.length === 0) {
-        callback();
-        return;
-      } // If is already loading, still consider if priority order > that of when started loading!!!
-      // Add resource load task to queue if not already in queue
-
-
-      var task = this._taskQueue.getTaskWithId(taskId);
-
-      if (!task) {
-        var loader = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["Loader"]();
-        task = {
-          id: taskId,
-          data: {
-            pageIndex: pageIndex
-          },
-          doAsync: function doAsync() {
-            return _this2._loadResources(pathsToLoadArray, pageIndex, loader);
-          },
-          doOnEnd: callback,
-          kill: function kill() {
-            // Cancel loading for resources not loaded yet
-            var slices = _this2._player.slices;
-            pathsToLoadArray.forEach(function (path) {
-              if (path && _this2._textureResources[path]) {
-                var textureResource = _this2._textureResources[path];
-
-                if (textureResource.hasLoaded === false) {
-                  textureResource.cancelLoad(slices);
-                }
-              }
-            });
-            loader.reset();
-          }
-        };
-
-        this._taskQueue.addOrUpdateTask(task); // In serial mode, if task exists, add data to potentially update its priority
-
-      } else if (this._allowsParallel === false) {
-        task.data.pageIndex = pageIndex;
-
-        this._taskQueue.addOrUpdateTask(task);
-      }
+    if (!path) {
+      return;
     }
-  }, {
-    key: "_loadResources",
-    value: function _loadResources(pathsToLoadArray, pageIndex, loader) {
-      var _this3 = this;
 
-      pathsToLoadArray.forEach(function (path) {
-        if (path && _this3._textureResources[path]) {
-          var textureResource = _this3._textureResources[path];
-          textureResource.notifyLoadStart();
-        }
-      });
-      return new Promise(function (resolve) {
-        _this3._addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve);
-      });
+    if (!this._textureResources[path]) {
+      this._textureResources[path] = new _TextureResource__WEBPACK_IMPORTED_MODULE_1__["default"](textureInfo, sliceId);
+    } else {
+      this._textureResources[path].addTextureInfo(textureInfo, sliceId);
     }
-  }, {
-    key: "_addResourcesToLoaderAndLoad",
-    value: function _addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve) {
-      var _this4 = this;
-
-      var firstPath = pathsToLoadArray[0];
-      var firstTextureResource = this._textureResources[firstPath];
-
-      if (pathsToLoadArray.length === 1 && firstTextureResource && firstTextureResource.type === "video") {
-        // Only consider a video if it is alone
-        var src = this._getSrc(firstPath);
-
-        var doOnVideoLoadSuccess = function doOnVideoLoadSuccess(textureData) {
-          _this4._acknowledgeResourceHandling([textureData], resolve);
-        };
-
-        var doOnVideoLoadFail = function doOnVideoLoadFail(path, fallbackPath) {
-          _this4._addToLoaderAndLoad([{
-            path: path,
-            fallbackPath: fallbackPath
-          }], loader, resolve);
-        };
-
-        firstTextureResource.attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail, this._videoLoadTimeout, this._allowsParallel, resolve);
-      } else {
-        var pathsAndFallbackPathsArray = [];
-        pathsToLoadArray.forEach(function (path) {
-          if (path && _this4._textureResources[path]) {
-            var type = _this4._textureResources[path].type; // Reminder: a sequence transition forces its resourcesArray
-            // to only contain image types anyway
-
-            if (type === "image") {
-              pathsAndFallbackPathsArray.push({
-                path: path
-              });
-            }
-          }
-        });
-
-        this._addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve);
-      }
-    }
-  }, {
-    key: "_getSrc",
-    value: function _getSrc(path) {
-      var fallbackPath = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var src = fallbackPath || path;
-      var _this$_textureSource = this._textureSource,
-          folderPath = _this$_textureSource.folderPath,
-          data = _this$_textureSource.data;
-
-      if (folderPath) {
-        src = "".concat(folderPath, "/").concat(src); // If the story was opened with data (i.e. not from a folder)
-        // and the resource is a video, use the dataURI as src
-      } else if (data && data.base64DataByHref) {
-        src = data.base64DataByHref[path];
-      }
-
-      return src;
-    }
-  }, {
-    key: "_addToLoaderAndLoad",
-    value: function _addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve) {
-      var _this5 = this;
-
-      pathsAndFallbackPathsArray.forEach(function (_ref3) {
-        var path = _ref3.path,
-            fallbackPath = _ref3.fallbackPath;
-
-        _this5._addToLoader(loader, path, fallbackPath);
-      });
-
-      this._load(loader, resolve);
-    }
-  }, {
-    key: "_addToLoader",
-    value: function _addToLoader(loader, path) {
-      var fallbackPath = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-
-      var src = this._getSrc(path, fallbackPath);
-
-      loader.add(path, src);
-    }
-  }, {
-    key: "_load",
-    value: function _load(loader, resolve) {
-      var _this6 = this;
-
-      if (loader.hasTasks === true) {
-        loader.load(); // If loading succeeds, move on
-
-        loader.onComplete(function (textureDataArray) {
-          _this6._acknowledgeResourceHandling(textureDataArray, resolve);
-        });
-      } else {
-        this._acknowledgeResourceHandling(null, resolve);
-      }
-    }
-  }, {
-    key: "_acknowledgeResourceHandling",
-    value: function _acknowledgeResourceHandling(textureDataArray, resolve) {
-      var _this7 = this;
-
-      if (textureDataArray) {
-        textureDataArray.forEach(function (textureData) {
-          var _ref4 = textureData || {},
-              name = _ref4.name,
-              baseTexture = _ref4.baseTexture,
-              texture = _ref4.texture; // Store the baseTexture (and compute clipped textures for media fragments as needed),
-          // knowing that name = path
+  } // When setting (including changing) the page navigator (used in Player)
 
 
-          if (name && _this7._textureResources[name]) {
-            var textureResource = _this7._textureResources[name];
-            textureResource.setBaseTexture(baseTexture, texture);
-          }
-        });
-      }
-
-      resolve();
-    } // Used in Player
-
-  }, {
-    key: "addStoryOpenTaskAndLoad",
-    value: function addStoryOpenTaskAndLoad(doOnLoadEnd, maxPriority) {
-      var _this8 = this;
-
-      // Add a last task to trigger doOnLoadEnd
-      var task = {
-        id: -1,
-        doOnEnd: doOnLoadEnd,
-        forcedPriority: maxPriority
-      };
-
-      this._taskQueue.addOrUpdateTask(task); // Start the async queue with a function to handle a change in load percent
-
+  reset(maxPriority, priorityFactor) {
+    // Build async task queue if there is none...
+    if (!this._taskQueue) {
+      this._taskQueue = new _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_2__["default"](maxPriority, priorityFactor, this._allowsParallel); // ...or stop all loading tasks otherwise
+    } else {
+      this._taskQueue.reset();
 
       this._nbOfCompletedTasks = 0;
-      var nbOfTasks = this._taskQueue.nbOfTasks;
+    } // Clear sliceIdsSets so they can be populated again for the considered reading mode
 
-      var doAfterEachInitialTask = function doAfterEachInitialTask() {
-        _this8._nbOfCompletedTasks += 1;
-        var percent = nbOfTasks > 0 ? _this8._nbOfCompletedTasks / nbOfTasks : 1;
-        var loadPercent = Math.round(100 * percent);
 
-        if (_this8._doWithLoadPercentChange) {
-          _this8._doWithLoadPercentChange(loadPercent);
-        }
-      };
+    Object.values(this._textureResources).forEach(textureResource => {
+      textureResource.resetSliceIdsSets();
+    });
+  }
 
-      this._taskQueue.start(doAfterEachInitialTask);
-    } // Used in SequenceSlice
+  updateForTargetPageIndex(targetPageIndex) {
+    // Update priorities for load tasks (if some tasks are still pending)
+    this._taskQueue.updatePriorities(targetPageIndex);
+  } // Used in Slice
 
-  }, {
-    key: "getTextureWithPath",
-    value: function getTextureWithPath(path) {
-      var mediaFragment = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
-      if (!path || !this._textureResources || !this._textureResources[path]) {
-        return null;
-      }
-
-      var textureResource = this._textureResources[path];
-      var texture = textureResource.getTextureForMediaFragment(mediaFragment);
-      return texture;
-    } // Used in Slice (and SequenceSlice)
-
-  }, {
-    key: "notifyTextureRemovalFromSlice",
-    value: function notifyTextureRemovalFromSlice(path) {
-      var slices = this._player.slices;
-
+  loadTexturesAtPaths(pathsArray, sliceId, pageIndex) {
+    let taskId = null;
+    const pathsToLoadArray = [];
+    pathsArray.forEach(path => {
       if (path && this._textureResources[path]) {
-        var textureResource = this._textureResources[path];
-        textureResource.destroyTexturesIfPossible(slices);
+        const textureResource = this._textureResources[path];
+        const {
+          id,
+          hasStartedLoading
+        } = textureResource;
+
+        if (hasStartedLoading === false) {
+          if (taskId === null) {
+            taskId = id;
+          }
+
+          pathsToLoadArray.push(path);
+        }
       }
-    } // Used in PageNavigator
+    });
 
-  }, {
-    key: "forceDestroyTexturesForPath",
-    value: function forceDestroyTexturesForPath(path) {
-      if (!path || !this._textureResources[path]) {
-        return;
-      }
+    const callback = () => {
+      const {
+        slices
+      } = this._player;
+      pathsArray.forEach(path => {
+        const textureResource = this._textureResources[path];
 
-      var textureResource = this._textureResources[path];
-      textureResource.forceDestroyTextures();
-    }
-  }, {
-    key: "killPendingLoads",
-    value: function killPendingLoads() {
-      this._taskQueue.reset(); // Note that killing all tasks will call their respective textureResource.cancelLoad()
-
-
-      this._nbOfCompletedTasks = 0;
-    }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.killPendingLoads();
-      Object.values(this._textureResources).forEach(function (textureResource) {
-        textureResource.forceDestroyTextures();
+        if (textureResource) {
+          textureResource.applyAllTextures(slices);
+        }
       });
-      this._textureResources = null;
+    }; // Note that callback will ensure slice.loadStatus = 2 (or -1),
+    // which will prevent re-triggering loadTexturesAtPaths for the slice
+
+
+    if (pathsToLoadArray.length === 0) {
+      callback();
+      return;
+    } // If is already loading, still consider if priority order > that of when started loading!!!
+    // Add resource load task to queue if not already in queue
+
+
+    let task = this._taskQueue.getTaskWithId(taskId);
+
+    if (!task) {
+      const loader = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["Loader"]();
+      task = {
+        id: taskId,
+        data: {
+          pageIndex
+        },
+        doAsync: () => this._loadResources(pathsToLoadArray, pageIndex, loader),
+        doOnEnd: callback,
+        kill: () => {
+          // Cancel loading for resources not loaded yet
+          const {
+            slices
+          } = this._player;
+          pathsToLoadArray.forEach(path => {
+            if (path && this._textureResources[path]) {
+              const textureResource = this._textureResources[path];
+
+              if (textureResource.hasLoaded === false) {
+                textureResource.cancelLoad(slices);
+              }
+            }
+          });
+          loader.reset();
+        }
+      };
+
+      this._taskQueue.addOrUpdateTask(task); // In serial mode, if task exists, add data to potentially update its priority
+
+    } else if (this._allowsParallel === false) {
+      task.data.pageIndex = pageIndex;
+
+      this._taskQueue.addOrUpdateTask(task);
     }
-  }]);
+  }
 
-  return ResourceManager;
-}();
+  _loadResources(pathsToLoadArray, pageIndex, loader) {
+    pathsToLoadArray.forEach(path => {
+      if (path && this._textureResources[path]) {
+        const textureResource = this._textureResources[path];
+        textureResource.notifyLoadStart();
+      }
+    });
+    return new Promise(resolve => {
+      this._addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve);
+    });
+  }
+
+  _addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve) {
+    const firstPath = pathsToLoadArray[0];
+    const firstTextureResource = this._textureResources[firstPath];
+
+    if (pathsToLoadArray.length === 1 && firstTextureResource && firstTextureResource.type === "video") {
+      // Only consider a video if it is alone
+      const src = this._getSrc(firstPath);
+
+      const doOnVideoLoadSuccess = textureData => {
+        this._acknowledgeResourceHandling([textureData], resolve);
+      };
+
+      const doOnVideoLoadFail = (path, fallbackPath) => {
+        this._addToLoaderAndLoad([{
+          path,
+          fallbackPath
+        }], loader, resolve);
+      };
+
+      firstTextureResource.attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail, this._videoLoadTimeout, this._allowsParallel, resolve);
+    } else {
+      const pathsAndFallbackPathsArray = [];
+      pathsToLoadArray.forEach(path => {
+        if (path && this._textureResources[path]) {
+          const {
+            type
+          } = this._textureResources[path]; // Reminder: a sequence transition forces its resourcesArray
+          // to only contain image types anyway
+
+          if (type === "image") {
+            pathsAndFallbackPathsArray.push({
+              path
+            });
+          }
+        }
+      });
+
+      this._addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve);
+    }
+  }
+
+  _getSrc(path, fallbackPath = null) {
+    let src = fallbackPath || path;
+    const {
+      folderPath,
+      data
+    } = this._textureSource;
+
+    if (folderPath) {
+      src = `${folderPath}/${src}`; // If the story was opened with data (i.e. not from a folder)
+      // and the resource is a video, use the dataURI as src
+    } else if (data && data.base64DataByHref) {
+      src = data.base64DataByHref[path];
+    }
+
+    return src;
+  }
+
+  _addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve) {
+    pathsAndFallbackPathsArray.forEach(({
+      path,
+      fallbackPath
+    }) => {
+      this._addToLoader(loader, path, fallbackPath);
+    });
+
+    this._load(loader, resolve);
+  }
+
+  _addToLoader(loader, path, fallbackPath = null) {
+    const src = this._getSrc(path, fallbackPath);
+
+    loader.add(path, src);
+  }
+
+  _load(loader, resolve) {
+    if (loader.hasTasks === true) {
+      loader.load(); // If loading succeeds, move on
+
+      loader.onComplete(textureDataArray => {
+        this._acknowledgeResourceHandling(textureDataArray, resolve);
+      });
+    } else {
+      this._acknowledgeResourceHandling(null, resolve);
+    }
+  }
+
+  _acknowledgeResourceHandling(textureDataArray, resolve) {
+    if (textureDataArray) {
+      textureDataArray.forEach(textureData => {
+        const {
+          name,
+          baseTexture,
+          texture
+        } = textureData || {}; // Store the baseTexture (and compute clipped textures for media fragments as needed),
+        // knowing that name = path
+
+        if (name && this._textureResources[name]) {
+          const textureResource = this._textureResources[name];
+          textureResource.setBaseTexture(baseTexture, texture);
+        }
+      });
+    }
+
+    resolve();
+  } // Used in Player
 
 
+  addStoryOpenTaskAndLoad(doOnLoadEnd, maxPriority) {
+    // Add a last task to trigger doOnLoadEnd
+    const task = {
+      id: -1,
+      doOnEnd: doOnLoadEnd,
+      forcedPriority: maxPriority
+    };
+
+    this._taskQueue.addOrUpdateTask(task); // Start the async queue with a function to handle a change in load percent
+
+
+    this._nbOfCompletedTasks = 0;
+    const {
+      nbOfTasks
+    } = this._taskQueue;
+
+    const doAfterEachInitialTask = () => {
+      this._nbOfCompletedTasks += 1;
+      const percent = nbOfTasks > 0 ? this._nbOfCompletedTasks / nbOfTasks : 1;
+      const loadPercent = Math.round(100 * percent);
+
+      if (this._doWithLoadPercentChange) {
+        this._doWithLoadPercentChange(loadPercent);
+      }
+    };
+
+    this._taskQueue.start(doAfterEachInitialTask);
+  } // Used in SequenceSlice
+
+
+  getTextureWithPath(path, mediaFragment = null) {
+    if (!path || !this._textureResources || !this._textureResources[path]) {
+      return null;
+    }
+
+    const textureResource = this._textureResources[path];
+    const texture = textureResource.getTextureForMediaFragment(mediaFragment);
+    return texture;
+  } // Used in Slice (and SequenceSlice)
+
+
+  notifyTextureRemovalFromSlice(path) {
+    const {
+      slices
+    } = this._player;
+
+    if (path && this._textureResources[path]) {
+      const textureResource = this._textureResources[path];
+      textureResource.destroyTexturesIfPossible(slices);
+    }
+  } // Used in PageNavigator
+
+
+  forceDestroyTexturesForPath(path) {
+    if (!path || !this._textureResources[path]) {
+      return;
+    }
+
+    const textureResource = this._textureResources[path];
+    textureResource.forceDestroyTextures();
+  }
+
+  killPendingLoads() {
+    this._taskQueue.reset(); // Note that killing all tasks will call their respective textureResource.cancelLoad()
+
+
+    this._nbOfCompletedTasks = 0;
+  }
+
+  destroy() {
+    this.killPendingLoads();
+    Object.values(this._textureResources).forEach(textureResource => {
+      textureResource.forceDestroyTextures();
+    });
+    this._textureResources = null;
+  }
+
+}
 
 /***/ }),
 
@@ -56736,63 +56145,45 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TextureResource; });
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Renderer */ "./src/Renderer/index.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+class TextureResource {
+  get id() {
+    return this._id;
+  }
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+  get type() {
+    return this._type;
+  }
 
+  get fallback() {
+    return this._fallback;
+  }
 
+  get href() {
+    return this._href;
+  }
 
-var TextureResource =
-/*#__PURE__*/
-function () {
-  _createClass(TextureResource, [{
-    key: "id",
-    get: function get() {
-      return this._id;
-    }
-  }, {
-    key: "type",
-    get: function get() {
-      return this._type;
-    }
-  }, {
-    key: "fallback",
-    get: function get() {
-      return this._fallback;
-    }
-  }, {
-    key: "href",
-    get: function get() {
-      return this._href;
-    }
-  }, {
-    key: "hasStartedLoading",
-    get: function get() {
-      return this._loadStatus !== 0;
-    }
-  }, {
-    key: "hasLoaded",
-    get: function get() {
-      return this._loadStatus === -1 || this._loadStatus === 2;
-    }
-  }], [{
-    key: "counter",
-    get: function get() {
-      TextureResource._counter = TextureResource._counter === undefined ? 0 : TextureResource._counter + 1;
-      return TextureResource._counter;
-    }
-  }]);
+  get hasStartedLoading() {
+    return this._loadStatus !== 0;
+  }
 
-  function TextureResource(textureInfo, sliceId) {
-    _classCallCheck(this, TextureResource);
+  get hasLoaded() {
+    return this._loadStatus === -1 || this._loadStatus === 2;
+  }
 
+  static get counter() {
+    TextureResource._counter = TextureResource._counter === undefined ? 0 : TextureResource._counter + 1;
+    return TextureResource._counter;
+  }
+
+  constructor(textureInfo, sliceId) {
     this._id = TextureResource.counter;
-    var type = textureInfo.type,
-        path = textureInfo.path,
-        href = textureInfo.href,
-        fallback = textureInfo.fallback;
+    const {
+      type,
+      path,
+      href,
+      fallback
+    } = textureInfo;
     this._type = type;
     this._path = path;
     this._href = href;
@@ -56810,108 +56201,158 @@ function () {
     this.addTextureInfo(textureInfo, sliceId);
   }
 
-  _createClass(TextureResource, [{
-    key: "_addOrUpdateMediaFragment",
-    value: function _addOrUpdateMediaFragment(mediaFragment, sliceId) {
-      if (!this._textures[mediaFragment]) {
-        this._textures[mediaFragment] = {
-          texture: null,
-          sliceIdsSet: new Set()
-        };
-      } // On a readingMode change, the baseTexture may already be present,
-      // so adding new media fragments imply that the corresponding textures be created
+  _addOrUpdateMediaFragment(mediaFragment, sliceId) {
+    if (!this._textures[mediaFragment]) {
+      this._textures[mediaFragment] = {
+        texture: null,
+        sliceIdsSet: new Set()
+      };
+    } // On a readingMode change, the baseTexture may already be present,
+    // so adding new media fragments imply that the corresponding textures be created
 
 
-      if (this._baseTexture && this._textures.full && this._textures.full.texture) {
-        var fullTexture = this._textures.full.texture;
-        var croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, mediaFragment);
-        this._textures[mediaFragment].texture = croppedTexture;
-      }
+    if (this._baseTexture && this._textures.full && this._textures.full.texture) {
+      const fullTexture = this._textures.full.texture;
+      const croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, mediaFragment);
+      this._textures[mediaFragment].texture = croppedTexture;
+    }
 
-      if (sliceId !== undefined) {
-        this._textures[mediaFragment].sliceIdsSet.add(sliceId);
-      }
-    } // Also used in ResourceManager
+    if (sliceId !== undefined) {
+      this._textures[mediaFragment].sliceIdsSet.add(sliceId);
+    }
+  } // Also used in ResourceManager
 
-  }, {
-    key: "addTextureInfo",
-    value: function addTextureInfo(textureInfo, sliceId) {
-      var mediaFragment = textureInfo.mediaFragment;
 
-      if (mediaFragment) {
-        this._addOrUpdateMediaFragment(mediaFragment, sliceId);
+  addTextureInfo(textureInfo, sliceId) {
+    const {
+      mediaFragment
+    } = textureInfo;
+
+    if (mediaFragment) {
+      this._addOrUpdateMediaFragment(mediaFragment, sliceId);
+    } else {
+      this._addOrUpdateMediaFragment("full", sliceId);
+    }
+  }
+
+  resetSliceIdsSets() {
+    Object.keys(this._textures).forEach(mediaFragment => {
+      this._textures[mediaFragment].sliceIdsSet = new Set();
+    });
+  }
+
+  attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail, videoLoadTimeout, allowsParallel, resolve) {
+    // Create video element
+    const video = document.createElement("video");
+    video.preload = "auto";
+    video.loop = true; // All videos will loop by default
+
+    video.autoplay = false; // Prevent autoplay at start
+
+    video.muted = true; // Only a muted video can autoplay
+
+    video.setAttribute("playsinline", ""); // Required to play in iOS
+
+    video.crossOrigin = "anonymous";
+    video.src = src;
+    this._video = video;
+
+    const doOnLoadFail = () => {
+      clearTimeout(this._timeout);
+
+      this._removeTracesOfVideoLoad();
+
+      this._video = null;
+
+      if (this._fallback && doOnVideoLoadFail) {
+        this._loadStatus = -1; // Let's create the baseTexture from the fallback image
+        // (we don't care that the type will thus not be the right one anymore)
+
+        doOnVideoLoadFail(this._path, this._fallback.path);
       } else {
-        this._addOrUpdateMediaFragment("full", sliceId);
+        this._loadStatus = 0;
+        resolve();
       }
-    }
-  }, {
-    key: "resetSliceIdsSets",
-    value: function resetSliceIdsSets() {
-      var _this = this;
+    };
 
-      Object.keys(this._textures).forEach(function (mediaFragment) {
-        _this._textures[mediaFragment].sliceIdsSet = new Set();
+    this._doOnLoadFail = doOnLoadFail;
+    video.addEventListener("error", doOnLoadFail); // Event to track should be loadedmetadata, but duration change proved more reliable
+
+    const doOnLoadSuccess = () => {
+      this._doOnDurationChange(doOnVideoLoadSuccess);
+    };
+
+    this._doOnLoadSuccess = doOnLoadSuccess;
+    video.addEventListener("durationchange", doOnLoadSuccess); // If resources are loaded serially, a failing video load should not block loading
+
+    if (allowsParallel === false) {
+      this._timeout = setTimeout(doOnLoadFail, videoLoadTimeout);
+    }
+  }
+
+  _removeTracesOfVideoLoad() {
+    if (!this._video) {
+      return;
+    }
+
+    if (this._doOnLoadFail) {
+      this._video.removeEventListener("error", this._doOnLoadFail);
+
+      this._doOnLoadFail = null;
+    }
+
+    if (this._doOnLoadSuccess) {
+      this._video.removeEventListener("durationchange", this._doOnLoadSuccess);
+
+      this._doOnLoadSuccess = null;
+    }
+  } // Once a video's duration is different from zero, get useful information
+
+
+  _doOnDurationChange(doOnVideoLoadSuccess) {
+    clearTimeout(this._timeout);
+    const {
+      duration
+    } = this._video;
+
+    if (duration && doOnVideoLoadSuccess) {
+      const texture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].createVideoTexture(this._video);
+
+      this._removeTracesOfVideoLoad();
+
+      const textureData = {
+        name: this._path,
+        baseTexture: texture.baseTexture,
+        texture
+      };
+      doOnVideoLoadSuccess(textureData); // If the video failed loading
+    } else if (this._doOnLoadFail) {
+      this._doOnLoadFail(); // Which involves removing the event listener too
+
+    }
+  }
+
+  notifyLoadStart() {
+    if (this._loadStatus === 0) {
+      this._loadStatus = 1; // Means that loader has started loading the resource
+    }
+  }
+
+  cancelLoad(slices) {
+    this._loadStatus = 0;
+    Object.values(this._textures).forEach(({
+      sliceIdsSet
+    }) => {
+      sliceIdsSet.forEach(sliceId => {
+        const slice = slices[sliceId];
+        slice._loadStatus = 0; // UGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       });
-    }
-  }, {
-    key: "attemptToLoadVideo",
-    value: function attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail, videoLoadTimeout, allowsParallel, resolve) {
-      var _this2 = this;
+    });
+    this.clearVideoTraces();
+  }
 
-      // Create video element
-      var video = document.createElement("video");
-      video.preload = "auto";
-      video.loop = true; // All videos will loop by default
-
-      video.autoplay = false; // Prevent autoplay at start
-
-      video.muted = true; // Only a muted video can autoplay
-
-      video.setAttribute("playsinline", ""); // Required to play in iOS
-
-      video.crossOrigin = "anonymous";
-      video.src = src;
-      this._video = video;
-
-      var doOnLoadFail = function doOnLoadFail() {
-        clearTimeout(_this2._timeout);
-
-        _this2._removeTracesOfVideoLoad();
-
-        _this2._video = null;
-
-        if (_this2._fallback && doOnVideoLoadFail) {
-          _this2._loadStatus = -1; // Let's create the baseTexture from the fallback image
-          // (we don't care that the type will thus not be the right one anymore)
-
-          doOnVideoLoadFail(_this2._path, _this2._fallback.path);
-        } else {
-          _this2._loadStatus = 0;
-          resolve();
-        }
-      };
-
-      this._doOnLoadFail = doOnLoadFail;
-      video.addEventListener("error", doOnLoadFail); // Event to track should be loadedmetadata, but duration change proved more reliable
-
-      var doOnLoadSuccess = function doOnLoadSuccess() {
-        _this2._doOnDurationChange(doOnVideoLoadSuccess);
-      };
-
-      this._doOnLoadSuccess = doOnLoadSuccess;
-      video.addEventListener("durationchange", doOnLoadSuccess); // If resources are loaded serially, a failing video load should not block loading
-
-      if (allowsParallel === false) {
-        this._timeout = setTimeout(doOnLoadFail, videoLoadTimeout);
-      }
-    }
-  }, {
-    key: "_removeTracesOfVideoLoad",
-    value: function _removeTracesOfVideoLoad() {
-      if (!this._video) {
-        return;
-      }
-
+  clearVideoTraces() {
+    if (this._video) {
       if (this._doOnLoadFail) {
         this._video.removeEventListener("error", this._doOnLoadFail);
 
@@ -56923,189 +56364,120 @@ function () {
 
         this._doOnLoadSuccess = null;
       }
-    } // Once a video's duration is different from zero, get useful information
 
-  }, {
-    key: "_doOnDurationChange",
-    value: function _doOnDurationChange(doOnVideoLoadSuccess) {
-      clearTimeout(this._timeout);
-      var duration = this._video.duration;
+      this._video = null;
+    }
+  }
 
-      if (duration && doOnVideoLoadSuccess) {
-        var texture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].createVideoTexture(this._video);
+  setBaseTexture(baseTexture, fullTexture) {
+    if (this._baseTexture || !baseTexture || !fullTexture) {
+      return;
+    }
 
-        this._removeTracesOfVideoLoad();
+    this._baseTexture = baseTexture; // For the texture, store the (clipped) media fragment texture directly if it is a fallback
 
-        var textureData = {
-          name: this._path,
-          baseTexture: texture.baseTexture,
-          texture: texture
-        };
-        doOnVideoLoadSuccess(textureData); // If the video failed loading
-      } else if (this._doOnLoadFail) {
-        this._doOnLoadFail(); // Which involves removing the event listener too
+    if (this._loadStatus === -1 && this._fallback && this._fallback.mediaFragment) {
+      const croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, this._fallback.mediaFragment);
+      this._textures.full.texture = croppedTexture; // Otherwise just store the texture as the full texture
+      // (reminder: this._loadStatus = 1 or -1 - if no fallback - at this stage)...
+    } else {
+      this._textures.full.texture = fullTexture; // ...and create other fragments as needed
 
+      this._createFragmentsIfNeeded(fullTexture);
+
+      if (this._loadStatus !== -1) {
+        this._loadStatus = 2;
       }
     }
-  }, {
-    key: "notifyLoadStart",
-    value: function notifyLoadStart() {
-      if (this._loadStatus === 0) {
-        this._loadStatus = 1; // Means that loader has started loading the resource
+  }
+
+  _createFragmentsIfNeeded(fullTexture) {
+    Object.keys(this._textures).forEach(mediaFragment => {
+      if (mediaFragment !== "full") {
+        const croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, mediaFragment);
+        this._textures[mediaFragment].texture = croppedTexture;
       }
-    }
-  }, {
-    key: "cancelLoad",
-    value: function cancelLoad(slices) {
-      this._loadStatus = 0;
-      Object.values(this._textures).forEach(function (_ref) {
-        var sliceIdsSet = _ref.sliceIdsSet;
-        sliceIdsSet.forEach(function (sliceId) {
-          var slice = slices[sliceId];
-          slice._loadStatus = 0; // UGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        });
-      });
-      this.clearVideoTraces();
-    }
-  }, {
-    key: "clearVideoTraces",
-    value: function clearVideoTraces() {
-      if (this._video) {
-        if (this._doOnLoadFail) {
-          this._video.removeEventListener("error", this._doOnLoadFail);
+    });
+  }
 
-          this._doOnLoadFail = null;
-        }
+  applyAllTextures(slices) {
+    const fullTexture = this._textures.full.texture;
+    Object.values(this._textures).forEach(({
+      texture,
+      sliceIdsSet
+    }) => {
+      sliceIdsSet.forEach(sliceId => {
+        const slice = slices[sliceId];
 
-        if (this._doOnLoadSuccess) {
-          this._video.removeEventListener("durationchange", this._doOnLoadSuccess);
-
-          this._doOnLoadSuccess = null;
-        }
-
-        this._video = null;
-      }
-    }
-  }, {
-    key: "setBaseTexture",
-    value: function setBaseTexture(baseTexture, fullTexture) {
-      if (this._baseTexture || !baseTexture || !fullTexture) {
-        return;
-      }
-
-      this._baseTexture = baseTexture; // For the texture, store the (clipped) media fragment texture directly if it is a fallback
-
-      if (this._loadStatus === -1 && this._fallback && this._fallback.mediaFragment) {
-        var croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, this._fallback.mediaFragment);
-        this._textures.full.texture = croppedTexture; // Otherwise just store the texture as the full texture
-        // (reminder: this._loadStatus = 1 or -1 - if no fallback - at this stage)...
-      } else {
-        this._textures.full.texture = fullTexture; // ...and create other fragments as needed
-
-        this._createFragmentsIfNeeded(fullTexture);
-
-        if (this._loadStatus !== -1) {
-          this._loadStatus = 2;
-        }
-      }
-    }
-  }, {
-    key: "_createFragmentsIfNeeded",
-    value: function _createFragmentsIfNeeded(fullTexture) {
-      var _this3 = this;
-
-      Object.keys(this._textures).forEach(function (mediaFragment) {
-        if (mediaFragment !== "full") {
-          var croppedTexture = _Renderer__WEBPACK_IMPORTED_MODULE_0__["Texture"].cropToFragment(fullTexture, mediaFragment);
-          _this3._textures[mediaFragment].texture = croppedTexture;
+        if (slice) {
+          const sliceTexture = this._loadStatus === -1 ? fullTexture : texture;
+          const isAFallback = this._loadStatus === -1;
+          slice.updateTextures(sliceTexture, isAFallback);
         }
       });
+    });
+  } // Used for a SequenceSlice only
+
+
+  getTextureForMediaFragment(mediaFragment = null) {
+    const fragment = this._loadStatus === -1 ? "full" // The full texture for a fallback is already sized correctly
+    : mediaFragment || "full";
+
+    if (!this._textures[fragment]) {
+      return null;
     }
-  }, {
-    key: "applyAllTextures",
-    value: function applyAllTextures(slices) {
-      var _this4 = this;
 
-      var fullTexture = this._textures.full.texture;
-      Object.values(this._textures).forEach(function (_ref2) {
-        var texture = _ref2.texture,
-            sliceIdsSet = _ref2.sliceIdsSet;
-        sliceIdsSet.forEach(function (sliceId) {
-          var slice = slices[sliceId];
+    const {
+      texture
+    } = this._textures[fragment];
+    return texture;
+  }
 
-          if (slice) {
-            var sliceTexture = _this4._loadStatus === -1 ? fullTexture : texture;
-            var isAFallback = _this4._loadStatus === -1;
-            slice.updateTextures(sliceTexture, isAFallback);
+  destroyTexturesIfPossible(slices) {
+    let shouldBeKept = false;
+    Object.values(this._textures).forEach(mediaFragmentData => {
+      const {
+        sliceIdsSet
+      } = mediaFragmentData;
+      sliceIdsSet.forEach(sliceId => {
+        const slice = slices[sliceId];
+
+        if (slice) {
+          const {
+            loadStatus
+          } = slice;
+
+          if (loadStatus === -1 || loadStatus === 1 || loadStatus === 2) {
+            shouldBeKept = true;
           }
-        });
+        }
       });
-    } // Used for a SequenceSlice only
+    });
 
-  }, {
-    key: "getTextureForMediaFragment",
-    value: function getTextureForMediaFragment() {
-      var mediaFragment = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var fragment = this._loadStatus === -1 ? "full" // The full texture for a fallback is already sized correctly
-      : mediaFragment || "full";
-
-      if (!this._textures[fragment]) {
-        return null;
-      }
-
-      var texture = this._textures[fragment].texture;
-      return texture;
+    if (shouldBeKept === false) {
+      this.forceDestroyTextures();
     }
-  }, {
-    key: "destroyTexturesIfPossible",
-    value: function destroyTexturesIfPossible(slices) {
-      var shouldBeKept = false;
-      Object.values(this._textures).forEach(function (mediaFragmentData) {
-        var sliceIdsSet = mediaFragmentData.sliceIdsSet;
-        sliceIdsSet.forEach(function (sliceId) {
-          var slice = slices[sliceId];
+  }
 
-          if (slice) {
-            var loadStatus = slice.loadStatus;
-
-            if (loadStatus === -1 || loadStatus === 1 || loadStatus === 2) {
-              shouldBeKept = true;
-            }
-          }
-        });
-      });
-
-      if (shouldBeKept === false) {
-        this.forceDestroyTextures();
-      }
+  forceDestroyTextures() {
+    if (this._loadStatus === 0) {
+      return;
     }
-  }, {
-    key: "forceDestroyTextures",
-    value: function forceDestroyTextures() {
-      var _this5 = this;
 
-      if (this._loadStatus === 0) {
-        return;
-      }
+    Object.keys(this._textures).forEach(mediaFragment => {
+      this._textures[mediaFragment].texture = null;
+    });
 
-      Object.keys(this._textures).forEach(function (mediaFragment) {
-        _this5._textures[mediaFragment].texture = null;
-      });
-
-      if (this._baseTexture) {
-        this._baseTexture.destroy();
-      }
-
-      this._baseTexture = null;
-      this.clearVideoTraces();
-      this._loadStatus = 0;
+    if (this._baseTexture) {
+      this._baseTexture.destroy();
     }
-  }]);
 
-  return TextureResource;
-}();
+    this._baseTexture = null;
+    this.clearVideoTraces();
+    this._loadStatus = 0;
+  }
 
-
+}
 
 /***/ }),
 
@@ -57136,254 +56508,199 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return SequenceSlice; });
 /* harmony import */ var _Slice__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Slice */ "./src/Slice/Slice.js");
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 
+class SequenceSlice extends _Slice__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  // Used below and in Player
+  get resourcesArray() {
+    const {
+      resourcesArray
+    } = this._resourcesInfo || {};
+    return resourcesArray || [];
+  } // Used in StateHandler
 
 
-var SequenceSlice =
-/*#__PURE__*/
-function (_Slice) {
-  _inherits(SequenceSlice, _Slice);
-
-  _createClass(SequenceSlice, [{
-    key: "resourcesArray",
-    // Used below and in Player
-    get: function get() {
-      var _ref = this._resourcesInfo || {},
-          resourcesArray = _ref.resourcesArray;
-
-      return resourcesArray || [];
-    } // Used in StateHandler
-
-  }, {
-    key: "canPlay",
-    get: function get() {
-      return this._duration > 0 && this._texturesArray.length > 0;
-    }
-  }]);
-
-  function SequenceSlice(resourcesInfo, player) {
-    var _this;
-
-    _classCallCheck(this, SequenceSlice);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(SequenceSlice).call(this, resourcesInfo, player));
-    _this._resourcesInfo = resourcesInfo;
-    var duration = resourcesInfo.duration;
-    _this._duration = _utils__WEBPACK_IMPORTED_MODULE_1__["isANumber"](duration) === true && duration > 0 ? duration : 0;
-    _this._type = "sequenceSlice";
-    _this._hasLoadedOnce = false;
-    _this._texturesArray = [];
-    _this._nbOfFrames = 0;
-    _this._nbOfLoadedFrameTextures = 0;
-    return _this;
+  get canPlay() {
+    return this._duration > 0 && this._texturesArray.length > 0;
   }
 
-  _createClass(SequenceSlice, [{
-    key: "getPathsToLoad",
-    value: function getPathsToLoad() {
-      var _this2 = this;
+  constructor(resourcesInfo, player) {
+    super(resourcesInfo, player);
+    this._resourcesInfo = resourcesInfo;
+    const {
+      duration
+    } = resourcesInfo;
+    this._duration = _utils__WEBPACK_IMPORTED_MODULE_1__["isANumber"](duration) === true && duration > 0 ? duration : 0;
+    this._type = "sequenceSlice";
+    this._hasLoadedOnce = false;
+    this._texturesArray = [];
+    this._nbOfFrames = 0;
+    this._nbOfLoadedFrameTextures = 0;
+  }
 
-      if (this._loadStatus === 1 || this._loadStatus === 2) {
-        return [];
-      }
-
-      var pathsArray = [];
-      this.resourcesArray.forEach(function (resource) {
-        var _this2$_getRelevantPa = _this2._getRelevantPathAndMediaFragment(resource),
-            path = _this2$_getRelevantPa.path;
-
-        if (path) {
-          pathsArray.push(path);
-        }
-      });
-      this._loadStatus = 1;
-      return [{
-        pathsArray: pathsArray,
-        sliceId: this._id
-      }];
+  getPathsToLoad() {
+    if (this._loadStatus === 1 || this._loadStatus === 2) {
+      return [];
     }
-  }, {
-    key: "updateTextures",
-    value: function updateTextures() {
-      if (!this._duration) {
-        return;
+
+    const pathsArray = [];
+    this.resourcesArray.forEach(resource => {
+      const {
+        path
+      } = this._getRelevantPathAndMediaFragment(resource);
+
+      if (path) {
+        pathsArray.push(path);
       }
+    });
+    this._loadStatus = 1;
+    return [{
+      pathsArray,
+      sliceId: this._id
+    }];
+  }
 
-      this._texturesArray = this._createTexturesArray();
-
-      if (this._texturesArray.length === 0) {
-        this._loadStatus = 0;
-        return;
-      }
-
-      if (this._texturesArray.length < this.resourcesArray.length) {
-        this._loadStatus = -1;
-      }
-
-      this._loadStatus = 2;
-      this.setTexturesArray(this._texturesArray);
+  updateTextures() {
+    if (!this._duration) {
+      return;
     }
-  }, {
-    key: "_createTexturesArray",
-    value: function _createTexturesArray() {
-      var _this3 = this;
 
-      var texturesArray = [];
+    this._texturesArray = this._createTexturesArray();
 
-      if (this.resourcesArray.length > 0) {
-        // Build texturesList
-        var texturesList = [];
-        this.resourcesArray.forEach(function (resource) {
-          var texture = _this3._getLoadedTexture(resource);
-
-          if (texture) {
-            // Get natural dimensions from the first valid texture in the list
-            if (_this3._hasLoadedOnce === false) {
-              _this3._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
-
-              _this3._hasLoadedOnce = true;
-            }
-
-            texturesList.push(texture);
-          }
-        }); // Now build texturesArray with time information
-
-        if (texturesList.length > 0) {
-          this._nbOfFrames = texturesList.length; // Compute how long each image will be displayed
-          // Note that the textures that have not been created are skipped,
-          // meaning that the total number of textures may be less than planned,
-          // and thus the time spent on each actual texture longer than expected
-
-          var time = this._duration / texturesList.length;
-          texturesArray = texturesList.map(function (texture) {
-            return {
-              texture: texture,
-              time: time
-            };
-          });
-        }
-      }
-
-      return texturesArray;
-    } // The associated texture can either come from an image or fallback image
-
-  }, {
-    key: "_getLoadedTexture",
-    value: function _getLoadedTexture(resource) {
-      if (!resource || !this.resourceManager) {
-        return null;
-      }
-
-      var _this$_getRelevantPat = this._getRelevantPathAndMediaFragment(resource),
-          path = _this$_getRelevantPat.path,
-          mediaFragment = _this$_getRelevantPat.mediaFragment;
-
-      var texture = this.resourceManager.getTextureWithPath(path, mediaFragment);
-      return texture;
-    }
-  }, {
-    key: "play",
-    value: function play() {
-      if (!this._playableSprite) {
-        return;
-      }
-
-      this._playableSprite.gotoAndPlay(0);
-    }
-  }, {
-    key: "stop",
-    value: function stop() {
-      if (!this._playableSprite) {
-        return;
-      }
-
-      this._playableSprite.gotoAndStop(0);
-    }
-  }, {
-    key: "pauseAtPercent",
-    value: function pauseAtPercent(percent) {
-      if (!this._playableSprite || this._nbOfFrames < 1) {
-        return;
-      }
-
-      var frameIndex = Math.min(Math.floor(percent * this._nbOfFrames), this._nbOfFrames - 1);
-
-      this._playableSprite.gotoAndStop(frameIndex);
-    }
-  }, {
-    key: "resize",
-    value: function resize() {
-      var pageNavigator = this._player.pageNavigator;
-      var fit = pageNavigator.metadata.forcedFit || this._resourcesInfo.fit || pageNavigator.metadata.fit;
-
-      _get(_getPrototypeOf(SequenceSlice.prototype), "resize", this).call(this, fit);
-    }
-  }, {
-    key: "destroyTexturesIfPossible",
-    value: function destroyTexturesIfPossible() {
-      var _this4 = this;
-
-      var pathsArray = this.unlinkTexturesAndGetPaths();
-      this.setTexturesArray(null);
-
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
-
-      pathsArray.forEach(function (path) {
-        _this4.resourceManager.notifyTextureRemovalFromSlice(path);
-      });
-    } // Used above and in Player
-
-  }, {
-    key: "unlinkTexturesAndGetPaths",
-    value: function unlinkTexturesAndGetPaths() {
-      var _this5 = this;
-
-      if (this._loadStatus === 0) {
-        return [];
-      }
-
+    if (this._texturesArray.length === 0) {
       this._loadStatus = 0;
-      var pathsArray = [];
-      this.resourcesArray.forEach(function (resource) {
-        var _this5$_getRelevantPa = _this5._getRelevantPathAndMediaFragment(resource),
-            path = _this5$_getRelevantPa.path;
-
-        if (path) {
-          pathsArray.push(path);
-        }
-      });
-      return pathsArray;
+      return;
     }
-  }]);
 
-  return SequenceSlice;
-}(_Slice__WEBPACK_IMPORTED_MODULE_0__["default"]);
+    if (this._texturesArray.length < this.resourcesArray.length) {
+      this._loadStatus = -1;
+    }
+
+    this._loadStatus = 2;
+    this.setTexturesArray(this._texturesArray);
+  }
+
+  _createTexturesArray() {
+    let texturesArray = [];
+
+    if (this.resourcesArray.length > 0) {
+      // Build texturesList
+      const texturesList = [];
+      this.resourcesArray.forEach(resource => {
+        const texture = this._getLoadedTexture(resource);
+
+        if (texture) {
+          // Get natural dimensions from the first valid texture in the list
+          if (this._hasLoadedOnce === false) {
+            this._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
+
+            this._hasLoadedOnce = true;
+          }
+
+          texturesList.push(texture);
+        }
+      }); // Now build texturesArray with time information
+
+      if (texturesList.length > 0) {
+        this._nbOfFrames = texturesList.length; // Compute how long each image will be displayed
+        // Note that the textures that have not been created are skipped,
+        // meaning that the total number of textures may be less than planned,
+        // and thus the time spent on each actual texture longer than expected
+
+        const time = this._duration / texturesList.length;
+        texturesArray = texturesList.map(texture => ({
+          texture,
+          time
+        }));
+      }
+    }
+
+    return texturesArray;
+  } // The associated texture can either come from an image or fallback image
 
 
+  _getLoadedTexture(resource) {
+    if (!resource || !this.resourceManager) {
+      return null;
+    }
+
+    const {
+      path,
+      mediaFragment
+    } = this._getRelevantPathAndMediaFragment(resource);
+
+    const texture = this.resourceManager.getTextureWithPath(path, mediaFragment);
+    return texture;
+  }
+
+  play() {
+    if (!this._playableSprite) {
+      return;
+    }
+
+    this._playableSprite.gotoAndPlay(0);
+  }
+
+  stop() {
+    if (!this._playableSprite) {
+      return;
+    }
+
+    this._playableSprite.gotoAndStop(0);
+  }
+
+  pauseAtPercent(percent) {
+    if (!this._playableSprite || this._nbOfFrames < 1) {
+      return;
+    }
+
+    const frameIndex = Math.min(Math.floor(percent * this._nbOfFrames), this._nbOfFrames - 1);
+
+    this._playableSprite.gotoAndStop(frameIndex);
+  }
+
+  resize() {
+    const {
+      pageNavigator
+    } = this._player;
+    const fit = pageNavigator.metadata.forcedFit || this._resourcesInfo.fit || pageNavigator.metadata.fit;
+    super.resize(fit);
+  }
+
+  destroyTexturesIfPossible() {
+    const pathsArray = this.unlinkTexturesAndGetPaths();
+    this.setTexturesArray(null);
+
+    if (this._parent && this._parent.updateLoadStatus) {
+      this._parent.updateLoadStatus();
+    }
+
+    pathsArray.forEach(path => {
+      this.resourceManager.notifyTextureRemovalFromSlice(path);
+    });
+  } // Used above and in Player
+
+
+  unlinkTexturesAndGetPaths() {
+    if (this._loadStatus === 0) {
+      return [];
+    }
+
+    this._loadStatus = 0;
+    const pathsArray = [];
+    this.resourcesArray.forEach(resource => {
+      const {
+        path
+      } = this._getRelevantPathAndMediaFragment(resource);
+
+      if (path) {
+        pathsArray.push(path);
+      }
+    });
+    return pathsArray;
+  }
+
+}
 
 /***/ }),
 
@@ -57398,420 +56715,345 @@ function (_Slice) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Slice; });
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Renderer */ "./src/Renderer/index.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var Slice =
-/*#__PURE__*/
-function (_TextureElement) {
-  _inherits(Slice, _TextureElement);
-
-  _createClass(Slice, [{
-    key: "resource",
-    // Used in Segment
-    get: function get() {
-      return this._resource;
-    } // Used in StoryBuilder
-
-  }, {
-    key: "pageNavInfo",
-    get: function get() {
-      return this._pageNavInfo;
-    } // Used in StateHandler
-
-  }, {
-    key: "canPlay",
-    get: function get() {
-      return this._duration > 0;
-    } // Used in Layer and ResourceManager
-
-  }, {
-    key: "loadStatus",
-    get: function get() {
-      return this._loadStatus;
-    } // Used in Segment (and below)
-
-  }, {
-    key: "href",
-    get: function get() {
-      return this._resource ? this._resource.href : null;
-    } // Used in Player
-
-  }, {
-    key: "id",
-    get: function get() {
-      return this._id;
-    } // Used below
-
-  }], [{
-    key: "counter",
-    get: function get() {
-      Slice._counter = Slice._counter === undefined ? 0 : Slice._counter + 1;
-      return Slice._counter;
-    } // Note that resource is really a SliceResource, not a (Texture)Resource
-
-  }]);
-
-  function Slice() {
-    var _this;
-
-    var resource = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-    var player = arguments.length > 1 ? arguments[1] : undefined;
-    var parentInfo = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-    var neighbor = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
-
-    _classCallCheck(this, Slice);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Slice).call(this, resource, player, parentInfo, neighbor));
-    _this._id = Slice.counter;
-    _this._resource = resource;
-    _this._type = "".concat(resource ? resource.type : "untyped", "Slice"); // Add a dummy texture to begin with
-
-    _this._hasLoadedOnce = false;
-
-    if (_this.role === "empty") {
-      _this._assignEmptyTexture();
-
-      _this._loadStatus = 2;
-    } else {
-      _this._assignDummyTexture();
-
-      _this._loadStatus = 0;
-    }
-
-    _this._pageNavInfo = {};
-    return _this;
+class Slice extends _Renderer__WEBPACK_IMPORTED_MODULE_0__["TextureElement"] {
+  // Used in Segment
+  get resource() {
+    return this._resource;
   } // Used in StoryBuilder
 
 
-  _createClass(Slice, [{
-    key: "setPageNavInfo",
-    value: function setPageNavInfo(type, pageNavInfo) {
-      this._pageNavInfo[type] = pageNavInfo;
-    } // Used in StoryBuilder (for transition slices) and Layer
+  get pageNavInfo() {
+    return this._pageNavInfo;
+  } // Used in StateHandler
 
-  }, {
-    key: "setParent",
-    value: function setParent(parent) {
-      _get(_getPrototypeOf(Slice.prototype), "setParent", this).call(this, parent);
-    } // Used in Layer
 
-  }, {
-    key: "getPathsToLoad",
-    value: function getPathsToLoad() {
-      if (this._loadStatus !== 0) {
-        return [];
-      }
+  get canPlay() {
+    return this._duration > 0;
+  } // Used in Layer and ResourceManager
 
-      var _this$_getRelevantPat = this._getRelevantPathAndMediaFragment(this._resource),
-          path = _this$_getRelevantPat.path;
 
-      this._loadStatus = !path ? 0 : 1;
+  get loadStatus() {
+    return this._loadStatus;
+  } // Used in Segment (and below)
 
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
 
-      return path ? [{
-        pathsArray: [path],
-        sliceId: this._id
-      }] : [];
+  get href() {
+    return this._resource ? this._resource.href : null;
+  } // Used in Player
+
+
+  get id() {
+    return this._id;
+  } // Used below
+
+
+  static get counter() {
+    Slice._counter = Slice._counter === undefined ? 0 : Slice._counter + 1;
+    return Slice._counter;
+  } // Note that resource is really a SliceResource, not a (Texture)Resource
+
+
+  constructor(resource = null, player, parentInfo = null, neighbor = null) {
+    super(resource, player, parentInfo, neighbor);
+    this._id = Slice.counter;
+    this._resource = resource;
+    this._type = `${resource ? resource.type : "untyped"}Slice`; // Add a dummy texture to begin with
+
+    this._hasLoadedOnce = false;
+
+    if (this.role === "empty") {
+      this._assignEmptyTexture();
+
+      this._loadStatus = 2;
+    } else {
+      this._assignDummyTexture();
+
+      this._loadStatus = 0;
     }
-  }, {
-    key: "_getRelevantPathAndMediaFragment",
-    value: function _getRelevantPathAndMediaFragment(resource) {
-      var path = resource ? resource.path : null;
-      var mediaFragment = resource ? resource.mediaFragment : null;
-      var _this$_player$tags = this._player.tags,
-          tags = _this$_player$tags === void 0 ? {} : _this$_player$tags; // Note that this._player actually comes from TextureElement
 
-      if (resource && resource.alternate) {
-        var alternate = resource.alternate;
-        Object.entries(tags).forEach(function (_ref) {
-          var _ref2 = _slicedToArray(_ref, 2),
-              tagName = _ref2[0],
-              tagData = _ref2[1];
+    this._pageNavInfo = {};
+  } // Used in StoryBuilder
 
-          var array = tagData.array,
-              index = tagData.index;
 
-          if (array && index < array.length) {
-            var tagValue = array[index];
+  setPageNavInfo(type, pageNavInfo) {
+    this._pageNavInfo[type] = pageNavInfo;
+  } // Used in StoryBuilder (for transition slices) and Layer
 
-            if (alternate[tagName] && alternate[tagName][tagValue]) {
-              path = alternate[tagName][tagValue].path;
-              mediaFragment = alternate[tagName][tagValue].mediaFragment;
-            }
+
+  setParent(parent) {
+    super.setParent(parent);
+  } // Used in Layer
+
+
+  getPathsToLoad() {
+    if (this._loadStatus !== 0) {
+      return [];
+    }
+
+    const {
+      path
+    } = this._getRelevantPathAndMediaFragment(this._resource);
+
+    this._loadStatus = !path ? 0 : 1;
+
+    if (this._parent && this._parent.updateLoadStatus) {
+      this._parent.updateLoadStatus();
+    }
+
+    return path ? [{
+      pathsArray: [path],
+      sliceId: this._id
+    }] : [];
+  }
+
+  _getRelevantPathAndMediaFragment(resource) {
+    let path = resource ? resource.path : null;
+    let mediaFragment = resource ? resource.mediaFragment : null;
+    const {
+      tags = {}
+    } = this._player; // Note that this._player actually comes from TextureElement
+
+    if (resource && resource.alternate) {
+      const {
+        alternate
+      } = resource;
+      Object.entries(tags).forEach(([tagName, tagData]) => {
+        const {
+          array,
+          index
+        } = tagData;
+
+        if (array && index < array.length) {
+          const tagValue = array[index];
+
+          if (alternate[tagName] && alternate[tagName][tagValue]) {
+            path = alternate[tagName][tagValue].path;
+            mediaFragment = alternate[tagName][tagValue].mediaFragment;
           }
+        }
+      });
+    }
+
+    return {
+      path,
+      mediaFragment
+    };
+  } // Once the associated texture has been created, it can be applied to the slice
+
+
+  updateTextures(texture, isAFallback) {
+    if (!texture) {
+      this._loadStatus = 0;
+
+      this._assignDummyTexture();
+    } else if (texture !== this.texture) {
+      this._loadStatus = isAFallback === true ? -1 : 2;
+      const {
+        video
+      } = texture; // If the texture is a video
+
+      if (video && video.duration) {
+        this._video = video;
+
+        this._setVideoTexture(texture);
+
+        if (this._hasLoadedOnce === false) {
+          this._duration = video.duration; // The dimensions are now correct and can be kept
+
+          this._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
+
+          this._hasLoadedOnce = true;
+        }
+
+        this._doOnEnd = null;
+
+        if (this._shouldPlay === true) {
+          this.play();
+        } // Otherwise the texture is a normal image or fallback image
+
+      } else {
+        this._setTexture(texture);
+
+        if (this._hasLoadedOnce === false) {
+          // The dimensions are now correct and can be kept
+          this._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
+
+          this._hasLoadedOnce = true;
+        }
+      }
+    } else {
+      // texture === this.texture
+      this._loadStatus = isAFallback === true ? -1 : 2;
+    }
+
+    if (this._parent && this._parent.updateLoadStatus) {
+      this._parent.updateLoadStatus();
+    }
+  } // On the first successful loading of the resource's texture
+
+
+  _setSizeFromActualTexture(width, height) {
+    if (width === this.size.width && height === this.size.height) {
+      return;
+    }
+
+    this._setSize({
+      width,
+      height
+    }); // Now only resize the page where this slice appears (if that page is indeed active)
+
+
+    if (this._parent) {
+      this._parent.resizePage();
+    }
+  }
+
+  play() {
+    this._shouldPlay = true;
+
+    if (this._video) {
+      const playPromise = this._video.play();
+
+      if (playPromise !== undefined) {
+        playPromise.then(() => {// Play
+        }, () => {// Caught error prevents play
         });
       }
-
-      return {
-        path: path,
-        mediaFragment: mediaFragment
-      };
-    } // Once the associated texture has been created, it can be applied to the slice
-
-  }, {
-    key: "updateTextures",
-    value: function updateTextures(texture, isAFallback) {
-      if (!texture) {
-        this._loadStatus = 0;
-
-        this._assignDummyTexture();
-      } else if (texture !== this.texture) {
-        this._loadStatus = isAFallback === true ? -1 : 2;
-        var video = texture.video; // If the texture is a video
-
-        if (video && video.duration) {
-          this._video = video;
-
-          this._setVideoTexture(texture);
-
-          if (this._hasLoadedOnce === false) {
-            this._duration = video.duration; // The dimensions are now correct and can be kept
-
-            this._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
-
-            this._hasLoadedOnce = true;
-          }
-
-          this._doOnEnd = null;
-
-          if (this._shouldPlay === true) {
-            this.play();
-          } // Otherwise the texture is a normal image or fallback image
-
-        } else {
-          this._setTexture(texture);
-
-          if (this._hasLoadedOnce === false) {
-            // The dimensions are now correct and can be kept
-            this._setSizeFromActualTexture(texture.frame.width, texture.frame.height);
-
-            this._hasLoadedOnce = true;
-          }
-        }
-      } else {
-        // texture === this.texture
-        this._loadStatus = isAFallback === true ? -1 : 2;
-      }
-
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
-    } // On the first successful loading of the resource's texture
-
-  }, {
-    key: "_setSizeFromActualTexture",
-    value: function _setSizeFromActualTexture(width, height) {
-      if (width === this.size.width && height === this.size.height) {
-        return;
-      }
-
-      this._setSize({
-        width: width,
-        height: height
-      }); // Now only resize the page where this slice appears (if that page is indeed active)
-
-
-      if (this._parent) {
-        this._parent.resizePage();
-      }
     }
-  }, {
-    key: "play",
-    value: function play() {
-      this._shouldPlay = true;
-
-      if (this._video) {
-        var playPromise = this._video.play();
-
-        if (playPromise !== undefined) {
-          playPromise.then(function () {// Play
-          }, function () {// Caught error prevents play
-          });
-        }
-      }
-    } // Stop a video by pausing it and returning to its first frame
-
-  }, {
-    key: "stop",
-    value: function stop() {
-      this._shouldPlay = false;
-
-      if (this._video) {
-        this._video.pause();
-
-        this._video.currentTime = 0;
-        this._video.loop = true;
-      } // Since changing pages will force a stop (on reaching the normal end of a transition
-      // or forcing it), now is the appropriate time to remove the "ended" event listener
+  } // Stop a video by pausing it and returning to its first frame
 
 
+  stop() {
+    this._shouldPlay = false;
+
+    if (this._video) {
+      this._video.pause();
+
+      this._video.currentTime = 0;
+      this._video.loop = true;
+    } // Since changing pages will force a stop (on reaching the normal end of a transition
+    // or forcing it), now is the appropriate time to remove the "ended" event listener
+
+
+    if (this._doOnEnd) {
+      this._video.removeEventListener("ended", this._doOnEnd);
+
+      this._doOnEnd = null;
+    }
+  }
+
+  setDoOnEnd(doOnEnd) {
+    if (!this._video) {
+      return;
+    }
+
+    this._video.loop = false;
+    this._doOnEnd = doOnEnd.bind(this);
+
+    this._video.addEventListener("ended", this._doOnEnd);
+  }
+
+  resize(sequenceFit) {
+    if (sequenceFit) {
+      const sequenceClipped = true;
+      super.resize(sequenceFit, sequenceClipped);
+      return;
+    }
+
+    const {
+      pageNavigator
+    } = this._player;
+    const fit = pageNavigator.metadata.forcedFit || this._resource.fit || pageNavigator.metadata.fit;
+    let clipped = false;
+
+    if (pageNavigator.metadata.forcedClipped === true || pageNavigator.metadata.forcedClipped === false) {
+      clipped = pageNavigator.metadata.forcedClipped;
+    } else if (this._resource.clipped === true || this._resource.clipped === false) {
+      clipped = this._resource.clipped;
+    } else {
+      clipped = pageNavigator.metadata.clipped;
+    }
+
+    super.resize(fit, clipped);
+  } // Used in Layer
+
+
+  setupForEntry() {
+    this.resize();
+  }
+
+  finalizeEntry() {
+    this.play();
+  }
+
+  finalizeExit() {
+    this.stop();
+  }
+
+  destroyTexturesIfPossible() {
+    const pathsArray = this.unlinkTexturesAndGetPaths();
+
+    if (this._parent && this._parent.updateLoadStatus) {
+      this._parent.updateLoadStatus();
+    }
+
+    if (!pathsArray) {
+      return;
+    }
+
+    pathsArray.forEach(path => {
+      this.resourceManager.notifyTextureRemovalFromSlice(path);
+    });
+  } // Used above and in Player
+
+
+  unlinkTexturesAndGetPaths() {
+    if (this._loadStatus === 0 || this.role === "empty") {
+      return [];
+    }
+
+    this._loadStatus = 0; // Note that we don't add this._setTexture(null): we're actually keeping the texture
+
+    const {
+      path
+    } = this._getRelevantPathAndMediaFragment(this._resource);
+
+    return path ? [path] : [];
+  } // Used in Layer, ultimately linked to PageNavigator's getFirstHrefInCurrentPage
+
+
+  getFirstHref() {
+    return this.href;
+  } // Called by Player on final destroy
+
+
+  destroy() {
+    // Clear textures
+    super.destroy(); // Remove event listeners
+
+    if (this._video) {
       if (this._doOnEnd) {
         this._video.removeEventListener("ended", this._doOnEnd);
 
         this._doOnEnd = null;
       }
+
+      this._video = null;
     }
-  }, {
-    key: "setDoOnEnd",
-    value: function setDoOnEnd(doOnEnd) {
-      if (!this._video) {
-        return;
-      }
-
-      this._video.loop = false;
-      this._doOnEnd = doOnEnd.bind(this);
-
-      this._video.addEventListener("ended", this._doOnEnd);
-    }
-  }, {
-    key: "resize",
-    value: function resize(sequenceFit) {
-      if (sequenceFit) {
-        var sequenceClipped = true;
-
-        _get(_getPrototypeOf(Slice.prototype), "resize", this).call(this, sequenceFit, sequenceClipped);
-
-        return;
-      }
-
-      var pageNavigator = this._player.pageNavigator;
-      var fit = pageNavigator.metadata.forcedFit || this._resource.fit || pageNavigator.metadata.fit;
-      var clipped = false;
-
-      if (pageNavigator.metadata.forcedClipped === true || pageNavigator.metadata.forcedClipped === false) {
-        clipped = pageNavigator.metadata.forcedClipped;
-      } else if (this._resource.clipped === true || this._resource.clipped === false) {
-        clipped = this._resource.clipped;
-      } else {
-        clipped = pageNavigator.metadata.clipped;
-      }
-
-      _get(_getPrototypeOf(Slice.prototype), "resize", this).call(this, fit, clipped);
-    } // Used in Layer
-
-  }, {
-    key: "setupForEntry",
-    value: function setupForEntry() {
-      this.resize();
-    }
-  }, {
-    key: "finalizeEntry",
-    value: function finalizeEntry() {
-      this.play();
-    }
-  }, {
-    key: "finalizeExit",
-    value: function finalizeExit() {
-      this.stop();
-    }
-  }, {
-    key: "destroyTexturesIfPossible",
-    value: function destroyTexturesIfPossible() {
-      var _this2 = this;
-
-      var pathsArray = this.unlinkTexturesAndGetPaths();
-
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
-
-      if (!pathsArray) {
-        return;
-      }
-
-      pathsArray.forEach(function (path) {
-        _this2.resourceManager.notifyTextureRemovalFromSlice(path);
-      });
-    } // Used above and in Player
-
-  }, {
-    key: "unlinkTexturesAndGetPaths",
-    value: function unlinkTexturesAndGetPaths() {
-      if (this._loadStatus === 0 || this.role === "empty") {
-        return [];
-      }
-
-      this._loadStatus = 0; // Note that we don't add this._setTexture(null): we're actually keeping the texture
-
-      var _this$_getRelevantPat2 = this._getRelevantPathAndMediaFragment(this._resource),
-          path = _this$_getRelevantPat2.path;
-
-      return path ? [path] : [];
-    } // Used in Layer, ultimately linked to PageNavigator's getFirstHrefInCurrentPage
-
-  }, {
-    key: "getFirstHref",
-    value: function getFirstHref() {
-      return this.href;
-    } // Called by Player on final destroy
-
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      // Clear textures
-      _get(_getPrototypeOf(Slice.prototype), "destroy", this).call(this); // Remove event listeners
+  } // Used in StoryBuilder
 
 
-      if (this._video) {
-        if (this._doOnEnd) {
-          this._video.removeEventListener("ended", this._doOnEnd);
+  static createEmptySlice(player, neighbor) {
+    const resource = {
+      role: "empty"
+    };
+    const parentInfo = null;
+    const slice = new Slice(resource, player, parentInfo, neighbor);
+    return slice;
+  }
 
-          this._doOnEnd = null;
-        }
-
-        this._video = null;
-      }
-    } // Used in StoryBuilder
-
-  }], [{
-    key: "createEmptySlice",
-    value: function createEmptySlice(player, neighbor) {
-      var resource = {
-        role: "empty"
-      };
-      var parentInfo = null;
-      var slice = new Slice(resource, player, parentInfo, neighbor);
-      return slice;
-    }
-  }]);
-
-  return Slice;
-}(_Renderer__WEBPACK_IMPORTED_MODULE_0__["TextureElement"]);
-
-
+}
 
 /***/ }),
 
@@ -57846,294 +57088,246 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Layer; });
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
+class Layer {
+  get type() {
+    return this._type;
+  }
 
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
+  get content() {
+    return this._content;
+  } // A Container in any case
 
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
 
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
+  get entryForward() {
+    return this._entryForward;
+  }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+  get exitForward() {
+    return this._exitForward;
+  }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+  get entryBackward() {
+    return this._entryBackward;
+  }
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+  get exitBackward() {
+    return this._exitBackward;
+  }
 
-var Layer =
-/*#__PURE__*/
-function () {
-  _createClass(Layer, [{
-    key: "type",
-    get: function get() {
-      return this._type;
+  get loadStatus() {
+    return this._content ? this._content.loadStatus : 0;
+  }
+
+  get size() {
+    if (!this._content) {
+      return {
+        width: 0,
+        height: 0
+      };
     }
-  }, {
-    key: "content",
-    get: function get() {
-      return this._content;
-    } // A Container in any case
 
-  }, {
-    key: "entryForward",
-    get: function get() {
-      return this._entryForward;
-    }
-  }, {
-    key: "exitForward",
-    get: function get() {
-      return this._exitForward;
-    }
-  }, {
-    key: "entryBackward",
-    get: function get() {
-      return this._entryBackward;
-    }
-  }, {
-    key: "exitBackward",
-    get: function get() {
-      return this._exitBackward;
-    }
-  }, {
-    key: "loadStatus",
-    get: function get() {
-      return this._content ? this._content.loadStatus : 0;
-    }
-  }, {
-    key: "size",
-    get: function get() {
-      if (!this._content) {
-        return {
-          width: 0,
-          height: 0
-        };
-      }
+    return this._content.size;
+  }
 
-      return this._content.size;
+  get resourcePath() {
+    if (this._type !== "slice" || !this._content) {
+      return null;
     }
-  }, {
-    key: "resourcePath",
-    get: function get() {
-      if (this._type !== "slice" || !this._content) {
-        return null;
-      }
 
-      return this._content.resourcePath;
-    } // Used in LayerPile: only a layer can be active, and it basically means that its content
-    // could be displayed on screen right now (i.e. it is an on-screen page, an on-screen page's
-    // on-screen or out-of-screen segment, or such a segment's slice - however slice transitions,
-    // which never form the content of a layer, will not be concerned by this property)
+    return this._content.resourcePath;
+  } // Used in LayerPile: only a layer can be active, and it basically means that its content
+  // could be displayed on screen right now (i.e. it is an on-screen page, an on-screen page's
+  // on-screen or out-of-screen segment, or such a segment's slice - however slice transitions,
+  // which never form the content of a layer, will not be concerned by this property)
 
-  }, {
-    key: "isActive",
-    get: function get() {
-      return this._isActive;
-    }
-  }]);
 
-  function Layer(type, content) {
-    _classCallCheck(this, Layer);
+  get isActive() {
+    return this._isActive;
+  }
 
+  constructor(type, content) {
     this._type = type;
     this._content = content;
     this._isActive = false;
   }
 
-  _createClass(Layer, [{
-    key: "setParent",
-    value: function setParent(parent) {
-      if (!this._content) {
-        return;
-      }
-
-      this._content.setParent(parent);
+  setParent(parent) {
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "setEntryForward",
-    value: function setEntryForward(entryForward) {
-      this._entryForward = entryForward;
+
+    this._content.setParent(parent);
+  }
+
+  setEntryForward(entryForward) {
+    this._entryForward = entryForward;
+  }
+
+  setExitForward(exitForward) {
+    this._exitForward = exitForward;
+  }
+
+  setEntryBackward(entryBackward) {
+    this._entryBackward = entryBackward;
+  }
+
+  setExitBackward(exitBackward) {
+    this._exitBackward = exitBackward;
+  }
+
+  attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) {
+    if (!this._content || !this._content.attemptToGoForward) {
+      return false;
     }
-  }, {
-    key: "setExitForward",
-    value: function setExitForward(exitForward) {
-      this._exitForward = exitForward;
+
+    return this._content.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges);
+  }
+
+  attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) {
+    if (!this._content || !this._content.attemptToGoBackward) {
+      return false;
     }
-  }, {
-    key: "setEntryBackward",
-    value: function setEntryBackward(entryBackward) {
-      this._entryBackward = entryBackward;
+
+    return this._content.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges);
+  }
+
+  setScale(scale) {
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "setExitBackward",
-    value: function setExitBackward(exitBackward) {
-      this._exitBackward = exitBackward;
+
+    this._content.setScale(scale);
+  } // Recursive functions (used in LayerPile)
+
+
+  resize() {
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "attemptToGoForward",
-    value: function attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) {
-      if (!this._content || !this._content.attemptToGoForward) {
-        return false;
-      }
 
-      return this._content.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges);
+    this._content.resize();
+  }
+
+  setupForEntry(isGoingForward) {
+    this._isActive = true;
+
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "attemptToGoBackward",
-    value: function attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) {
-      if (!this._content || !this._content.attemptToGoBackward) {
-        return false;
-      }
 
-      return this._content.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges);
+    this._content.setupForEntry(isGoingForward);
+  }
+
+  finalizeEntry() {
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "setScale",
-    value: function setScale(scale) {
-      if (!this._content) {
-        return;
-      }
 
-      this._content.setScale(scale);
-    } // Recursive functions (used in LayerPile)
+    this._content.finalizeEntry();
+  }
 
-  }, {
-    key: "resize",
-    value: function resize() {
-      if (!this._content) {
-        return;
-      }
+  finalizeExit() {
+    this._isActive = false;
 
-      this._content.resize();
+    if (!this._content) {
+      return;
     }
-  }, {
-    key: "setupForEntry",
-    value: function setupForEntry(isGoingForward) {
-      this._isActive = true;
 
-      if (!this._content) {
-        return;
-      }
+    this._content.finalizeExit();
+  } // Used in PageNavigator
 
-      this._content.setupForEntry(isGoingForward);
+
+  getPathsToLoad() {
+    if (!this._content) {
+      return [];
     }
-  }, {
-    key: "finalizeEntry",
-    value: function finalizeEntry() {
-      if (!this._content) {
-        return;
-      }
 
-      this._content.finalizeEntry();
+    const fullPathsArray = [];
+
+    let pathsArray = this._content.getPathsToLoad();
+
+    fullPathsArray.push(...pathsArray);
+
+    if (this._entryForward) {
+      pathsArray = Layer.getPathsForLayerTransition(this._entryForward);
+      fullPathsArray.push(...pathsArray);
     }
-  }, {
-    key: "finalizeExit",
-    value: function finalizeExit() {
-      this._isActive = false;
 
-      if (!this._content) {
-        return;
-      }
-
-      this._content.finalizeExit();
-    } // Used in PageNavigator
-
-  }, {
-    key: "getPathsToLoad",
-    value: function getPathsToLoad() {
-      if (!this._content) {
-        return [];
-      }
-
-      var fullPathsArray = [];
-
-      var pathsArray = this._content.getPathsToLoad();
-
-      fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-
-      if (this._entryForward) {
-        pathsArray = Layer.getPathsForLayerTransition(this._entryForward);
-        fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-      }
-
-      if (this._exitForward) {
-        pathsArray = Layer.getPathsForLayerTransition(this._exitForward);
-        fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-      }
-
-      if (this._entryBackward) {
-        pathsArray = Layer.getPathsForLayerTransition(this._entryBackward);
-        fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-      }
-
-      if (this._exitBackward) {
-        pathsArray = Layer.getPathsForLayerTransition(this._exitBackward);
-        fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-      }
-
-      return fullPathsArray;
+    if (this._exitForward) {
+      pathsArray = Layer.getPathsForLayerTransition(this._exitForward);
+      fullPathsArray.push(...pathsArray);
     }
-  }, {
-    key: "destroyTexturesIfPossible",
-    value: function destroyTexturesIfPossible() {
-      if (!this._content) {
-        return;
-      }
 
-      this._content.destroyTexturesIfPossible();
-
-      if (this._entryForward) {
-        Layer.destroyTexturesIfPossibleForHalfTransition(this._entryForward);
-      }
-
-      if (this._exitForward) {
-        Layer.destroyTexturesIfPossibleForHalfTransition(this._exitForward);
-      }
-
-      if (this._entryBackward) {
-        Layer.destroyTexturesIfPossibleForHalfTransition(this._entryBackward);
-      }
-
-      if (this._exitBackward) {
-        Layer.destroyTexturesIfPossibleForHalfTransition(this._exitBackward);
-      }
+    if (this._entryBackward) {
+      pathsArray = Layer.getPathsForLayerTransition(this._entryBackward);
+      fullPathsArray.push(...pathsArray);
     }
-  }, {
-    key: "getFirstHref",
-    value: function getFirstHref() {
-      if (!this._content || !this._content.getFirstHref) {
-        return null;
-      }
 
-      return this._content.getFirstHref();
+    if (this._exitBackward) {
+      pathsArray = Layer.getPathsForLayerTransition(this._exitBackward);
+      fullPathsArray.push(...pathsArray);
     }
-  }], [{
-    key: "getPathsForLayerTransition",
-    value: function getPathsForLayerTransition(layerTransition) {
-      var slice = layerTransition.slice;
 
-      if (!slice) {
-        return [];
-      }
+    return fullPathsArray;
+  }
 
-      return slice.getPathsToLoad();
+  static getPathsForLayerTransition(layerTransition) {
+    const {
+      slice
+    } = layerTransition;
+
+    if (!slice) {
+      return [];
     }
-  }, {
-    key: "destroyTexturesIfPossibleForHalfTransition",
-    value: function destroyTexturesIfPossibleForHalfTransition(halfTransition) {
-      var slice = halfTransition.slice;
 
-      if (!slice) {
-        return;
-      }
+    return slice.getPathsToLoad();
+  }
 
-      slice.destroyTexturesIfPossible();
+  destroyTexturesIfPossible() {
+    if (!this._content) {
+      return;
     }
-  }]);
 
-  return Layer;
-}();
+    this._content.destroyTexturesIfPossible();
 
+    if (this._entryForward) {
+      Layer.destroyTexturesIfPossibleForHalfTransition(this._entryForward);
+    }
 
+    if (this._exitForward) {
+      Layer.destroyTexturesIfPossibleForHalfTransition(this._exitForward);
+    }
+
+    if (this._entryBackward) {
+      Layer.destroyTexturesIfPossibleForHalfTransition(this._entryBackward);
+    }
+
+    if (this._exitBackward) {
+      Layer.destroyTexturesIfPossibleForHalfTransition(this._exitBackward);
+    }
+  }
+
+  static destroyTexturesIfPossibleForHalfTransition(halfTransition) {
+    const {
+      slice
+    } = halfTransition;
+
+    if (!slice) {
+      return;
+    }
+
+    slice.destroyTexturesIfPossible();
+  }
+
+  getFirstHref() {
+    if (!this._content || !this._content.getFirstHref) {
+      return null;
+    }
+
+    return this._content.getFirstHref();
+  }
+
+}
 
 /***/ }),
 
@@ -58150,417 +57344,332 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Renderer */ "./src/Renderer/index.js");
 /* harmony import */ var _StateHandler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./StateHandler */ "./src/StoryBuilder/StateHandler.js");
 /* harmony import */ var _OverflowHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OverflowHandler */ "./src/StoryBuilder/OverflowHandler/index.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 
 
-
-
-var LayerPile =
-/*#__PURE__*/
-function (_Container) {
-  _inherits(LayerPile, _Container);
-
-  _createClass(LayerPile, [{
-    key: "layersArray",
-    // Used below
-    get: function get() {
-      return this._layersArray;
-    }
-  }, {
-    key: "activeLayersArray",
-    get: function get() {
-      return this._layersArray.filter(function (layer) {
-        return layer.isActive === true;
-      });
-    }
-  }, {
-    key: "isAtStart",
-    get: function get() {
-      return this._handler ? this._handler.isAtStart : true;
-    }
-  }, {
-    key: "isAtEnd",
-    get: function get() {
-      return this._handler ? this._handler.isAtEnd : true;
-    }
-  }, {
-    key: "isUndergoingChanges",
-    get: function get() {
-      return this._handler ? this._handler.isUndergoingChanges : false;
-    } // Note that isAtStart, isAtEnd and isUndergoingChanges are not recursive!
-
-  }, {
-    key: "resourcePath",
-    get: function get() {
-      // Return the resourcePath of the first slice if there is one
-      if (this._layersArray.length === 0 || !this._layersArray[0]) {
-        return null;
-      }
-
-      return this._layersArray[0].resourcePath;
-    }
-  }, {
-    key: "size",
-    get: function get() {
-      // Size of a page (in a divina)
-      if (this._handler && this._handler.type === "overflowHandler") {
-        var inScrollDirection = this._handler.inScrollDirection;
-        var width = 0;
-        var height = 0; // The size is derived from the sizes of all segments
-
-        this._layersArray.forEach(function (layer) {
-          var size = layer.size;
-
-          if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-            width += size.width;
-
-            if (height === 0) {
-              height = size.height;
-            }
-          } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-            height += size.height;
-
-            if (width === 0) {
-              width = size.width;
-            }
-          }
-        });
-
-        return {
-          width: width,
-          height: height
-        };
-      } // Size of a segment (in a divina)
-      // If multiple layers (a Segment with multiple layers should have a parentSlice)
-
-
-      if (this._parentSlice) {
-        return this._parentSlice.size;
-      } // If a unique layer
-
-
-      if (this._layersArray.length === 1 && this._layersArray[0]) {
-        return this._layersArray[0].size;
-      } // All cases must have been covered already, but just in case
-
-
-      return {
-        width: 0,
-        height: 0
-      };
-    } // Used in Layer
-
-  }, {
-    key: "loadStatus",
-    get: function get() {
-      return this._loadStatus;
-    }
-  }]);
-
-  function LayerPile(name) {
-    var _this;
-
-    var parent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-    var layersArray = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : [];
-    var isFirstSliceAParentSlice = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
-
-    _classCallCheck(this, LayerPile);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(LayerPile).call(this, name, parent));
-    _this._name = name;
-    _this._parent = parent; // Build layers
-
-    _this._layersArray = []; // Note that the fallback slice is added too, although its texture will be hidden (in Slice.js)
-
-    if (layersArray) {
-      layersArray.forEach(function (layer) {
-        _this._addLayer(layer);
-
-        layer.setParent(_assertThisInitialized(_this));
-      });
-    }
-
-    var parentSliceLayer = isFirstSliceAParentSlice === true && layersArray.length > 0 ? layersArray[0] : null;
-    _this._parentSlice = parentSliceLayer ? parentSliceLayer.content : null;
-    _this._loadStatus = null;
-    _this._handler = null;
-    return _this;
+class LayerPile extends _Renderer__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  // Used below
+  get layersArray() {
+    return this._layersArray;
   }
 
-  _createClass(LayerPile, [{
-    key: "_addLayer",
-    value: function _addLayer(layer) {
-      var shouldAddLayerAtStart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+  get activeLayersArray() {
+    return this._layersArray.filter(layer => layer.isActive === true);
+  }
 
-      if (shouldAddLayerAtStart === true) {
-        // For an empty segment
-        this._layersArray.unshift(layer);
+  get isAtStart() {
+    return this._handler ? this._handler.isAtStart : true;
+  }
 
-        var slice = layer.content;
-        this.addChildAtIndex(slice, 0);
-      } else {
-        this._layersArray.push(layer);
-      } // Note that we do not add containerObjects right away,
-      // since the PageNavigator's stateHandler will deal with that
+  get isAtEnd() {
+    return this._handler ? this._handler.isAtEnd : true;
+  }
 
+  get isUndergoingChanges() {
+    return this._handler ? this._handler.isUndergoingChanges : false;
+  } // Note that isAtStart, isAtEnd and isUndergoingChanges are not recursive!
+
+
+  get resourcePath() {
+    // Return the resourcePath of the first slice if there is one
+    if (this._layersArray.length === 0 || !this._layersArray[0]) {
+      return null;
     }
-  }, {
-    key: "getDepthOfNewLayer",
-    value: function getDepthOfNewLayer() {
-      return this._depth;
-    }
-  }, {
-    key: "_addStateHandler",
-    value: function _addStateHandler(shouldStateLayersCoexistOutsideTransitions, player) {
-      this._handler = new _StateHandler__WEBPACK_IMPORTED_MODULE_1__["default"](this, shouldStateLayersCoexistOutsideTransitions, player);
-    }
-  }, {
-    key: "_addOverflowHandler",
-    value: function _addOverflowHandler(overflow, player) {
-      this._handler = new _OverflowHandler__WEBPACK_IMPORTED_MODULE_2__["default"](this, overflow, player);
-    }
-  }, {
-    key: "getLayerAtIndex",
-    value: function getLayerAtIndex(layerIndex) {
-      if (this._layersArray.length === 0 || layerIndex < 0 || layerIndex >= this._layersArray.length) {
-        return null;
-      }
 
-      var layer = this._layersArray[layerIndex];
-      return layer;
-    } // Following a discontinuous gesture
+    return this._layersArray[0].resourcePath;
+  }
 
-  }, {
-    key: "attemptToGoForward",
-    value: function attemptToGoForward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+  get size() {
+    // Size of a page (in a divina)
+    if (this._handler && this._handler.type === "overflowHandler") {
+      const {
+        inScrollDirection
+      } = this._handler;
+      let width = 0;
+      let height = 0; // The size is derived from the sizes of all segments
 
-      // If a change is under way, end it
-      if (this._handler && this.isUndergoingChanges === true) {
-        return this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
-      } // If not, try to go forward in the first layer (child)
+      this._layersArray.forEach(layer => {
+        const {
+          size
+        } = layer;
 
+        if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
+          width += size.width;
 
-      if (this.activeLayersArray.length > 0) {
-        var layer = this.activeLayersArray[0];
+          if (height === 0) {
+            height = size.height;
+          }
+        } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
+          height += size.height;
 
-        if (layer.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
-          return true;
-        }
-      } // Otherwise try go forward via the handler if there is one
-
-
-      return this._handler && this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
-    }
-  }, {
-    key: "attemptToGoBackward",
-    value: function attemptToGoBackward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      // If a change is under way, end it then go backward
-      if (this._handler && this.isUndergoingChanges === true) {
-        return this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
-      } // If not, try to go backward in the last layer (child)
-
-
-      if (this.activeLayersArray.length > 0) {
-        var layer = this.activeLayersArray[this.activeLayersArray.length - 1];
-
-        if (layer.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
-          return true;
-        }
-      } // Otherwise try go backward via the handler if there is one
-
-
-      return this._handler && this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
-    }
-  }, {
-    key: "resize",
-    value: function resize() {
-      this.activeLayersArray.forEach(function (layer) {
-        return layer.resize();
-      });
-
-      this._resizeMyself();
-    }
-  }, {
-    key: "_resizeMyself",
-    value: function _resizeMyself() {
-      var _this2 = this;
-
-      if (this._parentSlice) {
-        // If this is a Segment with multiple layers
-        this._parentSlice.resize();
-
-        this._layersArray.forEach(function (layer) {
-          layer.setScale(_this2._parentSlice.scale);
-        });
-      }
-
-      if (this._handler && this._handler.resize) {
-        this._handler.resize();
-      }
-    }
-  }, {
-    key: "setupForEntry",
-    value: function setupForEntry() {
-      var _this3 = this;
-
-      var isGoingForward = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-
-      this._layersArray.forEach(function (layer) {
-        // If the LayerPile is a Segment with a unique Slice (or eventually a basic LayerPile)
-        if (!_this3._handler) {
-          var slice = layer.content;
-
-          _this3.addChild(slice);
-        }
-
-        layer.setupForEntry(isGoingForward);
-      });
-
-      this._resizeMyself(); // If the LayerPile has a StateHandler (i.e. it is a PageNavigator or a multi-layered
-      // Segment with layer transitions) or an OverflowHandler (i.e. it is a Page)
-
-
-      if (this._handler) {
-        this._handler.setupForEntry(isGoingForward);
-      }
-    }
-  }, {
-    key: "finalizeEntry",
-    value: function finalizeEntry() {
-      this.activeLayersArray.forEach(function (layer) {
-        layer.finalizeEntry();
-      });
-    }
-  }, {
-    key: "finalizeExit",
-    value: function finalizeExit() {
-      this.activeLayersArray.forEach(function (layer) {
-        layer.finalizeExit();
-      }); // If a Segment with multiple states
-
-      if (this._handler && this._handler.type === "stateHandler") {
-        this._handler.finalizeExit();
-      }
-    }
-  }, {
-    key: "getPathsToLoad",
-    value: function getPathsToLoad() {
-      var fullPathsArray = [];
-
-      this._layersArray.forEach(function (layer) {
-        var pathsArray = layer.getPathsToLoad();
-        fullPathsArray.push.apply(fullPathsArray, _toConsumableArray(pathsArray));
-      });
-
-      return fullPathsArray;
-    }
-  }, {
-    key: "destroyTexturesIfPossible",
-    value: function destroyTexturesIfPossible() {
-      this._layersArray.forEach(function (layer) {
-        layer.destroyTexturesIfPossible();
-      });
-    }
-  }, {
-    key: "getFirstHref",
-    value: function getFirstHref() {
-      if (this._layersArray.length === 0) {
-        return null;
-      }
-
-      return this._layersArray[0].getFirstHref();
-    } // Slice functions
-
-  }, {
-    key: "resizePage",
-    value: function resizePage() {
-      if (!this._parent || !this._parent.resizePage) {
-        return;
-      }
-
-      this._parent.resizePage();
-    }
-  }, {
-    key: "updateLoadStatus",
-    value: function updateLoadStatus() {
-      var oldLoadStatus = this._loadStatus;
-      var nbOfLoadedLayers = 0;
-      var hasAtLeastOneLoadingLayer = false;
-      var hasAtLeastOnePartiallyLoadedLayer = false;
-
-      this._layersArray.forEach(function (layer) {
-        if (hasAtLeastOneLoadingLayer === false && hasAtLeastOnePartiallyLoadedLayer === false) {
-          var loadStatus = layer.loadStatus;
-
-          switch (loadStatus) {
-            case 2:
-              nbOfLoadedLayers += 1;
-              break;
-
-            case 1:
-              hasAtLeastOneLoadingLayer = true;
-              break;
-
-            case -1:
-              hasAtLeastOnePartiallyLoadedLayer = true;
-              break;
-
-            default:
-              break;
+          if (width === 0) {
+            width = size.width;
           }
         }
       });
 
-      if (hasAtLeastOnePartiallyLoadedLayer === true || nbOfLoadedLayers > 0 && nbOfLoadedLayers < this._layersArray.length) {
-        this._loadStatus = -1;
-      } else if (hasAtLeastOneLoadingLayer === true) {
-        this._loadStatus = 1;
-      } else if (nbOfLoadedLayers > 0 && nbOfLoadedLayers === this._layersArray.length) {
-        this._loadStatus = 2;
-      } else {
-        this._loadStatus = 0;
-      }
+      return {
+        width,
+        height
+      };
+    } // Size of a segment (in a divina)
+    // If multiple layers (a Segment with multiple layers should have a parentSlice)
 
-      if (this._loadStatus !== oldLoadStatus && this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
+
+    if (this._parentSlice) {
+      return this._parentSlice.size;
+    } // If a unique layer
+
+
+    if (this._layersArray.length === 1 && this._layersArray[0]) {
+      return this._layersArray[0].size;
+    } // All cases must have been covered already, but just in case
+
+
+    return {
+      width: 0,
+      height: 0
+    };
+  } // Used in Layer
+
+
+  get loadStatus() {
+    return this._loadStatus;
+  }
+
+  constructor(name, parent = null, layersArray = [], isFirstSliceAParentSlice = false) {
+    super(name, parent);
+    this._name = name;
+    this._parent = parent; // Build layers
+
+    this._layersArray = []; // Note that the fallback slice is added too, although its texture will be hidden (in Slice.js)
+
+    if (layersArray) {
+      layersArray.forEach(layer => {
+        this._addLayer(layer);
+
+        layer.setParent(this);
+      });
     }
-  }]);
 
-  return LayerPile;
-}(_Renderer__WEBPACK_IMPORTED_MODULE_0__["Container"]);
+    const parentSliceLayer = isFirstSliceAParentSlice === true && layersArray.length > 0 ? layersArray[0] : null;
+    this._parentSlice = parentSliceLayer ? parentSliceLayer.content : null;
+    this._loadStatus = null;
+    this._handler = null;
+  }
+
+  _addLayer(layer, shouldAddLayerAtStart = false) {
+    if (shouldAddLayerAtStart === true) {
+      // For an empty segment
+      this._layersArray.unshift(layer);
+
+      const slice = layer.content;
+      this.addChildAtIndex(slice, 0);
+    } else {
+      this._layersArray.push(layer);
+    } // Note that we do not add containerObjects right away,
+    // since the PageNavigator's stateHandler will deal with that
+
+  }
+
+  getDepthOfNewLayer() {
+    return this._depth;
+  }
+
+  _addStateHandler(shouldStateLayersCoexistOutsideTransitions, player) {
+    this._handler = new _StateHandler__WEBPACK_IMPORTED_MODULE_1__["default"](this, shouldStateLayersCoexistOutsideTransitions, player);
+  }
+
+  _addOverflowHandler(overflow, player) {
+    this._handler = new _OverflowHandler__WEBPACK_IMPORTED_MODULE_2__["default"](this, overflow, player);
+  }
+
+  getLayerAtIndex(layerIndex) {
+    if (this._layersArray.length === 0 || layerIndex < 0 || layerIndex >= this._layersArray.length) {
+      return null;
+    }
+
+    const layer = this._layersArray[layerIndex];
+    return layer;
+  } // Following a discontinuous gesture
 
 
+  attemptToGoForward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+    // If a change is under way, end it
+    if (this._handler && this.isUndergoingChanges === true) {
+      return this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+    } // If not, try to go forward in the first layer (child)
+
+
+    if (this.activeLayersArray.length > 0) {
+      const layer = this.activeLayersArray[0];
+
+      if (layer.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+        return true;
+      }
+    } // Otherwise try go forward via the handler if there is one
+
+
+    return this._handler && this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+  }
+
+  attemptToGoBackward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+    // If a change is under way, end it then go backward
+    if (this._handler && this.isUndergoingChanges === true) {
+      return this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+    } // If not, try to go backward in the last layer (child)
+
+
+    if (this.activeLayersArray.length > 0) {
+      const layer = this.activeLayersArray[this.activeLayersArray.length - 1];
+
+      if (layer.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+        return true;
+      }
+    } // Otherwise try go backward via the handler if there is one
+
+
+    return this._handler && this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+  }
+
+  resize() {
+    this.activeLayersArray.forEach(layer => layer.resize());
+
+    this._resizeMyself();
+  }
+
+  _resizeMyself() {
+    if (this._parentSlice) {
+      // If this is a Segment with multiple layers
+      this._parentSlice.resize();
+
+      this._layersArray.forEach(layer => {
+        layer.setScale(this._parentSlice.scale);
+      });
+    }
+
+    if (this._handler && this._handler.resize) {
+      this._handler.resize();
+    }
+  }
+
+  setupForEntry(isGoingForward = true) {
+    this._layersArray.forEach(layer => {
+      // If the LayerPile is a Segment with a unique Slice (or eventually a basic LayerPile)
+      if (!this._handler) {
+        const slice = layer.content;
+        this.addChild(slice);
+      }
+
+      layer.setupForEntry(isGoingForward);
+    });
+
+    this._resizeMyself(); // If the LayerPile has a StateHandler (i.e. it is a PageNavigator or a multi-layered
+    // Segment with layer transitions) or an OverflowHandler (i.e. it is a Page)
+
+
+    if (this._handler) {
+      this._handler.setupForEntry(isGoingForward);
+    }
+  }
+
+  finalizeEntry() {
+    this.activeLayersArray.forEach(layer => {
+      layer.finalizeEntry();
+    });
+  }
+
+  finalizeExit() {
+    this.activeLayersArray.forEach(layer => {
+      layer.finalizeExit();
+    }); // If a Segment with multiple states
+
+    if (this._handler && this._handler.type === "stateHandler") {
+      this._handler.finalizeExit();
+    }
+  }
+
+  getPathsToLoad() {
+    const fullPathsArray = [];
+
+    this._layersArray.forEach(layer => {
+      const pathsArray = layer.getPathsToLoad();
+      fullPathsArray.push(...pathsArray);
+    });
+
+    return fullPathsArray;
+  }
+
+  destroyTexturesIfPossible() {
+    this._layersArray.forEach(layer => {
+      layer.destroyTexturesIfPossible();
+    });
+  }
+
+  getFirstHref() {
+    if (this._layersArray.length === 0) {
+      return null;
+    }
+
+    return this._layersArray[0].getFirstHref();
+  } // Slice functions
+
+
+  resizePage() {
+    if (!this._parent || !this._parent.resizePage) {
+      return;
+    }
+
+    this._parent.resizePage();
+  }
+
+  updateLoadStatus() {
+    const oldLoadStatus = this._loadStatus;
+    let nbOfLoadedLayers = 0;
+    let hasAtLeastOneLoadingLayer = false;
+    let hasAtLeastOnePartiallyLoadedLayer = false;
+
+    this._layersArray.forEach(layer => {
+      if (hasAtLeastOneLoadingLayer === false && hasAtLeastOnePartiallyLoadedLayer === false) {
+        const {
+          loadStatus
+        } = layer;
+
+        switch (loadStatus) {
+          case 2:
+            nbOfLoadedLayers += 1;
+            break;
+
+          case 1:
+            hasAtLeastOneLoadingLayer = true;
+            break;
+
+          case -1:
+            hasAtLeastOnePartiallyLoadedLayer = true;
+            break;
+
+          default:
+            break;
+        }
+      }
+    });
+
+    if (hasAtLeastOnePartiallyLoadedLayer === true || nbOfLoadedLayers > 0 && nbOfLoadedLayers < this._layersArray.length) {
+      this._loadStatus = -1;
+    } else if (hasAtLeastOneLoadingLayer === true) {
+      this._loadStatus = 1;
+    } else if (nbOfLoadedLayers > 0 && nbOfLoadedLayers === this._layersArray.length) {
+      this._loadStatus = 2;
+    } else {
+      this._loadStatus = 0;
+    }
+
+    if (this._loadStatus !== oldLoadStatus && this._parent && this._parent.updateLoadStatus) {
+      this._parent.updateLoadStatus();
+    }
+  }
+
+}
 
 /***/ }),
 
@@ -58576,70 +57685,50 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Camera; });
 /* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../utils */ "./src/utils.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../../constants */ "./src/constants.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
+class Camera {
+  get isZoomed() {
+    return this._zoomFactor !== 1;
+  } // When the scene is jumping between two snap points, isAutoScrolling === true
 
 
-var Camera =
-/*#__PURE__*/
-function () {
-  _createClass(Camera, [{
-    key: "isZoomed",
-    get: function get() {
-      return this._zoomFactor !== 1;
-    } // When the scene is jumping between two snap points, isAutoScrolling === true
+  get isAutoScrolling() {
+    return this._jumpData ? this._jumpData.isAutoScrolling : false;
+  } // In a scene that is larger than the viewport, isAtStart = true on reaching it going forward
+  // (while a scene that is not larger than the viewport is considered to be always at its start)
 
-  }, {
-    key: "isAutoScrolling",
-    get: function get() {
-      return this._jumpData ? this._jumpData.isAutoScrolling : false;
-    } // In a scene that is larger than the viewport, isAtStart = true on reaching it going forward
-    // (while a scene that is not larger than the viewport is considered to be always at its start)
 
-  }, {
-    key: "isAtStart",
-    get: function get() {
-      return this.isZoomed === false && (this._progress === null || this._progress === 0);
-    } // In a scene larger than the viewport, isAtEnd = true before leaving the scene going forward
-    // (while a scene that is not larger than the viewport is considered to be always at its end)
+  get isAtStart() {
+    return this.isZoomed === false && (this._progress === null || this._progress === 0);
+  } // In a scene larger than the viewport, isAtEnd = true before leaving the scene going forward
+  // (while a scene that is not larger than the viewport is considered to be always at its end)
 
-  }, {
-    key: "isAtEnd",
-    get: function get() {
-      return this.isZoomed === false && (this._progress === null || this._progress === 1);
-    }
-  }, {
-    key: "_hasSpaceToMove",
-    get: function get() {
-      return Math.abs(this._maxX - this._minX) + Math.abs(this._maxY - this._minY) > 0;
-    }
-  }]);
 
-  function Camera(scene, overflow, player) {
-    _classCallCheck(this, Camera);
+  get isAtEnd() {
+    return this.isZoomed === false && (this._progress === null || this._progress === 1);
+  }
 
+  get _hasSpaceToMove() {
+    return Math.abs(this._maxX - this._minX) + Math.abs(this._maxY - this._minY) > 0;
+  }
+
+  constructor(scene, overflow, player) {
     // A scene is just a layerPile (in the divina case, can only be a page)
     this._scene = scene;
     this._overflow = overflow; // Useful for viewportRect and updateDisplayForZoomFactor (and options just below)
 
     this._player = player;
-    var eventEmitter = player.eventEmitter,
-        options = player.options;
+    const {
+      eventEmitter,
+      options
+    } = player;
     this._eventEmitter = eventEmitter;
-    var allowsPaginatedScroll = options.allowsPaginatedScroll,
-        isPaginationSticky = options.isPaginationSticky,
-        isPaginationGridBased = options.isPaginationGridBased;
+    const {
+      allowsPaginatedScroll,
+      isPaginationSticky,
+      isPaginationGridBased
+    } = options;
     this._allowsPaginatedScroll = allowsPaginatedScroll === true || allowsPaginatedScroll === false ? allowsPaginatedScroll : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultAllowsPaginatedScroll"];
     this._isPaginationSticky = isPaginationSticky === true || isPaginationSticky === false ? isPaginationSticky : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultIsPaginationSticky"];
     this._isPaginationGridBased = isPaginationGridBased === true || isPaginationGridBased === false ? isPaginationGridBased : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultIsPaginationGridBased"];
@@ -58690,1179 +57779,1148 @@ function () {
     this._zoomTouchPoint = null;
   }
 
-  _createClass(Camera, [{
-    key: "_reset",
-    value: function _reset() {
-      this._jumpData = {
-        isAutoScrolling: false,
-        startDate: null,
-        duration: 0,
-        startProgress: null,
-        targetProgress: null,
-        shouldForceToEnd: false,
-        endCallback: null
-      };
+  _reset() {
+    this._jumpData = {
+      isAutoScrolling: false,
+      startDate: null,
+      duration: 0,
+      startProgress: null,
+      targetProgress: null,
+      shouldForceToEnd: false,
+      endCallback: null
+    };
+  }
+
+  setInScrollDirection(inScrollDirection) {
+    this._inScrollDirection = inScrollDirection;
+
+    this._setRelativeStartAndEnd(inScrollDirection);
+
+    this._setVirtualPointInfo(inScrollDirection);
+  } // Based on the page's inScrollDirection, express the viewport "start"
+  // and "end" points in relative coordinates (from the top left corner)
+
+
+  _setRelativeStartAndEnd(inScrollDirection) {
+    this._relativeStart = null;
+    this._relativeEnd = null;
+
+    switch (inScrollDirection) {
+      case "ltr":
+        this._relativeStart = {
+          x: 0,
+          y: 0.5
+        }; // Start is the middle left point
+
+        this._relativeEnd = {
+          x: 1,
+          y: 0.5
+        }; // End is the middle right point
+
+        break;
+
+      case "rtl":
+        this._relativeStart = {
+          x: 1,
+          y: 0.5
+        };
+        this._relativeEnd = {
+          x: 0,
+          y: 0.5
+        };
+        break;
+
+      case "ttb":
+        this._relativeStart = {
+          x: 0.5,
+          y: 0
+        };
+        this._relativeEnd = {
+          x: 0.5,
+          y: 1
+        };
+        break;
+
+      case "btt":
+        this._relativeStart = {
+          x: 0.5,
+          y: 1
+        };
+        this._relativeEnd = {
+          x: 0.5,
+          y: 0
+        };
+        break;
+
+      default:
+        break;
     }
-  }, {
-    key: "setInScrollDirection",
-    value: function setInScrollDirection(inScrollDirection) {
-      this._inScrollDirection = inScrollDirection;
+  }
 
-      this._setRelativeStartAndEnd(inScrollDirection);
+  _setVirtualPointInfo(inScrollDirection) {
+    let getPercent = null;
+    let referenceDimension = null;
+    let coord = null;
+    let worksBackward = false;
 
-      this._setVirtualPointInfo(inScrollDirection);
-    } // Based on the page's inScrollDirection, express the viewport "start"
-    // and "end" points in relative coordinates (from the top left corner)
+    switch (inScrollDirection) {
+      case "ltr":
+        getPercent = () => (this._currentPosition.x - this._minX) / (this._maxX - this._minX);
 
-  }, {
-    key: "_setRelativeStartAndEnd",
-    value: function _setRelativeStartAndEnd(inScrollDirection) {
-      this._relativeStart = null;
-      this._relativeEnd = null;
+        referenceDimension = "width";
+        coord = "x";
+        worksBackward = false;
+        break;
 
-      switch (inScrollDirection) {
-        case "ltr":
-          this._relativeStart = {
-            x: 0,
-            y: 0.5
-          }; // Start is the middle left point
+      case "rtl":
+        getPercent = () => (this._maxX - this._currentPosition.x) / (this._maxX - this._minX);
 
-          this._relativeEnd = {
-            x: 1,
-            y: 0.5
-          }; // End is the middle right point
+        referenceDimension = "width";
+        coord = "x";
+        worksBackward = true;
+        break;
 
-          break;
+      case "ttb":
+        getPercent = () => (this._currentPosition.y - this._minY) / (this._maxY - this._minY);
 
-        case "rtl":
-          this._relativeStart = {
-            x: 1,
-            y: 0.5
-          };
-          this._relativeEnd = {
-            x: 0,
-            y: 0.5
-          };
-          break;
+        referenceDimension = "height";
+        coord = "y";
+        worksBackward = false;
+        break;
 
-        case "ttb":
-          this._relativeStart = {
-            x: 0.5,
-            y: 0
-          };
-          this._relativeEnd = {
-            x: 0.5,
-            y: 1
-          };
-          break;
+      case "btt":
+        getPercent = () => (this._maxY - this._currentPosition.y) / (this._maxY - this._minY);
 
-        case "btt":
-          this._relativeStart = {
-            x: 0.5,
-            y: 1
-          };
-          this._relativeEnd = {
-            x: 0.5,
-            y: 0
-          };
-          break;
+        referenceDimension = "height";
+        coord = "y";
+        worksBackward = true;
+        break;
 
-        default:
-          break;
-      }
+      default:
+        break;
     }
-  }, {
-    key: "_setVirtualPointInfo",
-    value: function _setVirtualPointInfo(inScrollDirection) {
-      var _this = this;
-
-      var getPercent = null;
-      var referenceDimension = null;
-      var coord = null;
-      var worksBackward = false;
-
-      switch (inScrollDirection) {
-        case "ltr":
-          getPercent = function getPercent() {
-            return (_this._currentPosition.x - _this._minX) / (_this._maxX - _this._minX);
-          };
-
-          referenceDimension = "width";
-          coord = "x";
-          worksBackward = false;
-          break;
-
-        case "rtl":
-          getPercent = function getPercent() {
-            return (_this._maxX - _this._currentPosition.x) / (_this._maxX - _this._minX);
-          };
-
-          referenceDimension = "width";
-          coord = "x";
-          worksBackward = true;
-          break;
-
-        case "ttb":
-          getPercent = function getPercent() {
-            return (_this._currentPosition.y - _this._minY) / (_this._maxY - _this._minY);
-          };
-
-          referenceDimension = "height";
-          coord = "y";
-          worksBackward = false;
-          break;
-
-        case "btt":
-          getPercent = function getPercent() {
-            return (_this._maxY - _this._currentPosition.y) / (_this._maxY - _this._minY);
-          };
-
-          referenceDimension = "height";
-          coord = "y";
-          worksBackward = true;
-          break;
-
-        default:
-          break;
-      }
-      /*if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-      	referenceDimension = "width"
-      	coord = "x"
-      } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-      	referenceDimension = "height"
-      	coord = "y"
-      }
-      const worksBackward = (inScrollDirection === "rtl" || inScrollDirection === "btt")*/
-
-
-      this._virtualPointInfo = {
-        getPercent: getPercent,
-        referenceDimension: referenceDimension,
-        coord: coord,
-        worksBackward: worksBackward
-      };
+    /*if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
+    	referenceDimension = "width"
+    	coord = "x"
+    } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
+    	referenceDimension = "height"
+    	coord = "y"
     }
-  }, {
-    key: "addSnapPoints",
-    value: function addSnapPoints(snapPointsArray, lastSegmentIndex) {
-      var _this2 = this;
-
-      snapPointsArray.forEach(function (snapPointInfo) {
-        var viewport = snapPointInfo.viewport,
-            x = snapPointInfo.x,
-            y = snapPointInfo.y;
-
-        if ((viewport === "start" || viewport === "center" || viewport === "end") && (x !== null || y !== null)) {
-          var snapPoint = {
-            segmentIndex: lastSegmentIndex,
-            viewport: viewport,
-            x: x,
-            y: y
-          };
-
-          _this2._rawSnapPointsArray.push(snapPoint);
-        }
-      });
-    } // After an overflowHandler's _positionSegments() operation, so in particular after a resize:
-    // - If the total length of all segments together is less than the viewport dimension,
-    // then the camera will not have space to move (but beware: only if zoomFactor = 1),
-    // so the camera's start and end positions will be set to the center of the whole segment block
-    // - If not, _hasSpaceToMove = true and there is no need to move the camera initially,
-    // since it is already well positioned respective to the first segment
-    // (Also, do note that small pixel errors are accounted for!)
-
-  }, {
-    key: "setBoundsAndUpdateOnResize",
-    value: function setBoundsAndUpdateOnResize() {
-      var _this3 = this;
-
-      var distanceToCover = 0;
-      var startCenter = null;
-      var viewportRect = this._player.viewportRect;
-      var width = viewportRect.width,
-          height = viewportRect.height;
-      this._startPosition = {
-        x: 0,
-        y: 0
-      };
-      this._progressVector = {
-        x: 0,
-        y: 0
-      };
-      this._referenceSceneSize = {
-        width: this._scene.size.width,
-        height: this._scene.size.height
-      };
-
-      if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-        var sceneContainerWidth = this._scene.size.width;
-        distanceToCover = sceneContainerWidth - width;
-        var signFactor = this._inScrollDirection === "rtl" ? -1 : 1;
-
-        if (distanceToCover <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
-          distanceToCover = 0;
-          startCenter = signFactor * (sceneContainerWidth / 2);
-        } else {
-          startCenter = signFactor * (width / 2);
-        }
-
-        this._startPosition.x = startCenter;
-        this._progressVector.x = signFactor * distanceToCover;
-      } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-        var sceneContainerHeight = this._scene.size.height;
-        distanceToCover = sceneContainerHeight - height;
-
-        var _signFactor = this._inScrollDirection === "btt" ? -1 : 1;
-
-        if (distanceToCover <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
-          distanceToCover = 0;
-          startCenter = _signFactor * (sceneContainerHeight / 2);
-        } else {
-          startCenter = _signFactor * (height / 2);
-        }
-
-        this._startPosition.y = startCenter;
-        this._progressVector.y = _signFactor * distanceToCover;
-      }
-
-      this._distanceToCover = Math.max(distanceToCover, 0); // Now if the page is larger than the effective viewport...
-
-      if (this._distanceToCover > 0) {
-        // Compute the possible error for progress calculations
-        this._possibleError = this._getProgressStepForLength(_constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]); // Compute the progress delta corresponding to one pagination step forward
-
-        this._paginationProgressStep = this._getPaginationProgressStep(); // Build snap points (i.e. define their progress values), if relevant
-
-        this._buildRelevantSnapPoints();
-      }
-
-      var callback = function callback() {
-        // Force zoomFactor to 1 and recompute x and y bounds
-        _this3._setZoomFactorAndUpdateBounds(1); // Now reposition the camera and update progress (if not null)
+    const worksBackward = (inScrollDirection === "rtl" || inScrollDirection === "btt")*/
 
 
-        _this3._updatePositionAndProgressOnResize();
-      }; // If we were actually jumping between snap points, force jump to end
+    this._virtualPointInfo = {
+      getPercent,
+      referenceDimension,
+      coord,
+      worksBackward
+    };
+  }
 
+  addSnapPoints(snapPointsArray, lastSegmentIndex) {
+    snapPointsArray.forEach(snapPointInfo => {
+      const {
+        viewport,
+        x,
+        y
+      } = snapPointInfo;
 
-      if (this.isAutoScrolling === true) {
-        this._jumpData.shouldForceToEnd = true;
-        this._jumpData.endCallback = callback;
-      } else {
-        callback();
-      }
-    }
-  }, {
-    key: "_getPaginationProgressStep",
-    value: function _getPaginationProgressStep() {
-      var viewportRect = this._player.viewportRect;
-      var width = viewportRect.width,
-          height = viewportRect.height;
-      var progressStep = 0;
-
-      if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-        progressStep = this._getProgressStepForLength(width);
-      } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-        progressStep = this._getProgressStepForLength(height);
-      }
-
-      return progressStep;
-    }
-  }, {
-    key: "_getProgressStepForLength",
-    value: function _getProgressStepForLength(length) {
-      var progressStep = Math.min(Math.max(length / this._distanceToCover, 0), 1);
-      return progressStep;
-    } // Build relevant snap points by adding a progress value to their raw information
-
-  }, {
-    key: "_buildRelevantSnapPoints",
-    value: function _buildRelevantSnapPoints() {
-      var _this4 = this;
-
-      var snapPointsArray = [];
-      var lastProgress = -1;
-
-      this._rawSnapPointsArray.forEach(function (rawSnapPoint) {
-        var progress = _this4._getProgressForSnapPoint(rawSnapPoint);
-
-        if (progress !== null && progress > lastProgress) {
-          var snapPoint = _objectSpread({}, rawSnapPoint, {
-            progress: progress
-          });
-
-          snapPointsArray.push(snapPoint);
-          lastProgress = progress;
-        }
-      });
-
-      this._snapPointsArray = snapPointsArray;
-    }
-  }, {
-    key: "_getProgressForSnapPoint",
-    value: function _getProgressForSnapPoint(rawSnapPoint) {
-      var segmentIndex = rawSnapPoint.segmentIndex,
-          viewport = rawSnapPoint.viewport,
-          x = rawSnapPoint.x,
-          y = rawSnapPoint.y;
-      var segment = this._scene.layersArray[segmentIndex].content;
-      var size = segment.size,
-          positionInSegmentLine = segment.positionInSegmentLine; // Get the top left position of the camera for the snap point alignment
-
-      var position = this._getCameraPositionInSegmentForAlignment(viewport, {
-        x: x,
-        y: y
-      }, size);
-
-      if (!position) {
-        return null;
-      } // Update the position based on the segment's position in the scene
-
-
-      position.x += positionInSegmentLine.x;
-      position.y += positionInSegmentLine.y; // Compute the distance from the scene container's start point to that new point
-
-      var distanceToCenter = _utils__WEBPACK_IMPORTED_MODULE_0__["getDistance"](this._startPosition, position); // Convert that value into an acceptable progress value (between 0 and 1)
-
-      var progress = null;
-
-      if (distanceToCenter < _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
-        progress = 0;
-      } else if (Math.abs(this._distanceToCover - distanceToCenter) < _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
-        progress = 1;
-      } else {
-        progress = Math.min(Math.max(distanceToCenter / this._distanceToCover, 0), 1);
-      }
-
-      return progress;
-    } // Get the position of the camera's top left point corresponding to a given snap point alignment
-
-  }, {
-    key: "_getCameraPositionInSegmentForAlignment",
-    value: function _getCameraPositionInSegmentForAlignment(viewportPoint, coords, segmentSize) {
-      var sign = this._inScrollDirection === "rtl" || this._inScrollDirection === "btt" ? -1 : 1;
-      var x = _utils__WEBPACK_IMPORTED_MODULE_0__["parseCoordinate"](coords.x, segmentSize.width);
-      var y = _utils__WEBPACK_IMPORTED_MODULE_0__["parseCoordinate"](coords.y, segmentSize.height);
-
-      if (x === null || y === null) {
-        return null;
-      }
-
-      var viewportRect = this._player.viewportRect;
-      var width = viewportRect.width,
-          height = viewportRect.height;
-      var position = {
-        x: sign * x,
-        y: sign * y
-      };
-
-      switch (viewportPoint) {
-        case "start":
-          position.x -= (this._relativeStart.x - 0.5) * width;
-          position.y -= (this._relativeStart.y - 0.5) * height;
-          break;
-
-        case "end":
-          position.x -= (this._relativeEnd.x - 0.5) * width;
-          position.y -= (this._relativeEnd.y - 0.5) * height;
-          break;
-
-        default:
-          // "center"
-          break;
-      }
-
-      return position;
-    } // Called by a resize or zoom change
-
-  }, {
-    key: "_setZoomFactorAndUpdateBounds",
-    value: function _setZoomFactorAndUpdateBounds(zoomFactor) {
-      this._zoomFactor = Math.min(Math.max(zoomFactor, 1), _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]);
-
-      this._scene.setScale(this._zoomFactor); // Reminder: this._scene is a Container
-
-
-      this._player.updateDisplayForZoomFactor(zoomFactor);
-
-      this._updateMinAndMaxX();
-
-      this._updateMinAndMaxY();
-
-      this._updateOffsetInScaledReferential();
-    }
-  }, {
-    key: "_updateMinAndMaxX",
-    value: function _updateMinAndMaxX() {
-      var _this$_player = this._player,
-          rootSize = _this$_player.rootSize,
-          viewportRect = _this$_player.viewportRect;
-      var width = viewportRect.width;
-      var tippingZoomFactorValue = width / this._referenceSceneSize.width;
-
-      if (this._inScrollDirection === "ltr") {
-        // Reminder: this._startPosition.x does not change
-        // And = this._referenceSceneSize.width / 2 if this._referenceSceneSize.width < width
-        if (this._zoomFactor < tippingZoomFactorValue) {
-          var k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
-          this._minX = this._startPosition.x + k * (width / 2 - this._startPosition.x);
-          this._maxX = this._minX;
-        } else {
-          this._minX = width / 2;
-          this._maxX = this._minX + this._referenceSceneSize.width * this._zoomFactor - width;
-        }
-      } else if (this._inScrollDirection === "rtl") {
-        if (this._zoomFactor < tippingZoomFactorValue) {
-          var _k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
-
-          this._maxX = this._startPosition.x - _k * (width / 2 + this._startPosition.x);
-          this._minX = this._maxX;
-        } else {
-          this._maxX = -width / 2;
-          this._minX = this._maxX - this._referenceSceneSize.width * this._zoomFactor + width;
-        }
-      } else {
-        var sizeDiff = this._referenceSceneSize.width * this._zoomFactor - rootSize.width;
-        var delta = sizeDiff > 0 ? sizeDiff / 2 : 0;
-        this._minX = this._startPosition.x - delta;
-        this._maxX = this._startPosition.x + delta;
-      }
-    }
-  }, {
-    key: "_updateMinAndMaxY",
-    value: function _updateMinAndMaxY() {
-      var _this$_player2 = this._player,
-          rootSize = _this$_player2.rootSize,
-          viewportRect = _this$_player2.viewportRect;
-      var height = viewportRect.height;
-      var tippingZoomFactorValue = height / this._referenceSceneSize.height;
-
-      if (this._inScrollDirection === "ttb") {
-        if (this._zoomFactor < tippingZoomFactorValue) {
-          var k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
-          this._minY = this._startPosition.y + k * (height / 2 - this._startPosition.y);
-          this._maxY = this._minY;
-        } else {
-          this._minY = height / 2;
-          this._maxY = this._minY + this._referenceSceneSize.height * this._zoomFactor - height;
-        }
-      } else if (this._inScrollDirection === "btt") {
-        if (this._zoomFactor < tippingZoomFactorValue) {
-          var _k2 = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
-
-          this._maxY = this._startPosition.y - _k2 * (height / 2 + this._startPosition.y);
-          this._minY = this._maxY;
-        } else {
-          this._maxY = -height / 2;
-          this._minY = this._maxY - this._referenceSceneSize.height * this._zoomFactor + height;
-        }
-      } else {
-        var sizeDiff = this._referenceSceneSize.height * this._zoomFactor - rootSize.height;
-        var delta = sizeDiff > 0 ? sizeDiff / 2 : 0;
-        this._minY = this._startPosition.y - delta;
-        this._maxY = this._startPosition.y + delta;
-      }
-    }
-  }, {
-    key: "_updateOffsetInScaledReferential",
-    value: function _updateOffsetInScaledReferential() {
-      var distanceInScaledReferential = null;
-
-      if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-        distanceInScaledReferential = this._maxX - this._minX;
-      } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-        distanceInScaledReferential = this._maxY - this._minY;
-      }
-
-      if (!distanceInScaledReferential) {
-        return;
-      }
-
-      this._offsetInScaledReferential = distanceInScaledReferential;
-      this._offsetInScaledReferential -= this._distanceToCover * this._zoomFactor;
-      this._offsetInScaledReferential /= 2;
-    }
-  }, {
-    key: "_updatePositionAndProgressOnResize",
-    value: function _updatePositionAndProgressOnResize() {
-      // Reminder: this._zoomFactor necessarily is 1
-      // If the scene can now entirely fit within the viewport
-      if (this._distanceToCover === 0) {
-        this._setPosition(this._startPosition);
-
-        this.setProgress(null);
-      } else {
-        // Note that progress may have been null before
-        // Keep center of camera fixed
-        var _this$_scene$size = this._scene.size,
-            width = _this$_scene$size.width,
-            height = _this$_scene$size.height;
-        var newPosition = {
-          x: Math.min(Math.max(this._signedPercent * width, this._minX), this._maxX),
-          y: Math.min(Math.max(this._signedPercent * height, this._minY), this._maxY)
+      if ((viewport === "start" || viewport === "center" || viewport === "end") && (x !== null || y !== null)) {
+        const snapPoint = {
+          segmentIndex: lastSegmentIndex,
+          viewport,
+          x,
+          y
         };
 
-        if (this._overflow === "scrolled") {
-          this._setPosition(newPosition);
-        }
-
-        var shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
-
-        this._updateProgressForPosition(newPosition, shouldStoreLastNonTemporaryProgress);
-
-        if (this._overflow === "paginated" && this.isAutoScrolling === false) {
-          var isTheResultOfADragEnd = false;
-
-          this._moveToClosestSnapPoint(isTheResultOfADragEnd);
-        }
-        /*
-        // Other method: keep virtual point fixed
-        if (this._virtualPoint) {
-        	const { segmentIndex, x, y } = this._virtualPoint
-        	const virtualSnapPoint = {
-        		segmentIndex,
-        		viewport: "center",
-        		x: `${(x || 0) * 100}%`,
-        		y: `${(y || 0) * 100}%`,
-        	}
-        	const progress = this._getProgressForSnapPoint(virtualSnapPoint)
-        	console.log(this._progress, progress, virtualSnapPoint, this._minX, this._maxX)
-        	this.setProgress(progress, true)
-        }*/
-        // Update snap point-related speeds based on inScrollDirection
-
-
-        if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-          this._snapJumpSpeed = width * _constants__WEBPACK_IMPORTED_MODULE_1__["snapJumpSpeedFactor"];
-          this._stickyMoveSpeed = width * _constants__WEBPACK_IMPORTED_MODULE_1__["stickyMoveSpeedFactor"];
-        } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-          this._snapJumpSpeed = height * _constants__WEBPACK_IMPORTED_MODULE_1__["snapJumpSpeedFactor"];
-          this._stickyMoveSpeed = height * _constants__WEBPACK_IMPORTED_MODULE_1__["stickyMoveSpeedFactor"];
-        }
+        this._rawSnapPointsArray.push(snapPoint);
       }
+    });
+  } // After an overflowHandler's _positionSegments() operation, so in particular after a resize:
+  // - If the total length of all segments together is less than the viewport dimension,
+  // then the camera will not have space to move (but beware: only if zoomFactor = 1),
+  // so the camera's start and end positions will be set to the center of the whole segment block
+  // - If not, _hasSpaceToMove = true and there is no need to move the camera initially,
+  // since it is already well positioned respective to the first segment
+  // (Also, do note that small pixel errors are accounted for!)
+
+
+  setBoundsAndUpdateOnResize() {
+    let distanceToCover = 0;
+    let startCenter = null;
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      width,
+      height
+    } = viewportRect;
+    this._startPosition = {
+      x: 0,
+      y: 0
+    };
+    this._progressVector = {
+      x: 0,
+      y: 0
+    };
+    this._referenceSceneSize = {
+      width: this._scene.size.width,
+      height: this._scene.size.height
+    };
+
+    if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+      const sceneContainerWidth = this._scene.size.width;
+      distanceToCover = sceneContainerWidth - width;
+      const signFactor = this._inScrollDirection === "rtl" ? -1 : 1;
+
+      if (distanceToCover <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
+        distanceToCover = 0;
+        startCenter = signFactor * (sceneContainerWidth / 2);
+      } else {
+        startCenter = signFactor * (width / 2);
+      }
+
+      this._startPosition.x = startCenter;
+      this._progressVector.x = signFactor * distanceToCover;
+    } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+      const sceneContainerHeight = this._scene.size.height;
+      distanceToCover = sceneContainerHeight - height;
+      const signFactor = this._inScrollDirection === "btt" ? -1 : 1;
+
+      if (distanceToCover <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
+        distanceToCover = 0;
+        startCenter = signFactor * (sceneContainerHeight / 2);
+      } else {
+        startCenter = signFactor * (height / 2);
+      }
+
+      this._startPosition.y = startCenter;
+      this._progressVector.y = signFactor * distanceToCover;
     }
-  }, {
-    key: "_setPosition",
-    value: function _setPosition(_ref) {
-      var x = _ref.x,
-          y = _ref.y;
-      // Note that x and y correspond to the camera's center position
-      this._currentPosition = {
-        x: x,
-        y: y
+
+    this._distanceToCover = Math.max(distanceToCover, 0); // Now if the page is larger than the effective viewport...
+
+    if (this._distanceToCover > 0) {
+      // Compute the possible error for progress calculations
+      this._possibleError = this._getProgressStepForLength(_constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]); // Compute the progress delta corresponding to one pagination step forward
+
+      this._paginationProgressStep = this._getPaginationProgressStep(); // Build snap points (i.e. define their progress values), if relevant
+
+      this._buildRelevantSnapPoints();
+    }
+
+    const callback = () => {
+      // Force zoomFactor to 1 and recompute x and y bounds
+      this._setZoomFactorAndUpdateBounds(1); // Now reposition the camera and update progress (if not null)
+
+
+      this._updatePositionAndProgressOnResize();
+    }; // If we were actually jumping between snap points, force jump to end
+
+
+    if (this.isAutoScrolling === true) {
+      this._jumpData.shouldForceToEnd = true;
+      this._jumpData.endCallback = callback;
+    } else {
+      callback();
+    }
+  }
+
+  _getPaginationProgressStep() {
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      width,
+      height
+    } = viewportRect;
+    let progressStep = 0;
+
+    if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+      progressStep = this._getProgressStepForLength(width);
+    } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+      progressStep = this._getProgressStepForLength(height);
+    }
+
+    return progressStep;
+  }
+
+  _getProgressStepForLength(length) {
+    const progressStep = Math.min(Math.max(length / this._distanceToCover, 0), 1);
+    return progressStep;
+  } // Build relevant snap points by adding a progress value to their raw information
+
+
+  _buildRelevantSnapPoints() {
+    const snapPointsArray = [];
+    let lastProgress = -1;
+
+    this._rawSnapPointsArray.forEach(rawSnapPoint => {
+      const progress = this._getProgressForSnapPoint(rawSnapPoint);
+
+      if (progress !== null && progress > lastProgress) {
+        const snapPoint = { ...rawSnapPoint,
+          progress
+        };
+        snapPointsArray.push(snapPoint);
+        lastProgress = progress;
+      }
+    });
+
+    this._snapPointsArray = snapPointsArray;
+  }
+
+  _getProgressForSnapPoint(rawSnapPoint) {
+    const {
+      segmentIndex,
+      viewport,
+      x,
+      y
+    } = rawSnapPoint;
+    const segment = this._scene.layersArray[segmentIndex].content;
+    const {
+      size,
+      positionInSegmentLine
+    } = segment; // Get the top left position of the camera for the snap point alignment
+
+    const position = this._getCameraPositionInSegmentForAlignment(viewport, {
+      x,
+      y
+    }, size);
+
+    if (!position) {
+      return null;
+    } // Update the position based on the segment's position in the scene
+
+
+    position.x += positionInSegmentLine.x;
+    position.y += positionInSegmentLine.y; // Compute the distance from the scene container's start point to that new point
+
+    const distanceToCenter = _utils__WEBPACK_IMPORTED_MODULE_0__["getDistance"](this._startPosition, position); // Convert that value into an acceptable progress value (between 0 and 1)
+
+    let progress = null;
+
+    if (distanceToCenter < _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
+      progress = 0;
+    } else if (Math.abs(this._distanceToCover - distanceToCenter) < _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"]) {
+      progress = 1;
+    } else {
+      progress = Math.min(Math.max(distanceToCenter / this._distanceToCover, 0), 1);
+    }
+
+    return progress;
+  } // Get the position of the camera's top left point corresponding to a given snap point alignment
+
+
+  _getCameraPositionInSegmentForAlignment(viewportPoint, coords, segmentSize) {
+    const sign = this._inScrollDirection === "rtl" || this._inScrollDirection === "btt" ? -1 : 1;
+    const x = _utils__WEBPACK_IMPORTED_MODULE_0__["parseCoordinate"](coords.x, segmentSize.width);
+    const y = _utils__WEBPACK_IMPORTED_MODULE_0__["parseCoordinate"](coords.y, segmentSize.height);
+
+    if (x === null || y === null) {
+      return null;
+    }
+
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      width,
+      height
+    } = viewportRect;
+    const position = {
+      x: sign * x,
+      y: sign * y
+    };
+
+    switch (viewportPoint) {
+      case "start":
+        position.x -= (this._relativeStart.x - 0.5) * width;
+        position.y -= (this._relativeStart.y - 0.5) * height;
+        break;
+
+      case "end":
+        position.x -= (this._relativeEnd.x - 0.5) * width;
+        position.y -= (this._relativeEnd.y - 0.5) * height;
+        break;
+
+      default:
+        // "center"
+        break;
+    }
+
+    return position;
+  } // Called by a resize or zoom change
+
+
+  _setZoomFactorAndUpdateBounds(zoomFactor) {
+    this._zoomFactor = Math.min(Math.max(zoomFactor, 1), _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]);
+
+    this._scene.setScale(this._zoomFactor); // Reminder: this._scene is a Container
+
+
+    this._player.updateDisplayForZoomFactor(zoomFactor);
+
+    this._updateMinAndMaxX();
+
+    this._updateMinAndMaxY();
+
+    this._updateOffsetInScaledReferential();
+  }
+
+  _updateMinAndMaxX() {
+    const {
+      rootSize,
+      viewportRect
+    } = this._player;
+    const {
+      width
+    } = viewportRect;
+    const tippingZoomFactorValue = width / this._referenceSceneSize.width;
+
+    if (this._inScrollDirection === "ltr") {
+      // Reminder: this._startPosition.x does not change
+      // And = this._referenceSceneSize.width / 2 if this._referenceSceneSize.width < width
+      if (this._zoomFactor < tippingZoomFactorValue) {
+        const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
+        this._minX = this._startPosition.x + k * (width / 2 - this._startPosition.x);
+        this._maxX = this._minX;
+      } else {
+        this._minX = width / 2;
+        this._maxX = this._minX + this._referenceSceneSize.width * this._zoomFactor - width;
+      }
+    } else if (this._inScrollDirection === "rtl") {
+      if (this._zoomFactor < tippingZoomFactorValue) {
+        const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
+        this._maxX = this._startPosition.x - k * (width / 2 + this._startPosition.x);
+        this._minX = this._maxX;
+      } else {
+        this._maxX = -width / 2;
+        this._minX = this._maxX - this._referenceSceneSize.width * this._zoomFactor + width;
+      }
+    } else {
+      const sizeDiff = this._referenceSceneSize.width * this._zoomFactor - rootSize.width;
+      const delta = sizeDiff > 0 ? sizeDiff / 2 : 0;
+      this._minX = this._startPosition.x - delta;
+      this._maxX = this._startPosition.x + delta;
+    }
+  }
+
+  _updateMinAndMaxY() {
+    const {
+      rootSize,
+      viewportRect
+    } = this._player;
+    const {
+      height
+    } = viewportRect;
+    const tippingZoomFactorValue = height / this._referenceSceneSize.height;
+
+    if (this._inScrollDirection === "ttb") {
+      if (this._zoomFactor < tippingZoomFactorValue) {
+        const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
+        this._minY = this._startPosition.y + k * (height / 2 - this._startPosition.y);
+        this._maxY = this._minY;
+      } else {
+        this._minY = height / 2;
+        this._maxY = this._minY + this._referenceSceneSize.height * this._zoomFactor - height;
+      }
+    } else if (this._inScrollDirection === "btt") {
+      if (this._zoomFactor < tippingZoomFactorValue) {
+        const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1);
+        this._maxY = this._startPosition.y - k * (height / 2 + this._startPosition.y);
+        this._minY = this._maxY;
+      } else {
+        this._maxY = -height / 2;
+        this._minY = this._maxY - this._referenceSceneSize.height * this._zoomFactor + height;
+      }
+    } else {
+      const sizeDiff = this._referenceSceneSize.height * this._zoomFactor - rootSize.height;
+      const delta = sizeDiff > 0 ? sizeDiff / 2 : 0;
+      this._minY = this._startPosition.y - delta;
+      this._maxY = this._startPosition.y + delta;
+    }
+  }
+
+  _updateOffsetInScaledReferential() {
+    let distanceInScaledReferential = null;
+
+    if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+      distanceInScaledReferential = this._maxX - this._minX;
+    } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+      distanceInScaledReferential = this._maxY - this._minY;
+    }
+
+    if (!distanceInScaledReferential) {
+      return;
+    }
+
+    this._offsetInScaledReferential = distanceInScaledReferential;
+    this._offsetInScaledReferential -= this._distanceToCover * this._zoomFactor;
+    this._offsetInScaledReferential /= 2;
+  }
+
+  _updatePositionAndProgressOnResize() {
+    // Reminder: this._zoomFactor necessarily is 1
+    // If the scene can now entirely fit within the viewport
+    if (this._distanceToCover === 0) {
+      this._setPosition(this._startPosition);
+
+      this.setProgress(null);
+    } else {
+      // Note that progress may have been null before
+      // Keep center of camera fixed
+      const {
+        width,
+        height
+      } = this._scene.size;
+      const newPosition = {
+        x: Math.min(Math.max(this._signedPercent * width, this._minX), this._maxX),
+        y: Math.min(Math.max(this._signedPercent * height, this._minY), this._maxY)
       };
 
-      this._scene.setPosition({
-        x: -x,
-        y: -y
-      }); // this._scene is still a Container
-
-
-      if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-        this._signedPercent = x / (this._scene.size.width * this._zoomFactor);
-      } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-        this._signedPercent = y / (this._scene.size.height * this._zoomFactor);
-      }
-    }
-  }, {
-    key: "_updateProgressForPosition",
-    value: function _updateProgressForPosition() {
-      var position = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : this._currentPosition;
-      var shouldStoreLastNonTemporaryProgress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-      if (this._progress === null) {
-        return;
+      if (this._overflow === "scrolled") {
+        this._setPosition(newPosition);
       }
 
-      if (shouldStoreLastNonTemporaryProgress === true && this._lastNonTemporaryProgress === null) {
-        this._lastNonTemporaryProgress = this._progress;
-      }
+      const shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
 
-      var progress = this._getProgressForPosition(position);
+      this._updateProgressForPosition(newPosition, shouldStoreLastNonTemporaryProgress);
 
-      var shouldUpdatePosition = false;
-      this.setProgress(progress, shouldUpdatePosition);
-    }
-  }, {
-    key: "_getProgressForPosition",
-    value: function _getProgressForPosition(position) {
-      var progress = null;
-
-      if (this._inScrollDirection === "ltr") {
-        progress = position.x - this._minX - this._offsetInScaledReferential;
-        progress /= this._maxX - this._minX - 2 * this._offsetInScaledReferential;
-      } else if (this._inScrollDirection === "rtl") {
-        progress = this._maxX - position.x - this._offsetInScaledReferential;
-        progress /= this._maxX - this._minX - 2 * this._offsetInScaledReferential;
-      } else if (this._inScrollDirection === "ttb") {
-        progress = position.y - this._minY - this._offsetInScaledReferential;
-        progress /= this._maxY - this._minY - 2 * this._offsetInScaledReferential;
-      } else if (this._inScrollDirection === "btt") {
-        progress = this._maxY - position.y - this._offsetInScaledReferential;
-        progress /= this._maxY - this._minY - 2 * this._offsetInScaledReferential;
-      }
-
-      progress = Math.min(Math.max(progress, 0), 1);
-      return progress;
-    } // Position the scene container to conform to the specified progress value
-
-  }, {
-    key: "setProgress",
-    value: function setProgress() {
-      var p = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-      var shouldUpdatePosition = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-      this._progress = p;
-      this._virtualPoint = this._getVirtualPoint();
-
-      this._eventEmitter.emit("inpagescroll", this._virtualPoint);
-
-      if (shouldUpdatePosition === false) {
-        return;
-      }
-
-      if (p === null) {
-        this._setPosition(this._startPosition);
-      } else if (this._inScrollDirection === "ltr") {
-        this._setPosition({
-          x: this._minX + p * this._progressVector.x * this._zoomFactor,
-          y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
-        });
-      } else if (this._inScrollDirection === "rtl") {
-        this._setPosition({
-          x: this._maxX + p * this._progressVector.x * this._zoomFactor,
-          y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
-        });
-      } else if (this._inScrollDirection === "ttb") {
-        this._setPosition({
-          x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-          y: this._minY + p * this._progressVector.y * this._zoomFactor
-        });
-      } else if (this._inScrollDirection === "btt") {
-        this._setPosition({
-          x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-          y: this._maxY + p * this._progressVector.y * this._zoomFactor
-        });
-      }
-    }
-  }, {
-    key: "_getVirtualPoint",
-    value: function _getVirtualPoint() {
-      if (this._progress === null) {
-        return null;
-      }
-
-      var viewportRect = this._player.viewportRect;
-      var _this$_virtualPointIn = this._virtualPointInfo,
-          getPercent = _this$_virtualPointIn.getPercent,
-          referenceDimension = _this$_virtualPointIn.referenceDimension,
-          coord = _this$_virtualPointIn.coord;
-      /*const percent = (coord === "x")
-      	? (this._currentPosition.x - this._minX) / (this._maxX - this._minX)
-      	: (this._currentPosition.y - this._minY) / (this._maxY - this._minY)*/
-
-      var percent = getPercent();
-      var i = 0;
-      var virtualPoint = null;
-      var remainingDistance = viewportRect[referenceDimension] / 2;
-      remainingDistance += coord === "x" ? percent * (this._maxX - this._minX) : percent * (this._maxY - this._minY);
-      remainingDistance /= this._zoomFactor;
-
-      while (i < this._scene.layersArray.length && virtualPoint === null) {
-        var segmentLayer = this._scene.layersArray[i];
-        var size = segmentLayer.size;
-        var referenceDistance = size[referenceDimension];
-        remainingDistance -= referenceDistance;
-
-        if (remainingDistance <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"] && referenceDistance > 0) {
-          var _virtualPoint;
-
-          var percentInSegment = (remainingDistance + referenceDistance) / referenceDistance;
-          percentInSegment = Math.min(Math.max(percentInSegment, 0), 1);
-          var worksBackward = this._virtualPointInfo.worksBackward;
-          virtualPoint = (_virtualPoint = {
-            segmentIndex: i,
-            href: segmentLayer.getFirstHref()
-          }, _defineProperty(_virtualPoint, coord, worksBackward === true ? 1 - percentInSegment : percentInSegment), _defineProperty(_virtualPoint, "percent", percent), _virtualPoint);
-        }
-
-        i += 1;
-      }
-
-      return virtualPoint;
-    }
-  }, {
-    key: "setPercent",
-    value: function setPercent(percent) {
-      switch (this._inScrollDirection) {
-        case "ltr":
-          this._setPosition({
-            x: this._minX + percent * (this._maxX - this._minX),
-            y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
-          });
-
-          break;
-
-        case "rtl":
-          this._setPosition({
-            //x: this._minX + percent * (this._maxX - this._minX),
-            x: this._maxX - percent * (this._maxX - this._minX),
-            y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
-          });
-
-          break;
-
-        case "ttb":
-          this._setPosition({
-            x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-            y: this._minY + percent * (this._maxY - this._minY)
-          });
-
-          break;
-
-        case "btt":
-          this._setPosition({
-            x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-            //y: this._minY + percent * (this._maxY - this._minY),
-            y: this._maxY - percent * (this._maxY - this._minY)
-          });
-
-          break;
-
-        default:
-          break;
-      }
-
-      this._updateProgressForPosition();
-    }
-  }, {
-    key: "_moveToClosestSnapPoint",
-    value: function _moveToClosestSnapPoint() {
-      var isTheResultOfADragEnd = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
-      var nextProgress = this._lastNonTemporaryProgress;
-      var previousProgress = this._lastNonTemporaryProgress;
-      var allowsSameProgress = false; // For a sticky drag...
-
-      if (isTheResultOfADragEnd === true) {
-        if (this._lastNonTemporaryProgress === null) {
-          return;
-        }
-
-        if (this._progress >= this._lastNonTemporaryProgress) {
-          nextProgress = this._getNextSnapPointProgress(allowsSameProgress, this._lastNonTemporaryProgress);
-        } else {
-          previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress, this._lastNonTemporaryProgress);
-        } // ...whereas after a resize or dezoom
-
-      } else {
-        allowsSameProgress = true;
-        nextProgress = this._getNextSnapPointProgress(allowsSameProgress);
-        previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress);
-      }
-
-      var progressDifferenceToNext = nextProgress - this._progress;
-      var progressDifferenceToPrevious = this._progress - previousProgress;
-      var targetProgress = this._progress;
-
-      if (progressDifferenceToNext <= progressDifferenceToPrevious) {
-        targetProgress = nextProgress;
-      } else if (progressDifferenceToNext > progressDifferenceToPrevious) {
-        targetProgress = previousProgress;
-      }
-
-      if (isTheResultOfADragEnd === true) {
-        var isUpdate = false;
-
-        this._startSnapPointJump(targetProgress, isUpdate);
-      } else {
-        // Move instantly
-        var shouldUpdatePosition = true;
-        this.setProgress(targetProgress, shouldUpdatePosition);
-      }
-
-      this._lastNonTemporaryProgress = null;
-    } // Get the progress value of the next snap point in the list (1 if there is none)
-
-  }, {
-    key: "_getNextSnapPointProgress",
-    value: function _getNextSnapPointProgress() {
-      var allowsSameProgress = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var lastNonTemporaryProgress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      if (!this._snapPointsArray || this._overflow === "scrolled" && this._allowsPaginatedScroll === false) {
-        return null;
-      } // If lastNonTemporaryProgress is defined, then a step forward
-      // (via a discontinuous gesture or a sticky drag) is under way
-
-
-      var referenceProgress = lastNonTemporaryProgress !== null ? lastNonTemporaryProgress : this._progress;
-      var i = 0;
-
-      while (i < this._snapPointsArray.length && (allowsSameProgress === true ? this._snapPointsArray[i].progress <= referenceProgress + this._possibleError : this._snapPointsArray[i].progress < referenceProgress - this._possibleError)) {
-        i += 1;
-      }
-
-      var nextProgress = 1;
-
-      if (i < this._snapPointsArray.length) {
-        nextProgress = this._snapPointsArray[i].progress;
-      } // Select the closest value between that one and the one corresponding to one pagination away
-
-
-      if (this._paginationProgressStep) {
-        var nextPaginatedProgress = nextProgress;
-
-        if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
-          nextPaginatedProgress = lastNonTemporaryProgress + this._paginationProgressStep;
-        } else {
-          nextPaginatedProgress = allowsSameProgress === true ? Math.ceil((this._progress - this._possibleError) / this._paginationProgressStep) : Math.floor((this._progress + this._possibleError) / this._paginationProgressStep + 1);
-          nextPaginatedProgress *= this._paginationProgressStep;
-        }
-
-        nextPaginatedProgress = Math.min(Math.max(nextPaginatedProgress, 0), 1);
-        nextProgress = Math.min(nextProgress, nextPaginatedProgress);
-      }
-
-      return nextProgress;
-    } // Get the progress value of the previous snap point in the list (0 if there is none)
-
-  }, {
-    key: "_getPreviousSnapPointProgress",
-    value: function _getPreviousSnapPointProgress() {
-      var allowsSameProgress = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var lastNonTemporaryProgress = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-
-      if (!this._snapPointsArray || this._overflow === "scrolled" && this._allowsPaginatedScroll === false) {
-        return null;
-      } // If lastNonTemporaryProgress is defined, then a step backward
-      // (via a discontinuous gesture or a sticky drag) is under way
-
-
-      var referenceProgress = lastNonTemporaryProgress !== null ? lastNonTemporaryProgress : this._progress;
-      var i = this._snapPointsArray.length - 1;
-
-      while (i >= 0 && (allowsSameProgress === true ? this._snapPointsArray[i].progress >= referenceProgress - this._possibleError : this._snapPointsArray[i].progress > referenceProgress + this._possibleError)) {
-        i -= 1;
-      }
-
-      var previousProgress = 0;
-
-      if (i >= 0) {
-        previousProgress = this._snapPointsArray[i].progress;
-      } // Select the closest value between that one and the one corresponding to one pagination away
-
-
-      if (this._paginationProgressStep) {
-        var previousPaginatedProgress = previousProgress;
-
-        if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
-          previousPaginatedProgress = lastNonTemporaryProgress - this._paginationProgressStep;
-        } else {
-          previousPaginatedProgress = allowsSameProgress === true ? Math.floor((this._progress + this._possibleError) / this._paginationProgressStep) : Math.ceil((this._progress - this._possibleError) / this._paginationProgressStep - 1);
-          previousPaginatedProgress *= this._paginationProgressStep;
-        }
-
-        previousPaginatedProgress = Math.min(Math.max(previousPaginatedProgress, 0), 1);
-        previousProgress = Math.max(previousProgress, previousPaginatedProgress);
-      }
-
-      return previousProgress;
-    }
-  }, {
-    key: "zoom",
-    value: function zoom(zoomData) {
-      // Prevent camera from zooming if is undergoing changes (i.e. jumping between points)
-      if (this.isAutoScrolling === true) {
-        return;
-      }
-
-      var isContinuous = zoomData.isContinuous,
-          touchPoint = zoomData.touchPoint,
-          delta = zoomData.delta,
-          multiplier = zoomData.multiplier;
-
-      if (!touchPoint) {
-        return;
-      }
-
-      var viewportRect = this._player.viewportRect;
-      var zoomFactor = this._zoomFactor;
-      var zoomFixedPoint = this._currentPosition; // For a "quick change" (toggle between min = 1 and maxZoomFactor value)
-
-      if (isContinuous === false) {
-        // Compute zoom factor
-        zoomFactor = this._zoomFactor !== 1 ? 1 : _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]; // Compute camera's fixed point
-
-        zoomFixedPoint = this._computeFixedPoint(touchPoint, viewportRect);
-      } else {
-        if (!delta && !multiplier) {
-          return;
-        } // Compute zoom factor
-
-
-        if (delta) {
-          var height = viewportRect.height;
-          var zoomSensitivity = _constants__WEBPACK_IMPORTED_MODULE_1__["zoomSensitivityConstant"] / height;
-          zoomFactor = Math.min(Math.max(this._zoomFactor - delta * zoomSensitivity, 1), _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]);
-        } else {
-          zoomFactor = this._zoomFactor * multiplier;
-        } // Compute camera's fixed point (only update it if the touch point has changed)
-
-
-        zoomFixedPoint = touchPoint !== this._zoomTouchPoint ? this._computeFixedPoint(touchPoint, viewportRect) : this._currentPosition;
-        this._zoomTouchPoint = touchPoint;
-      } // Compute zoomChange difference now, before setting the new zoomFactor
-
-
-      var zoomChange = zoomFactor - this._zoomFactor;
-
-      this._setZoomFactorAndUpdateBounds(zoomFactor, zoomFixedPoint);
-
-      this._updatePositionAndProgressOnZoomChange(zoomChange, zoomFixedPoint);
-    }
-  }, {
-    key: "_computeFixedPoint",
-    value: function _computeFixedPoint(point, viewportRect) {
-      var x = viewportRect.x,
-          y = viewportRect.y,
-          width = viewportRect.width,
-          height = viewportRect.height; // Express the point's coordinates in the non-scaled (i.e. non-zoomed) referential
-      // centered on the scene container's center (from which resources are positioned)
-
-      var topLeftCameraPointInSceneReferential = {
-        x: this._currentPosition.x - width / 2,
-        y: this._currentPosition.y - height / 2
-      }; // Reminder: this._currentPosition is the opposite of the position of the scene's container
-
-      var fixedPoint = {
-        x: (topLeftCameraPointInSceneReferential.x + point.x - x) / this._zoomFactor,
-        y: (topLeftCameraPointInSceneReferential.y + point.y - y) / this._zoomFactor
-      };
-      return fixedPoint;
-    }
-  }, {
-    key: "_updatePositionAndProgressOnZoomChange",
-    value: function _updatePositionAndProgressOnZoomChange(zoomChange, zoomFixedPoint) {
-      // Change currentPosition so that zoomFixedPoint remains visually fixed
-      this._setPosition({
-        x: Math.min(Math.max(this._currentPosition.x + zoomChange * zoomFixedPoint.x, this._minX), this._maxX),
-        y: Math.min(Math.max(this._currentPosition.y + zoomChange * zoomFixedPoint.y, this._minY), this._maxY)
-      }); // Update progress to conform to that new position
-
-
-      var shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
-
-      this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress); // If reverting to normal zoomFactor=1 value when overflow=paginated, snap to closest snap point
-
-
-      if (this._zoomFactor === 1 && this._overflow === "paginated") {
-        var isTheResultOfADragEnd = false;
+      if (this._overflow === "paginated" && this.isAutoScrolling === false) {
+        const isTheResultOfADragEnd = false;
 
         this._moveToClosestSnapPoint(isTheResultOfADragEnd);
       }
-    }
-  }, {
-    key: "moveToNextSnapPoint",
-    value: function moveToNextSnapPoint() {
-      if (this.isAutoScrolling === true) {
-        var _this$_jumpData = this._jumpData,
-            startProgress = _this$_jumpData.startProgress,
-            _targetProgress = _this$_jumpData.targetProgress;
-        var isJumpGoingForward = _targetProgress - startProgress >= 0;
+      /*
+      // Other method: keep virtual point fixed
+      if (this._virtualPoint) {
+      	const { segmentIndex, x, y } = this._virtualPoint
+      	const virtualSnapPoint = {
+      		segmentIndex,
+      		viewport: "center",
+      		x: `${(x || 0) * 100}%`,
+      		y: `${(y || 0) * 100}%`,
+      	}
+      	const progress = this._getProgressForSnapPoint(virtualSnapPoint)
+      	console.log(this._progress, progress, virtualSnapPoint, this._minX, this._maxX)
+      	this.setProgress(progress, true)
+      }*/
+      // Update snap point-related speeds based on inScrollDirection
 
-        if (isJumpGoingForward === true) {
-          this._jumpData.shouldForceToEnd = true;
-          return;
-        }
+
+      if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+        this._snapJumpSpeed = width * _constants__WEBPACK_IMPORTED_MODULE_1__["snapJumpSpeedFactor"];
+        this._stickyMoveSpeed = width * _constants__WEBPACK_IMPORTED_MODULE_1__["stickyMoveSpeedFactor"];
+      } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+        this._snapJumpSpeed = height * _constants__WEBPACK_IMPORTED_MODULE_1__["snapJumpSpeedFactor"];
+        this._stickyMoveSpeed = height * _constants__WEBPACK_IMPORTED_MODULE_1__["stickyMoveSpeedFactor"];
+      }
+    }
+  }
+
+  _setPosition({
+    x,
+    y
+  }) {
+    // Note that x and y correspond to the camera's center position
+    this._currentPosition = {
+      x,
+      y
+    };
+
+    this._scene.setPosition({
+      x: -x,
+      y: -y
+    }); // this._scene is still a Container
+
+
+    if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+      this._signedPercent = x / (this._scene.size.width * this._zoomFactor);
+    } else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+      this._signedPercent = y / (this._scene.size.height * this._zoomFactor);
+    }
+  }
+
+  _updateProgressForPosition(position = this._currentPosition, shouldStoreLastNonTemporaryProgress = false) {
+    if (this._progress === null) {
+      return;
+    }
+
+    if (shouldStoreLastNonTemporaryProgress === true && this._lastNonTemporaryProgress === null) {
+      this._lastNonTemporaryProgress = this._progress;
+    }
+
+    const progress = this._getProgressForPosition(position);
+
+    const shouldUpdatePosition = false;
+    this.setProgress(progress, shouldUpdatePosition);
+  }
+
+  _getProgressForPosition(position) {
+    let progress = null;
+
+    if (this._inScrollDirection === "ltr") {
+      progress = position.x - this._minX - this._offsetInScaledReferential;
+      progress /= this._maxX - this._minX - 2 * this._offsetInScaledReferential;
+    } else if (this._inScrollDirection === "rtl") {
+      progress = this._maxX - position.x - this._offsetInScaledReferential;
+      progress /= this._maxX - this._minX - 2 * this._offsetInScaledReferential;
+    } else if (this._inScrollDirection === "ttb") {
+      progress = position.y - this._minY - this._offsetInScaledReferential;
+      progress /= this._maxY - this._minY - 2 * this._offsetInScaledReferential;
+    } else if (this._inScrollDirection === "btt") {
+      progress = this._maxY - position.y - this._offsetInScaledReferential;
+      progress /= this._maxY - this._minY - 2 * this._offsetInScaledReferential;
+    }
+
+    progress = Math.min(Math.max(progress, 0), 1);
+    return progress;
+  } // Position the scene container to conform to the specified progress value
+
+
+  setProgress(p = null, shouldUpdatePosition = true) {
+    this._progress = p;
+    this._virtualPoint = this._getVirtualPoint();
+
+    this._eventEmitter.emit("inpagescroll", this._virtualPoint);
+
+    if (shouldUpdatePosition === false) {
+      return;
+    }
+
+    if (p === null) {
+      this._setPosition(this._startPosition);
+    } else if (this._inScrollDirection === "ltr") {
+      this._setPosition({
+        x: this._minX + p * this._progressVector.x * this._zoomFactor,
+        y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
+      });
+    } else if (this._inScrollDirection === "rtl") {
+      this._setPosition({
+        x: this._maxX + p * this._progressVector.x * this._zoomFactor,
+        y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
+      });
+    } else if (this._inScrollDirection === "ttb") {
+      this._setPosition({
+        x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+        y: this._minY + p * this._progressVector.y * this._zoomFactor
+      });
+    } else if (this._inScrollDirection === "btt") {
+      this._setPosition({
+        x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+        y: this._maxY + p * this._progressVector.y * this._zoomFactor
+      });
+    }
+  }
+
+  _getVirtualPoint() {
+    if (this._progress === null) {
+      return null;
+    }
+
+    const {
+      viewportRect
+    } = this._player;
+    const {
+      getPercent,
+      referenceDimension,
+      coord
+    } = this._virtualPointInfo;
+    /*const percent = (coord === "x")
+    	? (this._currentPosition.x - this._minX) / (this._maxX - this._minX)
+    	: (this._currentPosition.y - this._minY) / (this._maxY - this._minY)*/
+
+    const percent = getPercent();
+    let i = 0;
+    let virtualPoint = null;
+    let remainingDistance = viewportRect[referenceDimension] / 2;
+    remainingDistance += coord === "x" ? percent * (this._maxX - this._minX) : percent * (this._maxY - this._minY);
+    remainingDistance /= this._zoomFactor;
+
+    while (i < this._scene.layersArray.length && virtualPoint === null) {
+      const segmentLayer = this._scene.layersArray[i];
+      const {
+        size
+      } = segmentLayer;
+      const referenceDistance = size[referenceDimension];
+      remainingDistance -= referenceDistance;
+
+      if (remainingDistance <= _constants__WEBPACK_IMPORTED_MODULE_1__["possiblePixelError"] && referenceDistance > 0) {
+        let percentInSegment = (remainingDistance + referenceDistance) / referenceDistance;
+        percentInSegment = Math.min(Math.max(percentInSegment, 0), 1);
+        const {
+          worksBackward
+        } = this._virtualPointInfo;
+        virtualPoint = {
+          segmentIndex: i,
+          href: segmentLayer.getFirstHref(),
+          [coord]: worksBackward === true ? 1 - percentInSegment : percentInSegment,
+          percent //direction: this._inScrollDirection,
+
+        };
       }
 
-      var allowsSameProgress = false;
+      i += 1;
+    }
 
-      var targetProgress = this._getNextSnapPointProgress(allowsSameProgress, this._progress);
+    return virtualPoint;
+  }
 
-      if (targetProgress === null) {
+  setPercent(percent) {
+    switch (this._inScrollDirection) {
+      case "ltr":
+        this._setPosition({
+          x: this._minX + percent * (this._maxX - this._minX),
+          y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
+        });
+
+        break;
+
+      case "rtl":
+        this._setPosition({
+          //x: this._minX + percent * (this._maxX - this._minX),
+          x: this._maxX - percent * (this._maxX - this._minX),
+          y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
+        });
+
+        break;
+
+      case "ttb":
+        this._setPosition({
+          x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+          y: this._minY + percent * (this._maxY - this._minY)
+        });
+
+        break;
+
+      case "btt":
+        this._setPosition({
+          x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+          //y: this._minY + percent * (this._maxY - this._minY),
+          y: this._maxY - percent * (this._maxY - this._minY)
+        });
+
+        break;
+
+      default:
+        break;
+    }
+
+    this._updateProgressForPosition();
+  }
+
+  _moveToClosestSnapPoint(isTheResultOfADragEnd = true) {
+    let nextProgress = this._lastNonTemporaryProgress;
+    let previousProgress = this._lastNonTemporaryProgress;
+    let allowsSameProgress = false; // For a sticky drag...
+
+    if (isTheResultOfADragEnd === true) {
+      if (this._lastNonTemporaryProgress === null) {
         return;
       }
 
-      var isUpdate = false;
-
-      this._startSnapPointJump(targetProgress, isUpdate);
-    }
-  }, {
-    key: "moveToPreviousSnapPoint",
-    value: function moveToPreviousSnapPoint() {
-      if (this.isAutoScrolling === true) {
-        var _this$_jumpData2 = this._jumpData,
-            startProgress = _this$_jumpData2.startProgress,
-            _targetProgress2 = _this$_jumpData2.targetProgress;
-        var isJumpGoingForward = _targetProgress2 - startProgress >= 0;
-
-        if (isJumpGoingForward === false) {
-          this._jumpData.shouldForceToEnd = true;
-          return;
-        }
-      }
-
-      var allowsSameProgress = false;
-
-      var targetProgress = this._getPreviousSnapPointProgress(allowsSameProgress, this._progress);
-
-      if (targetProgress === null) {
-        return;
-      }
-
-      var isUpdate = false;
-
-      this._startSnapPointJump(targetProgress, isUpdate);
-    }
-  }, {
-    key: "_startSnapPointJump",
-    value: function _startSnapPointJump(targetProgress) {
-      var isUpdate = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      this._jumpData.isAutoScrolling = true;
-      this._jumpData.startDate = Date.now();
-      this._jumpData.duration = this._getJumpDuration(this._progress, targetProgress);
-      this._jumpData.startProgress = this._progress;
-      this._jumpData.targetProgress = targetProgress; // If a jump was not under way, start one
-
-      if (isUpdate === false) {
-        requestAnimationFrame(this._autoProgress.bind(this));
-      }
-    }
-  }, {
-    key: "_getJumpDuration",
-    value: function _getJumpDuration(startProgress, targetProgress) {
-      if (this._distanceToCover === 0) {
-        return 0;
-      }
-
-      var distance = Math.abs((targetProgress - startProgress) * this._distanceToCover);
-      var duration = this._isPaginationSticky === true ? distance / this._stickyMoveSpeed : distance / this._snapJumpSpeed;
-      return duration;
-    }
-  }, {
-    key: "_autoProgress",
-    value: function _autoProgress() {
-      if (this.isAutoScrolling === false) {
-        return;
-      }
-
-      var _this$_jumpData3 = this._jumpData,
-          startDate = _this$_jumpData3.startDate,
-          duration = _this$_jumpData3.duration,
-          startProgress = _this$_jumpData3.startProgress,
-          targetProgress = _this$_jumpData3.targetProgress,
-          shouldForceToEnd = _this$_jumpData3.shouldForceToEnd,
-          endCallback = _this$_jumpData3.endCallback;
-      var percent = (Date.now() - startDate) / duration;
-
-      if (duration === 0 || percent >= 1 || shouldForceToEnd === true) {
-        this.setProgress(targetProgress);
-
-        this._reset();
-
-        if (endCallback) {
-          endCallback();
-        }
+      if (this._progress >= this._lastNonTemporaryProgress) {
+        nextProgress = this._getNextSnapPointProgress(allowsSameProgress, this._lastNonTemporaryProgress);
       } else {
-        var forcedProgress = startProgress + (targetProgress - startProgress) * percent;
-        forcedProgress = Math.min(Math.max(forcedProgress, 0), 1);
-        this.setProgress(forcedProgress);
-        requestAnimationFrame(this._autoProgress.bind(this));
-      }
+        previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress, this._lastNonTemporaryProgress);
+      } // ...whereas after a resize or dezoom
+
+    } else {
+      allowsSameProgress = true;
+      nextProgress = this._getNextSnapPointProgress(allowsSameProgress);
+      previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress);
     }
-  }, {
-    key: "attemptStickyStep",
-    value: function attemptStickyStep() {
-      if (this._hasSpaceToMove === false || this.isZoomed === true) {
-        return false;
+
+    const progressDifferenceToNext = nextProgress - this._progress;
+    const progressDifferenceToPrevious = this._progress - previousProgress;
+    let targetProgress = this._progress;
+
+    if (progressDifferenceToNext <= progressDifferenceToPrevious) {
+      targetProgress = nextProgress;
+    } else if (progressDifferenceToNext > progressDifferenceToPrevious) {
+      targetProgress = previousProgress;
+    }
+
+    if (isTheResultOfADragEnd === true) {
+      const isUpdate = false;
+
+      this._startSnapPointJump(targetProgress, isUpdate);
+    } else {
+      // Move instantly
+      const shouldUpdatePosition = true;
+      this.setProgress(targetProgress, shouldUpdatePosition);
+    }
+
+    this._lastNonTemporaryProgress = null;
+  } // Get the progress value of the next snap point in the list (1 if there is none)
+
+
+  _getNextSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress = null) {
+    if (!this._snapPointsArray || this._overflow === "scrolled" && this._allowsPaginatedScroll === false) {
+      return null;
+    } // If lastNonTemporaryProgress is defined, then a step forward
+    // (via a discontinuous gesture or a sticky drag) is under way
+
+
+    const referenceProgress = lastNonTemporaryProgress !== null ? lastNonTemporaryProgress : this._progress;
+    let i = 0;
+
+    while (i < this._snapPointsArray.length && (allowsSameProgress === true ? this._snapPointsArray[i].progress <= referenceProgress + this._possibleError : this._snapPointsArray[i].progress < referenceProgress - this._possibleError)) {
+      i += 1;
+    }
+
+    let nextProgress = 1;
+
+    if (i < this._snapPointsArray.length) {
+      nextProgress = this._snapPointsArray[i].progress;
+    } // Select the closest value between that one and the one corresponding to one pagination away
+
+
+    if (this._paginationProgressStep) {
+      let nextPaginatedProgress = nextProgress;
+
+      if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
+        nextPaginatedProgress = lastNonTemporaryProgress + this._paginationProgressStep;
+      } else {
+        nextPaginatedProgress = allowsSameProgress === true ? Math.ceil((this._progress - this._possibleError) / this._paginationProgressStep) : Math.floor((this._progress + this._possibleError) / this._paginationProgressStep + 1);
+        nextPaginatedProgress *= this._paginationProgressStep;
       }
 
-      var isTheResultOfADragEnd = true;
+      nextPaginatedProgress = Math.min(Math.max(nextPaginatedProgress, 0), 1);
+      nextProgress = Math.min(nextProgress, nextPaginatedProgress);
+    }
+
+    return nextProgress;
+  } // Get the progress value of the previous snap point in the list (0 if there is none)
+
+
+  _getPreviousSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress = null) {
+    if (!this._snapPointsArray || this._overflow === "scrolled" && this._allowsPaginatedScroll === false) {
+      return null;
+    } // If lastNonTemporaryProgress is defined, then a step backward
+    // (via a discontinuous gesture or a sticky drag) is under way
+
+
+    const referenceProgress = lastNonTemporaryProgress !== null ? lastNonTemporaryProgress : this._progress;
+    let i = this._snapPointsArray.length - 1;
+
+    while (i >= 0 && (allowsSameProgress === true ? this._snapPointsArray[i].progress >= referenceProgress - this._possibleError : this._snapPointsArray[i].progress > referenceProgress + this._possibleError)) {
+      i -= 1;
+    }
+
+    let previousProgress = 0;
+
+    if (i >= 0) {
+      previousProgress = this._snapPointsArray[i].progress;
+    } // Select the closest value between that one and the one corresponding to one pagination away
+
+
+    if (this._paginationProgressStep) {
+      let previousPaginatedProgress = previousProgress;
+
+      if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
+        previousPaginatedProgress = lastNonTemporaryProgress - this._paginationProgressStep;
+      } else {
+        previousPaginatedProgress = allowsSameProgress === true ? Math.floor((this._progress + this._possibleError) / this._paginationProgressStep) : Math.ceil((this._progress - this._possibleError) / this._paginationProgressStep - 1);
+        previousPaginatedProgress *= this._paginationProgressStep;
+      }
+
+      previousPaginatedProgress = Math.min(Math.max(previousPaginatedProgress, 0), 1);
+      previousProgress = Math.max(previousProgress, previousPaginatedProgress);
+    }
+
+    return previousProgress;
+  }
+
+  zoom(zoomData) {
+    // Prevent camera from zooming if is undergoing changes (i.e. jumping between points)
+    if (this.isAutoScrolling === true) {
+      return;
+    }
+
+    const {
+      isContinuous,
+      touchPoint,
+      delta,
+      multiplier
+    } = zoomData;
+
+    if (!touchPoint) {
+      return;
+    }
+
+    const {
+      viewportRect
+    } = this._player;
+    let zoomFactor = this._zoomFactor;
+    let zoomFixedPoint = this._currentPosition; // For a "quick change" (toggle between min = 1 and maxZoomFactor value)
+
+    if (isContinuous === false) {
+      // Compute zoom factor
+      zoomFactor = this._zoomFactor !== 1 ? 1 : _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]; // Compute camera's fixed point
+
+      zoomFixedPoint = this._computeFixedPoint(touchPoint, viewportRect);
+    } else {
+      if (!delta && !multiplier) {
+        return;
+      } // Compute zoom factor
+
+
+      if (delta) {
+        const {
+          height
+        } = viewportRect;
+        const zoomSensitivity = _constants__WEBPACK_IMPORTED_MODULE_1__["zoomSensitivityConstant"] / height;
+        zoomFactor = Math.min(Math.max(this._zoomFactor - delta * zoomSensitivity, 1), _constants__WEBPACK_IMPORTED_MODULE_1__["maxZoomFactor"]);
+      } else {
+        zoomFactor = this._zoomFactor * multiplier;
+      } // Compute camera's fixed point (only update it if the touch point has changed)
+
+
+      zoomFixedPoint = touchPoint !== this._zoomTouchPoint ? this._computeFixedPoint(touchPoint, viewportRect) : this._currentPosition;
+      this._zoomTouchPoint = touchPoint;
+    } // Compute zoomChange difference now, before setting the new zoomFactor
+
+
+    const zoomChange = zoomFactor - this._zoomFactor;
+
+    this._setZoomFactorAndUpdateBounds(zoomFactor, zoomFixedPoint);
+
+    this._updatePositionAndProgressOnZoomChange(zoomChange, zoomFixedPoint);
+  }
+
+  _computeFixedPoint(point, viewportRect) {
+    const {
+      x,
+      y,
+      width,
+      height
+    } = viewportRect; // Express the point's coordinates in the non-scaled (i.e. non-zoomed) referential
+    // centered on the scene container's center (from which resources are positioned)
+
+    const topLeftCameraPointInSceneReferential = {
+      x: this._currentPosition.x - width / 2,
+      y: this._currentPosition.y - height / 2
+    }; // Reminder: this._currentPosition is the opposite of the position of the scene's container
+
+    const fixedPoint = {
+      x: (topLeftCameraPointInSceneReferential.x + point.x - x) / this._zoomFactor,
+      y: (topLeftCameraPointInSceneReferential.y + point.y - y) / this._zoomFactor
+    };
+    return fixedPoint;
+  }
+
+  _updatePositionAndProgressOnZoomChange(zoomChange, zoomFixedPoint) {
+    // Change currentPosition so that zoomFixedPoint remains visually fixed
+    this._setPosition({
+      x: Math.min(Math.max(this._currentPosition.x + zoomChange * zoomFixedPoint.x, this._minX), this._maxX),
+      y: Math.min(Math.max(this._currentPosition.y + zoomChange * zoomFixedPoint.y, this._minY), this._maxY)
+    }); // Update progress to conform to that new position
+
+
+    const shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
+
+    this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress); // If reverting to normal zoomFactor=1 value when overflow=paginated, snap to closest snap point
+
+
+    if (this._zoomFactor === 1 && this._overflow === "paginated") {
+      const isTheResultOfADragEnd = false;
 
       this._moveToClosestSnapPoint(isTheResultOfADragEnd);
+    }
+  }
 
-      return true;
-    } // Apply the amount of user scrolling to the scene container's position via the camera
-    // by computing what new progress value the delta corresponds to
+  moveToNextSnapPoint() {
+    if (this.isAutoScrolling === true) {
+      const {
+        startProgress,
+        targetProgress
+      } = this._jumpData;
+      const isJumpGoingForward = targetProgress - startProgress >= 0;
 
-  }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      if (this._hasSpaceToMove === false || this.isZoomed === false && this._overflow === "paginated" && (this._isPaginationSticky === false || isWheelScroll === true)) {
+      if (isJumpGoingForward === true) {
+        this._jumpData.shouldForceToEnd = true;
         return;
       }
-
-      var deltaX = scrollData.deltaX,
-          deltaY = scrollData.deltaY;
-
-      this._setPosition({
-        x: Math.min(Math.max(this._currentPosition.x - deltaX, this._minX), this._maxX),
-        y: Math.min(Math.max(this._currentPosition.y - deltaY, this._minY), this._maxY)
-      });
-
-      var shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
-
-      this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress);
     }
-  }, {
-    key: "moveToSegmentIndex",
-    value: function moveToSegmentIndex(segmentIndex, isGoingForward) {
-      // If the scene is not larger than the viewport, just display it
-      if (this._hasSpaceToMove === false) {
-        return;
-      } // If a segmentIndex is specified and progress is defined,
-      // then get the progress value to which the segment corresponds
 
+    const allowsSameProgress = false;
 
-      if (segmentIndex !== null && this._progress !== null) {
-        var progress = this._getProgressForSegmentIndex(segmentIndex);
+    const targetProgress = this._getNextSnapPointProgress(allowsSameProgress, this._progress);
 
-        this.setProgress(progress || 0); // Otherwise just go to the start or end of the scene
-      } else {
-        this.moveToStartOrEnd(isGoingForward);
-      }
+    if (targetProgress === null) {
+      return;
     }
-  }, {
-    key: "_getProgressForSegmentIndex",
-    value: function _getProgressForSegmentIndex(segmentIndex) {
-      // The progress value is computed for the "start" viewport point in the case
-      // the inScrollDirection is ltr or btt, and for the "end" point otherwise
-      var snapPoint = {
-        segmentIndex: segmentIndex,
-        viewport: "start",
-        x: "0%",
-        y: "0%"
-      };
 
-      var progress = this._getProgressForSnapPoint(snapPoint);
+    const isUpdate = false;
 
-      return progress;
-    }
-  }, {
-    key: "moveToStartOrEnd",
-    value: function moveToStartOrEnd() {
-      var isGoingForward = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+    this._startSnapPointJump(targetProgress, isUpdate);
+  }
 
-      if (this._distanceToCover === 0) {
+  moveToPreviousSnapPoint() {
+    if (this.isAutoScrolling === true) {
+      const {
+        startProgress,
+        targetProgress
+      } = this._jumpData;
+      const isJumpGoingForward = targetProgress - startProgress >= 0;
+
+      if (isJumpGoingForward === false) {
+        this._jumpData.shouldForceToEnd = true;
         return;
       }
+    }
+
+    const allowsSameProgress = false;
+
+    const targetProgress = this._getPreviousSnapPointProgress(allowsSameProgress, this._progress);
+
+    if (targetProgress === null) {
+      return;
+    }
+
+    const isUpdate = false;
+
+    this._startSnapPointJump(targetProgress, isUpdate);
+  }
+
+  _startSnapPointJump(targetProgress, isUpdate = false) {
+    this._jumpData.isAutoScrolling = true;
+    this._jumpData.startDate = Date.now();
+    this._jumpData.duration = this._getJumpDuration(this._progress, targetProgress);
+    this._jumpData.startProgress = this._progress;
+    this._jumpData.targetProgress = targetProgress; // If a jump was not under way, start one
+
+    if (isUpdate === false) {
+      requestAnimationFrame(this._autoProgress.bind(this));
+    }
+  }
+
+  _getJumpDuration(startProgress, targetProgress) {
+    if (this._distanceToCover === 0) {
+      return 0;
+    }
+
+    const distance = Math.abs((targetProgress - startProgress) * this._distanceToCover);
+    const duration = this._isPaginationSticky === true ? distance / this._stickyMoveSpeed : distance / this._snapJumpSpeed;
+    return duration;
+  }
+
+  _autoProgress() {
+    if (this.isAutoScrolling === false) {
+      return;
+    }
+
+    const {
+      startDate,
+      duration,
+      startProgress,
+      targetProgress,
+      shouldForceToEnd,
+      endCallback
+    } = this._jumpData;
+    const percent = (Date.now() - startDate) / duration;
+
+    if (duration === 0 || percent >= 1 || shouldForceToEnd === true) {
+      this.setProgress(targetProgress);
 
       this._reset();
 
-      this.setProgress(isGoingForward === true ? 0 : 1);
-
-      if (isGoingForward === true) {
-        this._signedPercent = 0;
-      } else {
-        this._signedPercent = this._inScrollDirection === "rtl" || this._inScrollDirection === "btt" ? -1 : 1;
+      if (endCallback) {
+        endCallback();
       }
+    } else {
+      let forcedProgress = startProgress + (targetProgress - startProgress) * percent;
+      forcedProgress = Math.min(Math.max(forcedProgress, 0), 1);
+      this.setProgress(forcedProgress);
+      requestAnimationFrame(this._autoProgress.bind(this));
     }
-  }]);
+  }
 
-  return Camera;
-}();
+  attemptStickyStep() {
+    if (this._hasSpaceToMove === false || this.isZoomed === true) {
+      return false;
+    }
+
+    const isTheResultOfADragEnd = true;
+
+    this._moveToClosestSnapPoint(isTheResultOfADragEnd);
+
+    return true;
+  } // Apply the amount of user scrolling to the scene container's position via the camera
+  // by computing what new progress value the delta corresponds to
 
 
+  handleScroll(scrollData, isWheelScroll) {
+    if (this._hasSpaceToMove === false || this.isZoomed === false && this._overflow === "paginated" && (this._isPaginationSticky === false || isWheelScroll === true)) {
+      return;
+    }
+
+    const {
+      deltaX,
+      deltaY
+    } = scrollData;
+
+    this._setPosition({
+      x: Math.min(Math.max(this._currentPosition.x - deltaX, this._minX), this._maxX),
+      y: Math.min(Math.max(this._currentPosition.y - deltaY, this._minY), this._maxY)
+    });
+
+    const shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
+
+    this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress);
+  }
+
+  moveToSegmentIndex(segmentIndex, isGoingForward) {
+    // If the scene is not larger than the viewport, just display it
+    if (this._hasSpaceToMove === false) {
+      return;
+    } // If a segmentIndex is specified and progress is defined,
+    // then get the progress value to which the segment corresponds
+
+
+    if (segmentIndex !== null && this._progress !== null) {
+      const progress = this._getProgressForSegmentIndex(segmentIndex);
+
+      this.setProgress(progress || 0); // Otherwise just go to the start or end of the scene
+    } else {
+      this.moveToStartOrEnd(isGoingForward);
+    }
+  }
+
+  _getProgressForSegmentIndex(segmentIndex) {
+    // The progress value is computed for the "start" viewport point in the case
+    // the inScrollDirection is ltr or btt, and for the "end" point otherwise
+    const snapPoint = {
+      segmentIndex,
+      viewport: "start",
+      x: "0%",
+      y: "0%"
+    };
+
+    const progress = this._getProgressForSnapPoint(snapPoint);
+
+    return progress;
+  }
+
+  moveToStartOrEnd(isGoingForward = true) {
+    if (this._distanceToCover === 0) {
+      return;
+    }
+
+    this._reset();
+
+    this.setProgress(isGoingForward === true ? 0 : 1);
+
+    if (isGoingForward === true) {
+      this._signedPercent = 0;
+    } else {
+      this._signedPercent = this._inScrollDirection === "rtl" || this._inScrollDirection === "btt" ? -1 : 1;
+    }
+  }
+
+}
 
 /***/ }),
 
@@ -59877,54 +58935,35 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return OverflowHandler; });
 /* harmony import */ var _Camera__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Camera */ "./src/StoryBuilder/OverflowHandler/Camera.js");
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+class OverflowHandler {
+  get type() {
+    return this._type;
+  } // Used in LayerPile
 
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+  get activeLayersArray() {
+    return this._layerPile ? this._layerPile.layersArray : [];
+  }
+
+  get isAtStart() {
+    return this._camera ? this._camera.isAtStart : true;
+  }
+
+  get isAtEnd() {
+    return this._camera ? this._camera.isAtEnd : true;
+  }
+
+  get isUndergoingChanges() {
+    return this._camera.isAutoScrolling === true;
+  }
+
+  get inScrollDirection() {
+    return this._inScrollDirection;
+  } // Constructor
 
 
-
-var OverflowHandler =
-/*#__PURE__*/
-function () {
-  _createClass(OverflowHandler, [{
-    key: "type",
-    get: function get() {
-      return this._type;
-    } // Used in LayerPile
-
-  }, {
-    key: "activeLayersArray",
-    get: function get() {
-      return this._layerPile ? this._layerPile.layersArray : [];
-    }
-  }, {
-    key: "isAtStart",
-    get: function get() {
-      return this._camera ? this._camera.isAtStart : true;
-    }
-  }, {
-    key: "isAtEnd",
-    get: function get() {
-      return this._camera ? this._camera.isAtEnd : true;
-    }
-  }, {
-    key: "isUndergoingChanges",
-    get: function get() {
-      return this._camera.isAutoScrolling === true;
-    }
-  }, {
-    key: "inScrollDirection",
-    get: function get() {
-      return this._inScrollDirection;
-    } // Constructor
-
-  }]);
-
-  function OverflowHandler(layerPile, overflow, player) {
-    _classCallCheck(this, OverflowHandler);
-
+  constructor(layerPile, overflow, player) {
     this._layerPile = layerPile; // An overflowHandler necessarily has a camera
 
     this._camera = new _Camera__WEBPACK_IMPORTED_MODULE_0__["default"](layerPile, overflow, player);
@@ -59932,208 +58971,187 @@ function () {
     this._inScrollDirection = null;
   }
 
-  _createClass(OverflowHandler, [{
-    key: "setInScrollDirection",
-    value: function setInScrollDirection(inScrollDirection) {
-      this._inScrollDirection = inScrollDirection;
+  setInScrollDirection(inScrollDirection) {
+    this._inScrollDirection = inScrollDirection;
 
-      this._camera.setInScrollDirection(inScrollDirection);
+    this._camera.setInScrollDirection(inScrollDirection);
 
-      this.resize(); // Will reposition segments
-    } // Functions linked to segments
-    // Add snap points to the last segment - since we are still in the process of adding segments
+    this.resize(); // Will reposition segments
+  } // Functions linked to segments
+  // Add snap points to the last segment - since we are still in the process of adding segments
 
-  }, {
-    key: "addSnapPointsForLastSegment",
-    value: function addSnapPointsForLastSegment(snapPointsArray) {
-      var segmentsArray = this._layerPile.layersArray.map(function (layer) {
-        return layer.content;
-      });
 
-      if (segmentsArray.length === 0) {
-        return;
-      }
+  addSnapPointsForLastSegment(snapPointsArray) {
+    const segmentsArray = this._layerPile.layersArray.map(layer => layer.content);
 
-      var lastSegmentIndex = segmentsArray.length - 1;
-
-      this._camera.addSnapPoints(snapPointsArray, lastSegmentIndex);
+    if (segmentsArray.length === 0) {
+      return;
     }
-  }, {
-    key: "goToSegmentIndex",
-    value: function goToSegmentIndex(segmentIndex, isGoingForward) {
-      this._camera.moveToSegmentIndex(segmentIndex, isGoingForward);
+
+    const lastSegmentIndex = segmentsArray.length - 1;
+
+    this._camera.addSnapPoints(snapPointsArray, lastSegmentIndex);
+  }
+
+  goToSegmentIndex(segmentIndex, isGoingForward) {
+    this._camera.moveToSegmentIndex(segmentIndex, isGoingForward);
+  }
+
+  setupForEntry(isGoingForward) {
+    if (this._camera.isZoomed === true) {
+      // Should never hapen
+      return;
     }
-  }, {
-    key: "setupForEntry",
-    value: function setupForEntry(isGoingForward) {
-      if (this._camera.isZoomed === true) {
-        // Should never hapen
-        return;
-      }
 
-      this._camera.moveToStartOrEnd(isGoingForward);
-    } // Functions linked to LayerPile
+    this._camera.moveToStartOrEnd(isGoingForward);
+  } // Functions linked to LayerPile
 
-  }, {
-    key: "attemptToGoForward",
-    value: function attemptToGoForward() {
-      var shouldGoInstantly = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      // Step forward
-      if (this._camera.isZoomed === true) {
-        // Block all interactions
-        return true;
-      }
-
-      if (this._camera.isAtEnd === true) {
-        return false;
-      }
-
-      this._camera.moveToNextSnapPoint(shouldGoInstantly);
-
+  attemptToGoForward(shouldGoInstantly = false) {
+    // Step forward
+    if (this._camera.isZoomed === true) {
+      // Block all interactions
       return true;
     }
-  }, {
-    key: "attemptToGoBackward",
-    value: function attemptToGoBackward() {
-      var shouldGoInstantly = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
 
-      // Step backward
-      if (this._camera.isZoomed === true) {
-        // Block all interactions
-        return true;
-      }
+    if (this._camera.isAtEnd === true) {
+      return false;
+    }
 
-      if (this._camera.isAtStart === true) {
-        return false;
-      }
+    this._camera.moveToNextSnapPoint(shouldGoInstantly);
 
-      this._camera.moveToPreviousSnapPoint(shouldGoInstantly);
+    return true;
+  }
 
+  attemptToGoBackward(shouldGoInstantly = false) {
+    // Step backward
+    if (this._camera.isZoomed === true) {
+      // Block all interactions
       return true;
-    } // Functions to deal with continuous gestures and zoom
-
-  }, {
-    key: "attemptStickyStep",
-    value: function attemptStickyStep() {
-      return this.isUndergoingChanges === false && this._camera.attemptStickyStep();
     }
-  }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      if (this.isUndergoingChanges === true) {
+
+    if (this._camera.isAtStart === true) {
+      return false;
+    }
+
+    this._camera.moveToPreviousSnapPoint(shouldGoInstantly);
+
+    return true;
+  } // Functions to deal with continuous gestures and zoom
+
+
+  attemptStickyStep() {
+    return this.isUndergoingChanges === false && this._camera.attemptStickyStep();
+  }
+
+  handleScroll(scrollData, isWheelScroll) {
+    if (this.isUndergoingChanges === true) {
+      return;
+    }
+
+    this._camera.handleScroll(scrollData, isWheelScroll);
+  }
+
+  zoom(zoomData) {
+    if (this.isUndergoingChanges === true) {
+      return;
+    }
+
+    this._camera.zoom(zoomData);
+  }
+
+  setPercent(percent) {
+    if (this.isUndergoingChanges === true) {
+      return;
+    }
+
+    this._camera.setPercent(percent);
+  } // Functions to deal with inner changes (jumps) and resize
+
+
+  resize() {
+    // After all segments have been resized, (re)position them
+    this._positionSegments(); // Update camera and possible snap points (note that zoomFactor will be forced to 1)
+
+
+    this._camera.setBoundsAndUpdateOnResize();
+  }
+
+  _positionSegments() {
+    let sumOfPreviousSegmentDimensions = 0; // Translate all segment containers in the page by half their size plus the sum
+    // of all previous segment dimensions (so that the first one is translated only
+    // half its size and all others are then glued next to it, one after the other)
+
+    this._layerPile.layersArray.forEach(layer => {
+      const segment = layer.content;
+      const {
+        size
+      } = segment;
+      const {
+        width,
+        height
+      } = size;
+
+      if (!width || !height) {
         return;
       }
 
-      this._camera.handleScroll(scrollData, isWheelScroll);
-    }
-  }, {
-    key: "zoom",
-    value: function zoom(zoomData) {
-      if (this.isUndergoingChanges === true) {
-        return;
+      switch (this._inScrollDirection) {
+        case "ltr":
+          segment.setPositionInSegmentLine({
+            x: sumOfPreviousSegmentDimensions,
+            y: 0
+          });
+          segment.setPosition({
+            x: sumOfPreviousSegmentDimensions + width / 2,
+            y: 0
+          });
+          sumOfPreviousSegmentDimensions += width;
+          break;
+
+        case "rtl":
+          segment.setPositionInSegmentLine({
+            x: -sumOfPreviousSegmentDimensions,
+            y: 0
+          });
+          segment.setPosition({
+            x: -sumOfPreviousSegmentDimensions - width / 2,
+            y: 0
+          });
+          sumOfPreviousSegmentDimensions += width;
+          break;
+
+        case "ttb":
+          segment.setPositionInSegmentLine({
+            x: 0,
+            y: sumOfPreviousSegmentDimensions
+          });
+          segment.setPosition({
+            x: 0,
+            y: sumOfPreviousSegmentDimensions + height / 2
+          });
+          sumOfPreviousSegmentDimensions += height;
+          break;
+
+        case "btt":
+          segment.setPositionInSegmentLine({
+            x: 0,
+            y: -sumOfPreviousSegmentDimensions
+          });
+          segment.setPosition({
+            x: 0,
+            y: -sumOfPreviousSegmentDimensions - height / 2
+          });
+          sumOfPreviousSegmentDimensions += height;
+          break;
+
+        default:
+          break;
       }
+    });
+  }
 
-      this._camera.zoom(zoomData);
-    }
-  }, {
-    key: "setPercent",
-    value: function setPercent(percent) {
-      if (this.isUndergoingChanges === true) {
-        return;
-      }
-
-      this._camera.setPercent(percent);
-    } // Functions to deal with inner changes (jumps) and resize
-
-  }, {
-    key: "resize",
-    value: function resize() {
-      // After all segments have been resized, (re)position them
-      this._positionSegments(); // Update camera and possible snap points (note that zoomFactor will be forced to 1)
-
-
-      this._camera.setBoundsAndUpdateOnResize();
-    }
-  }, {
-    key: "_positionSegments",
-    value: function _positionSegments() {
-      var _this = this;
-
-      var sumOfPreviousSegmentDimensions = 0; // Translate all segment containers in the page by half their size plus the sum
-      // of all previous segment dimensions (so that the first one is translated only
-      // half its size and all others are then glued next to it, one after the other)
-
-      this._layerPile.layersArray.forEach(function (layer) {
-        var segment = layer.content;
-        var size = segment.size;
-        var width = size.width,
-            height = size.height;
-
-        if (!width || !height) {
-          return;
-        }
-
-        switch (_this._inScrollDirection) {
-          case "ltr":
-            segment.setPositionInSegmentLine({
-              x: sumOfPreviousSegmentDimensions,
-              y: 0
-            });
-            segment.setPosition({
-              x: sumOfPreviousSegmentDimensions + width / 2,
-              y: 0
-            });
-            sumOfPreviousSegmentDimensions += width;
-            break;
-
-          case "rtl":
-            segment.setPositionInSegmentLine({
-              x: -sumOfPreviousSegmentDimensions,
-              y: 0
-            });
-            segment.setPosition({
-              x: -sumOfPreviousSegmentDimensions - width / 2,
-              y: 0
-            });
-            sumOfPreviousSegmentDimensions += width;
-            break;
-
-          case "ttb":
-            segment.setPositionInSegmentLine({
-              x: 0,
-              y: sumOfPreviousSegmentDimensions
-            });
-            segment.setPosition({
-              x: 0,
-              y: sumOfPreviousSegmentDimensions + height / 2
-            });
-            sumOfPreviousSegmentDimensions += height;
-            break;
-
-          case "btt":
-            segment.setPositionInSegmentLine({
-              x: 0,
-              y: -sumOfPreviousSegmentDimensions
-            });
-            segment.setPosition({
-              x: 0,
-              y: -sumOfPreviousSegmentDimensions - height / 2
-            });
-            sumOfPreviousSegmentDimensions += height;
-            break;
-
-          default:
-            break;
-        }
-      });
-    }
-  }]);
-
-  return OverflowHandler;
-}();
-
-
+}
 
 /***/ }),
 
@@ -60164,265 +59182,204 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Page; });
 /* harmony import */ var _LayerPile__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LayerPile */ "./src/StoryBuilder/LayerPile.js");
 /* harmony import */ var _Layer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Layer */ "./src/StoryBuilder/Layer.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 
+class Page extends _LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  get isAtStart() {
+    return this._handler && this._handler.type === "overflowHandler" && this._handler.isAtStart === true;
+  }
+
+  get isAtEnd() {
+    return this._handler && this._handler.type === "overflowHandler" && this._handler.isAtEnd === true;
+  } // Used in Segment
 
 
-var Page =
-/*#__PURE__*/
-function (_LayerPile) {
-  _inherits(Page, _LayerPile);
+  get pageIndex() {
+    return this._pageIndex;
+  } // Used in StoryLoader and below
 
-  _createClass(Page, [{
-    key: "isAtStart",
-    get: function get() {
-      return this._handler && this._handler.type === "overflowHandler" && this._handler.isAtStart === true;
-    }
-  }, {
-    key: "isAtEnd",
-    get: function get() {
-      return this._handler && this._handler.type === "overflowHandler" && this._handler.isAtEnd === true;
-    } // Used in Segment
 
-  }, {
-    key: "pageIndex",
-    get: function get() {
-      return this._pageIndex;
-    } // Used in StoryLoader and below
+  get segmentsArray() {
+    return this._layersArray.map(({
+      content
+    }) => content);
+  } // Used in InteractionManager
 
-  }, {
-    key: "segmentsArray",
-    get: function get() {
-      return this._layersArray.map(function (_ref) {
-        var content = _ref.content;
-        return content;
-      });
-    } // Used in InteractionManager
 
-  }, {
-    key: "hitZoneToPrevious",
-    get: function get() {
-      return this._hitZoneToPrevious;
-    }
-  }, {
-    key: "hitZoneToNext",
-    get: function get() {
-      return this._hitZoneToNext;
-    }
-  }, {
-    key: "inScrollDirection",
-    get: function get() {
-      return this._inScrollDirection;
-    }
-  }]);
+  get hitZoneToPrevious() {
+    return this._hitZoneToPrevious;
+  }
 
-  function Page(pageIndex, overflow, player) {
-    var _this;
+  get hitZoneToNext() {
+    return this._hitZoneToNext;
+  }
 
-    _classCallCheck(this, Page);
+  get inScrollDirection() {
+    return this._inScrollDirection;
+  }
 
-    var name = "page".concat(pageIndex);
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Page).call(this, name));
-    _this._pageIndex = pageIndex;
-    _this._hitZoneToPrevious = null;
-    _this._hitZoneToNext = null;
-    _this._inScrollDirection = null;
+  constructor(pageIndex, overflow, player) {
+    const name = `page${pageIndex}`;
+    super(name);
+    this._pageIndex = pageIndex;
+    this._hitZoneToPrevious = null;
+    this._hitZoneToNext = null;
+    this._inScrollDirection = null;
 
-    _this._addOverflowHandler(overflow, player);
+    this._addOverflowHandler(overflow, player);
 
-    var options = player.options;
-    var doOnPageLoadStatusUpdate = options.doOnPageLoadStatusUpdate;
+    const {
+      options
+    } = player;
+    const {
+      doOnPageLoadStatusUpdate
+    } = options;
 
     if (doOnPageLoadStatusUpdate) {
-      _this._doOnPageLoadStatusUpdate = doOnPageLoadStatusUpdate;
+      this._doOnPageLoadStatusUpdate = doOnPageLoadStatusUpdate;
     }
-
-    return _this;
   } // Used in Slideshow
 
 
-  _createClass(Page, [{
-    key: "setDirection",
-    value: function setDirection(direction) {
-      this._setInScrollDirection(direction);
+  setDirection(direction) {
+    this._setInScrollDirection(direction);
 
-      switch (direction) {
-        case "ltr":
-          this._setHitZoneToPrevious("left");
+    switch (direction) {
+      case "ltr":
+        this._setHitZoneToPrevious("left");
 
-          this._setHitZoneToNext("right");
+        this._setHitZoneToNext("right");
 
-          break;
+        break;
 
-        case "rtl":
-          this._setHitZoneToPrevious("right");
+      case "rtl":
+        this._setHitZoneToPrevious("right");
 
-          this._setHitZoneToNext("left");
+        this._setHitZoneToNext("left");
 
-          break;
+        break;
 
-        case "ttb":
-          this._setHitZoneToPrevious("top");
+      case "ttb":
+        this._setHitZoneToPrevious("top");
 
-          this._setHitZoneToNext("bottom");
+        this._setHitZoneToNext("bottom");
 
-          break;
+        break;
 
-        case "btt":
-          this._setHitZoneToPrevious("bottom");
+      case "btt":
+        this._setHitZoneToPrevious("bottom");
 
-          this._setHitZoneToNext("top"); // Ditto
+        this._setHitZoneToNext("top"); // Ditto
 
 
-          break;
+        break;
 
-        default:
-          break;
-      }
+      default:
+        break;
     }
-  }, {
-    key: "_setHitZoneToPrevious",
-    value: function _setHitZoneToPrevious(quadrant) {
-      this._hitZoneToPrevious = quadrant;
+  }
+
+  _setHitZoneToPrevious(quadrant) {
+    this._hitZoneToPrevious = quadrant;
+  }
+
+  _setHitZoneToNext(quadrant) {
+    this._hitZoneToNext = quadrant;
+  }
+
+  _setInScrollDirection(inScrollDirection) {
+    this._inScrollDirection = inScrollDirection;
+
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "_setHitZoneToNext",
-    value: function _setHitZoneToNext(quadrant) {
-      this._hitZoneToNext = quadrant;
+
+    this._handler.setInScrollDirection(inScrollDirection);
+  }
+
+  addSegment(segment, shouldAddSegmentAtStart = false) {
+    // Add the segment to the layer pile
+    const segmentLayer = new _Layer__WEBPACK_IMPORTED_MODULE_1__["default"]("segment", segment);
+
+    this._addLayer(segmentLayer, shouldAddSegmentAtStart);
+  }
+
+  addSnapPointsForLastSegment(snapPointsArray) {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "_setInScrollDirection",
-    value: function _setInScrollDirection(inScrollDirection) {
-      this._inScrollDirection = inScrollDirection;
 
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
+    this._handler.addSnapPointsForLastSegment(snapPointsArray);
+  } // Used in PageNavigator
 
-      this._handler.setInScrollDirection(inScrollDirection);
+
+  goToSegmentIndex(segmentIndex, isGoingForward = true) {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "addSegment",
-    value: function addSegment(segment) {
-      var shouldAddSegmentAtStart = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-      // Add the segment to the layer pile
-      var segmentLayer = new _Layer__WEBPACK_IMPORTED_MODULE_1__["default"]("segment", segment);
 
-      this._addLayer(segmentLayer, shouldAddSegmentAtStart);
+    this._handler.goToSegmentIndex(segmentIndex, isGoingForward);
+  }
+
+  attemptStickyStep() {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return false;
     }
-  }, {
-    key: "addSnapPointsForLastSegment",
-    value: function addSnapPointsForLastSegment(snapPointsArray) {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
 
-      this._handler.addSnapPointsForLastSegment(snapPointsArray);
-    } // Used in PageNavigator
+    return this._handler.attemptStickyStep();
+  }
 
-  }, {
-    key: "goToSegmentIndex",
-    value: function goToSegmentIndex(segmentIndex) {
-      var isGoingForward = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
-
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
-
-      this._handler.goToSegmentIndex(segmentIndex, isGoingForward);
+  handleScroll(scrollData, isWheelScroll) {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "attemptStickyStep",
-    value: function attemptStickyStep() {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return false;
-      }
 
-      return this._handler.attemptStickyStep();
+    this._handler.handleScroll(scrollData, isWheelScroll);
+  }
+
+  zoom(zoomData) {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
 
-      this._handler.handleScroll(scrollData, isWheelScroll);
+    this._handler.zoom(zoomData);
+  }
+
+  setPercent(percent) {
+    if (!this._handler || this._handler.type !== "overflowHandler") {
+      return;
     }
-  }, {
-    key: "zoom",
-    value: function zoom(zoomData) {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
 
-      this._handler.zoom(zoomData);
+    this._handler.setPercent(percent);
+  }
+
+  resizePage() {
+    const storyNavigator = this._parent;
+
+    if (storyNavigator) {
+      storyNavigator.layersArray.forEach(layer => {
+        const {
+          content,
+          isActive
+        } = layer; // content is a Page
+
+        if (content === this && isActive === true) {
+          this.resize();
+        }
+      });
     }
-  }, {
-    key: "setPercent",
-    value: function setPercent(percent) {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
+  }
 
-      this._handler.setPercent(percent);
+  updateLoadStatus() {
+    const oldStatus = this._loadStatus;
+    super.updateLoadStatus();
+
+    if (this._loadStatus !== oldStatus && this._doOnPageLoadStatusUpdate) {
+      this._doOnPageLoadStatusUpdate(this._pageIndex, this._loadStatus);
     }
-  }, {
-    key: "resizePage",
-    value: function resizePage() {
-      var _this2 = this;
+  }
 
-      var storyNavigator = this._parent;
-
-      if (storyNavigator) {
-        storyNavigator.layersArray.forEach(function (layer) {
-          var content = layer.content,
-              isActive = layer.isActive; // content is a Page
-
-          if (content === _this2 && isActive === true) {
-            _this2.resize();
-          }
-        });
-      }
-    }
-  }, {
-    key: "updateLoadStatus",
-    value: function updateLoadStatus() {
-      var oldStatus = this._loadStatus;
-
-      _get(_getPrototypeOf(Page.prototype), "updateLoadStatus", this).call(this);
-
-      if (this._loadStatus !== oldStatus && this._doOnPageLoadStatusUpdate) {
-        this._doOnPageLoadStatusUpdate(this._pageIndex, this._loadStatus);
-      }
-    }
-  }]);
-
-  return Page;
-}(_LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -60438,396 +59395,334 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return PageNavigator; });
 /* harmony import */ var _LayerPile__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LayerPile */ "./src/StoryBuilder/LayerPile.js");
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _get(target, property, receiver) { if (typeof Reflect !== "undefined" && Reflect.get) { _get = Reflect.get; } else { _get = function _get(target, property, receiver) { var base = _superPropBase(target, property); if (!base) return; var desc = Object.getOwnPropertyDescriptor(base, property); if (desc.get) { return desc.get.call(receiver); } return desc.value; }; } return _get(target, property, receiver || target); }
-
-function _superPropBase(object, property) { while (!Object.prototype.hasOwnProperty.call(object, property)) { object = _getPrototypeOf(object); if (object === null) break; } return object; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
 
 
+class PageNavigator extends _LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  // Used in StateHandler
+  get doOnStateChangeStart() {
+    return this.updateLoadTasks;
+  } // Used in Player and ResourceManager
 
 
-var PageNavigator =
-/*#__PURE__*/
-function (_LayerPile) {
-  _inherits(PageNavigator, _LayerPile);
+  get type() {
+    return this._type;
+  } // Used in ResourceManager (and below)
 
-  _createClass(PageNavigator, [{
-    key: "doOnStateChangeStart",
-    // Used in StateHandler
-    get: function get() {
-      return this.updateLoadTasks;
-    } // Used in Player and ResourceManager
 
-  }, {
-    key: "type",
-    get: function get() {
-      return this._type;
-    } // Used in ResourceManager (and below)
+  get pageIndex() {
+    const pageIndex = this._handler && this._handler.type === "stateHandler" ? this._handler.stateIndex : 0;
+    return pageIndex;
+  } // Used in InteractionManager
 
-  }, {
-    key: "pageIndex",
-    get: function get() {
-      var pageIndex = this._handler && this._handler.type === "stateHandler" ? this._handler.stateIndex : 0;
-      return pageIndex;
-    } // Used in InteractionManager
 
-  }, {
-    key: "currentPage",
-    get: function get() {
-      return this._currentPage;
-    } // Used in Slice
+  get currentPage() {
+    return this._currentPage;
+  } // Used in Slice
 
-  }, {
-    key: "metadata",
-    get: function get() {
-      return this._metadata;
-    } // Used below
 
-  }, {
-    key: "nbOfPages",
-    get: function get() {
-      return this._pagesArray ? this._pagesArray.length : 0;
-    }
-  }]);
+  get metadata() {
+    return this._metadata;
+  } // Used below
 
-  function PageNavigator(type, metadata, pageLayersArray, player) {
-    var _this;
 
-    _classCallCheck(this, PageNavigator);
+  get nbOfPages() {
+    return this._pagesArray ? this._pagesArray.length : 0;
+  }
 
-    var name = "".concat(type, "PageNav");
-    var parent = null;
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(PageNavigator).call(this, name, parent, pageLayersArray));
-    _this._type = type;
-    _this._metadata = metadata;
-    var eventEmitter = player.eventEmitter,
-        interactionManager = player.interactionManager,
-        resourceManager = player.resourceManager,
-        options = player.options;
-    _this._eventEmitter = eventEmitter;
-    _this._interactionManager = interactionManager;
-    _this._resourceManager = resourceManager;
-    var allowsDestroy = options.allowsDestroy;
-    _this._allowsDestroy = allowsDestroy === true || allowsDestroy === false ? allowsDestroy : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultAllowsDestroy"];
-    var shouldStateLayersCoexistOutsideTransitions = false;
+  constructor(type, metadata, pageLayersArray, player) {
+    const name = `${type}PageNav`;
+    const parent = null;
+    super(name, parent, pageLayersArray);
+    this._type = type;
+    this._metadata = metadata;
+    const {
+      eventEmitter,
+      interactionManager,
+      resourceManager,
+      options
+    } = player;
+    this._eventEmitter = eventEmitter;
+    this._interactionManager = interactionManager;
+    this._resourceManager = resourceManager;
+    const {
+      allowsDestroy
+    } = options;
+    this._allowsDestroy = allowsDestroy === true || allowsDestroy === false ? allowsDestroy : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultAllowsDestroy"];
+    const shouldStateLayersCoexistOutsideTransitions = false;
 
-    _this._addStateHandler(shouldStateLayersCoexistOutsideTransitions, player);
+    this._addStateHandler(shouldStateLayersCoexistOutsideTransitions, player);
 
-    _this._pagesArray = _this._layersArray ? _this._layersArray.map(function (_ref) {
-      var content = _ref.content;
-      return content;
-    }) : [];
-    _this._currentPage = null; // The current page will be the page pointed to by pageIndex
+    this._pagesArray = this._layersArray ? this._layersArray.map(({
+      content
+    }) => content) : [];
+    this._currentPage = null; // The current page will be the page pointed to by pageIndex
 
-    _this._targetSegmentIndex = null; // Pages for which textures are required to be loaded
+    this._targetSegmentIndex = null; // Pages for which textures are required to be loaded
 
-    _this._loadingPageRange = {
+    this._loadingPageRange = {
       startIndex: null,
       endIndex: null
     };
-    _this._tags = null;
-    return _this;
+    this._tags = null;
   }
 
-  _createClass(PageNavigator, [{
-    key: "setLoadingProperties",
-    value: function setLoadingProperties(maxNbOfPagesBefore, maxNbOfPagesAfter) {
-      this._maxNbOfPagesBefore = maxNbOfPagesBefore;
-      this._maxNbOfPagesAfter = maxNbOfPagesAfter;
-    } // Used above and in Player
-
-  }, {
-    key: "updateLoadTasks",
-    value: function updateLoadTasks(targetPageIndex) {
-      var _this2 = this;
-
-      var oldPathsSet = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var actualTargetPageIndex = targetPageIndex === null ? this.pageIndex : targetPageIndex; // Update priorities for load tasks (if some tasks are still pending)
-
-      this._resourceManager.updateForTargetPageIndex(actualTargetPageIndex); // Determine which pages have been added or removed
+  setLoadingProperties(maxNbOfPagesBefore, maxNbOfPagesAfter) {
+    this._maxNbOfPagesBefore = maxNbOfPagesBefore;
+    this._maxNbOfPagesAfter = maxNbOfPagesAfter;
+  } // Used above and in Player
 
 
-      if (oldPathsSet) {
-        // On a reading mode or tag change
-        this._loadingPageRange = {
-          startIndex: null,
-          endIndex: null
-        };
-      }
+  updateLoadTasks(targetPageIndex, oldPathsSet = null) {
+    const actualTargetPageIndex = targetPageIndex === null ? this.pageIndex : targetPageIndex; // Update priorities for load tasks (if some tasks are still pending)
 
-      var _this$_getPageIndexLo = this._getPageIndexLoadingRange(actualTargetPageIndex),
-          startIndex = _this$_getPageIndexLo.startIndex,
-          endIndex = _this$_getPageIndexLo.endIndex; // If start and end indices have not changed, do nothing
+    this._resourceManager.updateForTargetPageIndex(actualTargetPageIndex); // Determine which pages have been added or removed
 
 
-      if (startIndex !== this._loadingPageRange.startIndex || endIndex !== this._loadingPageRange.endIndex) {
-        var pagesToAddIndices = [];
-        var pagesToRemoveIndices = []; // Determine added page indices
+    if (oldPathsSet) {
+      // On a reading mode or tag change
+      this._loadingPageRange = {
+        startIndex: null,
+        endIndex: null
+      };
+    }
 
-        for (var i = startIndex; i <= endIndex; i += 1) {
-          if (this._loadingPageRange.startIndex === null || i < this._loadingPageRange.startIndex || i > this._loadingPageRange.endIndex || this._layersArray[i].loadStatus === 1 || this._layersArray[i].loadStatus === 0 || this._pagesArray[i].loadStatus === -1) {
-            pagesToAddIndices.push(i);
+    const {
+      startIndex,
+      endIndex
+    } = this._getPageIndexLoadingRange(actualTargetPageIndex); // If start and end indices have not changed, do nothing
+
+
+    if (startIndex !== this._loadingPageRange.startIndex || endIndex !== this._loadingPageRange.endIndex) {
+      const pagesToAddIndices = [];
+      const pagesToRemoveIndices = []; // Determine added page indices
+
+      for (let i = startIndex; i <= endIndex; i += 1) {
+        if (this._loadingPageRange.startIndex === null || i < this._loadingPageRange.startIndex || i > this._loadingPageRange.endIndex || this._layersArray[i].loadStatus === 1 || this._layersArray[i].loadStatus === 0 || this._pagesArray[i].loadStatus === -1) {
+          pagesToAddIndices.push(i);
+        }
+      } // Determine removed page indices
+
+
+      if (this._loadingPageRange.startIndex !== null) {
+        for (let i = this._loadingPageRange.startIndex; i <= this._loadingPageRange.endIndex; i += 1) {
+          if (i < startIndex || i > endIndex) {
+            pagesToRemoveIndices.push(i);
           }
-        } // Determine removed page indices
+        }
+      } // Store active page range for next time (i.e. next page change)
 
 
-        if (this._loadingPageRange.startIndex !== null) {
-          for (var _i = this._loadingPageRange.startIndex; _i <= this._loadingPageRange.endIndex; _i += 1) {
-            if (_i < startIndex || _i > endIndex) {
-              pagesToRemoveIndices.push(_i);
-            }
-          }
-        } // Store active page range for next time (i.e. next page change)
+      this._loadingPageRange = {
+        startIndex,
+        endIndex
+      }; // Load relevant textures
 
+      const newPathsSet = new Set(); // Used to list all *individual* paths
 
-        this._loadingPageRange = {
-          startIndex: startIndex,
-          endIndex: endIndex
-        }; // Load relevant textures
+      pagesToAddIndices.forEach(pageIndex => {
+        const layer = this._getLayerWithIndex(pageIndex);
 
-        var newPathsSet = new Set(); // Used to list all *individual* paths
+        if (layer) {
+          const pathsArrayAndSliceIdsArray = layer.getPathsToLoad();
+          pathsArrayAndSliceIdsArray.forEach(({
+            pathsArray,
+            sliceId
+          }) => {
+            // Reminder: at this stage each pathsArray actually = { pathsArray, sliceId }
+            this._resourceManager.loadTexturesAtPaths(pathsArray, sliceId, pageIndex);
 
-        pagesToAddIndices.forEach(function (pageIndex) {
-          var layer = _this2._getLayerWithIndex(pageIndex);
-
-          if (layer) {
-            var pathsArrayAndSliceIdsArray = layer.getPathsToLoad();
-            pathsArrayAndSliceIdsArray.forEach(function (_ref2) {
-              var pathsArray = _ref2.pathsArray,
-                  sliceId = _ref2.sliceId;
-
-              // Reminder: at this stage each pathsArray actually = { pathsArray, sliceId }
-              _this2._resourceManager.loadTexturesAtPaths(pathsArray, sliceId, pageIndex);
-
-              pathsArray.forEach(function (path) {
-                newPathsSet.add(path);
-              });
+            pathsArray.forEach(path => {
+              newPathsSet.add(path);
             });
-          }
-        }); // Destroy relevant textures
-
-        if (this._allowsDestroy === true) {
-          if (oldPathsSet) {
-            var destroyablePathsArray = []; // All those in old that are not in new!
-
-            oldPathsSet.forEach(function (oldPath) {
-              var canBeDestroyed = true;
-              newPathsSet.forEach(function (newPath) {
-                if (newPath === oldPath) {
-                  canBeDestroyed = false;
-                }
-              });
-
-              if (canBeDestroyed === true) {
-                destroyablePathsArray.push(oldPath);
-              }
-            });
-            destroyablePathsArray.forEach(function (path) {
-              _this2._resourceManager.forceDestroyTexturesForPath(path);
-            });
-          }
-
-          pagesToRemoveIndices.forEach(function (pageIndex) {
-            var layer = _this2._getLayerWithIndex(pageIndex);
-
-            if (layer) {
-              layer.destroyTexturesIfPossible();
-            }
           });
         }
+      }); // Destroy relevant textures
+
+      if (this._allowsDestroy === true) {
+        if (oldPathsSet) {
+          const destroyablePathsArray = []; // All those in old that are not in new!
+
+          oldPathsSet.forEach(oldPath => {
+            let canBeDestroyed = true;
+            newPathsSet.forEach(newPath => {
+              if (newPath === oldPath) {
+                canBeDestroyed = false;
+              }
+            });
+
+            if (canBeDestroyed === true) {
+              destroyablePathsArray.push(oldPath);
+            }
+          });
+          destroyablePathsArray.forEach(path => {
+            this._resourceManager.forceDestroyTexturesForPath(path);
+          });
+        }
+
+        pagesToRemoveIndices.forEach(pageIndex => {
+          const layer = this._getLayerWithIndex(pageIndex);
+
+          if (layer) {
+            layer.destroyTexturesIfPossible();
+          }
+        });
       }
     }
-  }, {
-    key: "_getPageIndexLoadingRange",
-    value: function _getPageIndexLoadingRange(pageIndex) {
-      var startIndex = 0;
-      var endIndex = this.nbOfPages - 1;
+  }
 
-      if (this._maxNbOfPagesAfter) {
-        startIndex = Math.max(0, pageIndex - this._maxNbOfPagesBefore);
-        endIndex = Math.min(this.nbOfPages - 1, pageIndex + this._maxNbOfPagesAfter);
-      }
+  _getPageIndexLoadingRange(pageIndex) {
+    let startIndex = 0;
+    let endIndex = this.nbOfPages - 1;
 
-      return {
-        startIndex: startIndex,
-        endIndex: endIndex
-      };
-    } // On a successful page change (post-transition), when this.pageIndex (= stateIndex) has changed
+    if (this._maxNbOfPagesAfter) {
+      startIndex = Math.max(0, pageIndex - this._maxNbOfPagesBefore);
+      endIndex = Math.min(this.nbOfPages - 1, pageIndex + this._maxNbOfPagesAfter);
+    }
 
-  }, {
-    key: "finalizeEntry",
-    value: function finalizeEntry() {
-      if (this.pageIndex < this._pagesArray.length) {
-        this._currentPage = this._pagesArray[this.pageIndex];
-      } else {
-        return;
-      }
-
-      if (!this._currentPage) {
-        return;
-      } // If _doOnStateChangeEnd has been called by a goTo, go to the relevant segment directly
+    return {
+      startIndex,
+      endIndex
+    };
+  } // On a successful page change (post-transition), when this.pageIndex (= stateIndex) has changed
 
 
-      if (this._targetSegmentIndex !== null) {
-        this._currentPage.goToSegmentIndex(this._targetSegmentIndex);
+  finalizeEntry() {
+    if (this.pageIndex < this._pagesArray.length) {
+      this._currentPage = this._pagesArray[this.pageIndex];
+    } else {
+      return;
+    }
 
-        this._targetSegmentIndex = null;
-      } // If required, do something with the page change information (e.g. signal it via an event)
+    if (!this._currentPage) {
+      return;
+    } // If _doOnStateChangeEnd has been called by a goTo, go to the relevant segment directly
 
 
-      var customData = {
-        pageIndex: this.pageIndex,
-        nbOfPages: this.nbOfPages
-      };
+    if (this._targetSegmentIndex !== null) {
+      this._currentPage.goToSegmentIndex(this._targetSegmentIndex);
 
-      this._eventEmitter.emit("pagechange", customData);
-    } // Used in StateHandler
+      this._targetSegmentIndex = null;
+    } // If required, do something with the page change information (e.g. signal it via an event)
 
-  }, {
-    key: "getDepthOfNewLayer",
-    value: function getDepthOfNewLayer(oldPageIndex, isGoingForward) {
-      if (oldPageIndex < 0 || oldPageIndex >= this._layersArray.length || !this._layersArray[oldPageIndex]) {
-        return 1;
-      }
 
-      var _this$_layersArray$ol = this._layersArray[oldPageIndex],
-          exitForward = _this$_layersArray$ol.exitForward,
-          exitBackward = _this$_layersArray$ol.exitBackward;
+    const customData = {
+      pageIndex: this.pageIndex,
+      nbOfPages: this.nbOfPages
+    };
 
-      if (isGoingForward === true && exitForward && exitForward.type === "slide-out" || isGoingForward === false && exitBackward && (exitBackward.type === "fade-out" || exitBackward.type === "slide-out")) {
-        return 0;
-      }
+    this._eventEmitter.emit("pagechange", customData);
+  } // Used in StateHandler
 
+
+  getDepthOfNewLayer(oldPageIndex, isGoingForward) {
+    if (oldPageIndex < 0 || oldPageIndex >= this._layersArray.length || !this._layersArray[oldPageIndex]) {
       return 1;
     }
-  }, {
-    key: "attemptStickyStep",
-    value: function attemptStickyStep() {
-      if (!this._currentPage || this.isUndergoingChanges === true || this._metadata.overflow !== "paginated") {
-        return false;
-      }
 
-      return this._currentPage.attemptStickyStep();
+    const {
+      exitForward,
+      exitBackward
+    } = this._layersArray[oldPageIndex];
+
+    if (isGoingForward === true && exitForward && exitForward.type === "slide-out" || isGoingForward === false && exitBackward && (exitBackward.type === "fade-out" || exitBackward.type === "slide-out")) {
+      return 0;
     }
-  }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      // If the page is being changed, do nothing
-      if (!this._currentPage || this.isUndergoingChanges === true) {
-        return;
-      }
 
-      this._currentPage.handleScroll(scrollData, isWheelScroll);
+    return 1;
+  }
+
+  attemptStickyStep() {
+    if (!this._currentPage || this.isUndergoingChanges === true || this._metadata.overflow !== "paginated") {
+      return false;
     }
-  }, {
-    key: "zoom",
-    value: function zoom(zoomData) {
-      if (!this._currentPage || this.isUndergoingChanges === true) {
-        return;
-      }
 
-      this._currentPage.zoom(zoomData);
-    } // Player functions
+    return this._currentPage.attemptStickyStep();
+  }
 
-  }, {
-    key: "goToPageWithIndex",
-    value: function goToPageWithIndex(pageIndex) {
-      var _this3 = this;
-
-      var segmentIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var shouldCancelTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
-      var isGoingForward = true;
-      this._targetSegmentIndex = segmentIndex;
-
-      if (!this._handler || this._handler.type !== "stateHandler") {
-        return;
-      }
-
-      var callback = function callback() {
-        // If changing pages
-        if (pageIndex !== _this3.pageIndex) {
-          _this3._handler.goToState(pageIndex, isGoingForward, shouldCancelTransition); // And then the finalizeEntry above will ensure we go to segmentIndex directly
-          // Or if staying on the same page but changing segments
-
-        } else if (_this3._targetSegmentIndex !== null) {
-          _this3._currentPage.goToSegmentIndex(_this3._targetSegmentIndex, isGoingForward);
-
-          _this3._targetSegmentIndex = null;
-        }
-      }; // If forcing a page change (e.g. via ToC while a transition is running)
-
-
-      if (this._handler.isUndergoingChanges === true) {
-        this._handler.forceChangesToEnd(callback);
-      } else {
-        callback();
-      }
+  handleScroll(scrollData, isWheelScroll) {
+    // If the page is being changed, do nothing
+    if (!this._currentPage || this.isUndergoingChanges === true) {
+      return;
     }
-  }, {
-    key: "_getLayerWithIndex",
-    value: function _getLayerWithIndex(pageIndex) {
-      if (this._layersArray.length > 0 && pageIndex >= 0 && pageIndex < this.nbOfPages) {
-        var layer = this._layersArray[pageIndex];
-        return layer;
-      }
 
+    this._currentPage.handleScroll(scrollData, isWheelScroll);
+  }
+
+  zoom(zoomData) {
+    if (!this._currentPage || this.isUndergoingChanges === true) {
+      return;
+    }
+
+    this._currentPage.zoom(zoomData);
+  } // Player functions
+
+
+  goToPageWithIndex(pageIndex, segmentIndex = null, shouldCancelTransition = false) {
+    const isGoingForward = true;
+    this._targetSegmentIndex = segmentIndex;
+
+    if (!this._handler || this._handler.type !== "stateHandler") {
+      return;
+    }
+
+    const callback = () => {
+      // If changing pages
+      if (pageIndex !== this.pageIndex) {
+        this._handler.goToState(pageIndex, isGoingForward, shouldCancelTransition); // And then the finalizeEntry above will ensure we go to segmentIndex directly
+        // Or if staying on the same page but changing segments
+
+      } else if (this._targetSegmentIndex !== null) {
+        this._currentPage.goToSegmentIndex(this._targetSegmentIndex, isGoingForward);
+
+        this._targetSegmentIndex = null;
+      }
+    }; // If forcing a page change (e.g. via ToC while a transition is running)
+
+
+    if (this._handler.isUndergoingChanges === true) {
+      this._handler.forceChangesToEnd(callback);
+    } else {
+      callback();
+    }
+  }
+
+  _getLayerWithIndex(pageIndex) {
+    if (this._layersArray.length > 0 && pageIndex >= 0 && pageIndex < this.nbOfPages) {
+      const layer = this._layersArray[pageIndex];
+      return layer;
+    }
+
+    return null;
+  }
+
+  finalizeExit() {
+    // But no need for a setupForEntry
+    super.finalizeExit();
+    this._currentPage = null;
+    this.removeFromParent();
+  }
+
+  setPercentInCurrentPage(percent) {
+    if (!this._currentPage) {
+      return;
+    }
+
+    this._currentPage.setPercent(percent);
+  }
+
+  getFirstHrefInCurrentPage() {
+    if (!this._currentPage) {
       return null;
     }
-  }, {
-    key: "finalizeExit",
-    value: function finalizeExit() {
-      // But no need for a setupForEntry
-      _get(_getPrototypeOf(PageNavigator.prototype), "finalizeExit", this).call(this);
 
-      this._currentPage = null;
-      this.removeFromParent();
-    }
-  }, {
-    key: "setPercentInCurrentPage",
-    value: function setPercentInCurrentPage(percent) {
-      if (!this._currentPage) {
-        return;
-      }
+    return this._currentPage.getFirstHref();
+  }
 
-      this._currentPage.setPercent(percent);
-    }
-  }, {
-    key: "getFirstHrefInCurrentPage",
-    value: function getFirstHrefInCurrentPage() {
-      if (!this._currentPage) {
-        return null;
-      }
+  destroy() {
+    this.removeFromParent();
+  }
 
-      return this._currentPage.getFirstHref();
-    }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      this.removeFromParent();
-    }
-  }]);
-
-  return PageNavigator;
-}(_LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -60842,68 +59737,35 @@ function (_LayerPile) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Segment; });
 /* harmony import */ var _LayerPile__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LayerPile */ "./src/StoryBuilder/LayerPile.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+class Segment extends _LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  // Used in StoryBuilder
+  get segmentIndex() {
+    return this._segmentIndex;
+  }
 
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var Segment =
-/*#__PURE__*/
-function (_LayerPile) {
-  _inherits(Segment, _LayerPile);
-
-  _createClass(Segment, [{
-    key: "segmentIndex",
-    // Used in StoryBuilder
-    get: function get() {
-      return this._segmentIndex;
-    }
-  }]);
-
-  function Segment(segmentIndex, page, sliceLayersArray, player) {
-    var _this;
-
-    _classCallCheck(this, Segment);
-
-    var pageIndex = page.pageIndex;
-    var name = "page".concat(pageIndex, "Segment").concat(segmentIndex);
-    var isFirstSliceAParentSlice = sliceLayersArray.length > 1;
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Segment).call(this, name, page, sliceLayersArray, isFirstSliceAParentSlice));
-    _this._pageIndex = pageIndex;
-    _this._segmentIndex = segmentIndex; // Add a StateHandler to the Segment if it has multiple layers
+  constructor(segmentIndex, page, sliceLayersArray, player) {
+    const {
+      pageIndex
+    } = page;
+    const name = `page${pageIndex}Segment${segmentIndex}`;
+    const isFirstSliceAParentSlice = sliceLayersArray.length > 1;
+    super(name, page, sliceLayersArray, isFirstSliceAParentSlice);
+    this._pageIndex = pageIndex;
+    this._segmentIndex = segmentIndex; // Add a StateHandler to the Segment if it has multiple layers
 
     if (sliceLayersArray.length > 1) {
-      var shouldStateLayersCoexistOutsideTransitions = true;
+      const shouldStateLayersCoexistOutsideTransitions = true;
 
-      _this._addStateHandler(shouldStateLayersCoexistOutsideTransitions, player);
+      this._addStateHandler(shouldStateLayersCoexistOutsideTransitions, player);
     } // It is useful to do the following right away for (double page) empty slices,
     // so that their loadStatus will always be = 2
 
 
-    _this.updateLoadStatus();
-
-    return _this;
+    this.updateLoadStatus();
   }
 
-  return Segment;
-}(_LayerPile__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -60918,130 +59780,88 @@ function (_LayerPile) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Slideshow; });
 /* harmony import */ var _PageNavigator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./PageNavigator */ "./src/StoryBuilder/PageNavigator.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+class Slideshow extends _PageNavigator__WEBPACK_IMPORTED_MODULE_0__["default"] {
+  constructor(type, metadata, pageLayersArray, player) {
+    super(type, metadata, pageLayersArray, player);
+    const {
+      direction
+    } = metadata || {};
+    this._direction = direction;
 
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var Slideshow =
-/*#__PURE__*/
-function (_PageNavigator) {
-  _inherits(Slideshow, _PageNavigator);
-
-  function Slideshow(type, metadata, pageLayersArray, player) {
-    var _this;
-
-    _classCallCheck(this, Slideshow);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(Slideshow).call(this, type, metadata, pageLayersArray, player));
-
-    var _ref = metadata || {},
-        direction = _ref.direction;
-
-    _this._direction = direction;
-
-    _this._pagesArray.forEach(function (page) {
+    this._pagesArray.forEach(page => {
       page.setDirection(direction);
     });
-
-    return _this;
   }
 
-  _createClass(Slideshow, [{
-    key: "go",
-    value: function go(way, shouldGoToTheMax) {
-      if (!this._direction || (way === "right" || way === "left") && (this._direction === "ttb" || this._direction === "btt") || (way === "down" || way === "up") && (this._direction === "rtl" || this._direction === "ltr")) {
-        return;
+  go(way, shouldGoToTheMax) {
+    if (!this._direction || (way === "right" || way === "left") && (this._direction === "ttb" || this._direction === "btt") || (way === "down" || way === "up") && (this._direction === "rtl" || this._direction === "ltr")) {
+      return;
+    }
+
+    if (shouldGoToTheMax === true) {
+      let targetPageIndex = null;
+
+      if (way === "right" || way === "down") {
+        targetPageIndex = this._direction === "ltr" || this._direction === "ttb" ? this._pagesArray.length - 1 : 0;
+      } else if (way === "left" || way === "up") {
+        targetPageIndex = this._direction === "rtl" || this._direction === "btt" ? this._pagesArray.length - 1 : 0;
       }
 
-      if (shouldGoToTheMax === true) {
-        var targetPageIndex = null;
+      if (targetPageIndex !== null) {
+        const shouldCancelTransition = true;
 
-        if (way === "right" || way === "down") {
-          targetPageIndex = this._direction === "ltr" || this._direction === "ttb" ? this._pagesArray.length - 1 : 0;
-        } else if (way === "left" || way === "up") {
-          targetPageIndex = this._direction === "rtl" || this._direction === "btt" ? this._pagesArray.length - 1 : 0;
-        }
-
-        if (targetPageIndex !== null) {
-          var shouldCancelTransition = true;
-
-          if (targetPageIndex !== this.pageIndex) {
-            this.goToPageWithIndex(targetPageIndex, null, shouldCancelTransition);
-          } else {
-            this.goToPageWithIndex(targetPageIndex, 0, shouldCancelTransition);
-          }
-        }
-      } else {
-        switch (way) {
-          case "right":
-            this._interactionManager.goRight();
-
-            break;
-
-          case "left":
-            this._interactionManager.goLeft();
-
-            break;
-
-          case "down":
-            this._interactionManager.goDown();
-
-            break;
-
-          case "up":
-            this._interactionManager.goUp();
-
-            break;
-
-          default:
-            break;
+        if (targetPageIndex !== this.pageIndex) {
+          this.goToPageWithIndex(targetPageIndex, null, shouldCancelTransition);
+        } else {
+          this.goToPageWithIndex(targetPageIndex, 0, shouldCancelTransition);
         }
       }
+    } else {
+      switch (way) {
+        case "right":
+          this._interactionManager.goRight();
+
+          break;
+
+        case "left":
+          this._interactionManager.goLeft();
+
+          break;
+
+        case "down":
+          this._interactionManager.goDown();
+
+          break;
+
+        case "up":
+          this._interactionManager.goUp();
+
+          break;
+
+        default:
+          break;
+      }
     }
-  }, {
-    key: "goForward",
-    value: function goForward() {
-      var _this2 = this;
+  }
 
-      var doIfIsUndergoingChanges = function doIfIsUndergoingChanges() {
-        _this2.attemptToGoForward(true);
-      };
+  goForward() {
+    const doIfIsUndergoingChanges = () => {
+      this.attemptToGoForward(true);
+    };
 
-      this.attemptToGoForward(false, doIfIsUndergoingChanges);
-    }
-  }, {
-    key: "goBackward",
-    value: function goBackward() {
-      var _this3 = this;
+    this.attemptToGoForward(false, doIfIsUndergoingChanges);
+  }
 
-      var doIfIsUndergoingChanges = function doIfIsUndergoingChanges() {
-        _this3.attemptToGoBackward(true);
-      };
+  goBackward() {
+    const doIfIsUndergoingChanges = () => {
+      this.attemptToGoBackward(true);
+    };
 
-      this.attemptToGoBackward(false, doIfIsUndergoingChanges);
-    }
-  }]);
+    this.attemptToGoBackward(false, doIfIsUndergoingChanges);
+  }
 
-  return Slideshow;
-}(_PageNavigator__WEBPACK_IMPORTED_MODULE_0__["default"]);
-
-
+}
 
 /***/ }),
 
@@ -61056,73 +59876,40 @@ function (_PageNavigator) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return StateHandler; });
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
 
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
-
-function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
-
-function _iterableToArray(iter) { if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter); }
-
-function _arrayWithoutHoles(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+class StateHandler {
+  get type() {
+    return this._type;
+  } // Used in LayerPile
 
 
+  get isAtStart() {
+    return this._statesArray.length === 0 || this._stateIndex === 0;
+  }
 
-var StateHandler =
-/*#__PURE__*/
-function () {
-  _createClass(StateHandler, [{
-    key: "type",
-    get: function get() {
-      return this._type;
-    } // Used in LayerPile
+  get isAtEnd() {
+    return this._statesArray.length === 0 || this._stateIndex === this._statesArray.length - 1;
+  }
 
-  }, {
-    key: "isAtStart",
-    get: function get() {
-      return this._statesArray.length === 0 || this._stateIndex === 0;
-    }
-  }, {
-    key: "isAtEnd",
-    get: function get() {
-      return this._statesArray.length === 0 || this._stateIndex === this._statesArray.length - 1;
-    }
-  }, {
-    key: "isUndergoingChanges",
-    get: function get() {
-      return this._currentTransition.status !== "none";
-    } // Used in PageNavigator
+  get isUndergoingChanges() {
+    return this._currentTransition.status !== "none";
+  } // Used in PageNavigator
 
-  }, {
-    key: "stateIndex",
-    get: function get() {
-      return this._stateIndex;
-    }
-  }]);
 
-  function StateHandler(layerPile) {
-    var shouldStateLayersCoexistOutsideTransitions = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-    var player = arguments.length > 2 ? arguments[2] : undefined;
+  get stateIndex() {
+    return this._stateIndex;
+  }
 
-    _classCallCheck(this, StateHandler);
-
+  constructor(layerPile, shouldStateLayersCoexistOutsideTransitions = false, player) {
     this._layerPile = layerPile;
     this._shouldStateLayersCoexistOutsideTransitions = shouldStateLayersCoexistOutsideTransitions;
     this._player = player; // Useful only for viewportRect
 
     this._type = "stateHandler"; // this._isLooping = false
 
-    var layersArray = layerPile.layersArray; // The _statesArray lists for each state the indices of the layers to add
+    const {
+      layersArray
+    } = layerPile; // The _statesArray lists for each state the indices of the layers to add
     // (shouldStateLayersCoexistOutsideTransitions specifies what to do with already present layers)
 
     this._statesArray = this._createStatesArray(layersArray);
@@ -61131,544 +59918,519 @@ function () {
     this._reset();
   }
 
-  _createClass(StateHandler, [{
-    key: "_createStatesArray",
-    value: function _createStatesArray(layersArray) {
-      // For a PageNavigator (in particular)
-      if (this._shouldStateLayersCoexistOutsideTransitions === false) {
-        return layersArray.map(function (_, i) {
-          return [i];
-        });
-      } // While for a multi-layer Segment...
+  _createStatesArray(layersArray) {
+    // For a PageNavigator (in particular)
+    if (this._shouldStateLayersCoexistOutsideTransitions === false) {
+      return layersArray.map((_, i) => [i]);
+    } // While for a multi-layer Segment...
 
 
-      var statesArray = [];
-      var newLayerIndicesForState = [];
+    const statesArray = [];
+    let newLayerIndicesForState = [];
 
-      for (var i = 0; i < layersArray.length; i += 1) {
-        var layer = layersArray[i];
+    for (let i = 0; i < layersArray.length; i += 1) {
+      const layer = layersArray[i];
+      const {
+        entryForward
+      } = layer || {}; // Strong decision: only those are taken into account
+      // (i.e. we're not considering possibly mismatched backwardEntries to build the list)
 
-        var _ref = layer || {},
-            entryForward = _ref.entryForward; // Strong decision: only those are taken into account
-        // (i.e. we're not considering possibly mismatched backwardEntries to build the list)
-
-
-        if (entryForward && entryForward.isDiscontinuous === true && i !== 0) {
-          statesArray.push(newLayerIndicesForState);
-          newLayerIndicesForState = [i];
-        } else {
-          newLayerIndicesForState.push(i);
-        }
+      if (entryForward && entryForward.isDiscontinuous === true && i !== 0) {
+        statesArray.push(newLayerIndicesForState);
+        newLayerIndicesForState = [i];
+      } else {
+        newLayerIndicesForState.push(i);
       }
-
-      statesArray.push(newLayerIndicesForState);
-      return statesArray;
     }
-  }, {
-    key: "_reset",
-    value: function _reset() {
-      this._currentTransition = {
-        status: "none",
-        isGoingForward: true,
-        layerTransitionsArray: [],
-        nbOfRunningLayerTransitions: 0,
-        shouldForceToEnd: false,
-        endCallback: null,
-        shouldForceToStop: false
-      };
-    } // Used here and in PageNavigator
 
-  }, {
-    key: "forceChangesToEnd",
-    value: function forceChangesToEnd(callback, isGoingForward) {
-      // Only run the callback if the movement directions differ
-      if (isGoingForward !== this._currentTransition.isGoingForward) {
-        if (this._currentTransition.status === "none") {
-          if (callback) {
-            callback();
-          }
+    statesArray.push(newLayerIndicesForState);
+    return statesArray;
+  }
 
-          return;
-        } // else
+  _reset() {
+    this._currentTransition = {
+      status: "none",
+      isGoingForward: true,
+      layerTransitionsArray: [],
+      nbOfRunningLayerTransitions: 0,
+      shouldForceToEnd: false,
+      endCallback: null,
+      shouldForceToStop: false
+    };
+  } // Used here and in PageNavigator
 
 
-        this._currentTransition.endCallback = callback;
-      }
+  forceChangesToEnd(callback, isGoingForward) {
+    // Only run the callback if the movement directions differ
+    if (isGoingForward !== this._currentTransition.isGoingForward) {
+      if (this._currentTransition.status === "none") {
+        if (callback) {
+          callback();
+        }
 
+        return;
+      } // else
+
+
+      this._currentTransition.endCallback = callback;
+    }
+
+    this._currentTransition.shouldForceToEnd = true;
+  }
+
+  goToState(stateIndex, isGoingForward, shouldCancelTransition = false) {
+    if (stateIndex < 0 || stateIndex >= this._statesArray.length) {
+      return;
+    }
+
+    if (shouldCancelTransition === true) {
+      // Ensure layerTransitions will be forced to end
       this._currentTransition.shouldForceToEnd = true;
     }
-  }, {
-    key: "goToState",
-    value: function goToState(stateIndex, isGoingForward) {
-      var _this = this;
 
-      var shouldCancelTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+    const oldStateIndex = this._stateIndex;
+    let layerIndicesToRemove = [];
+    let layerIndicesToAdd = []; // For page transitions
 
-      if (stateIndex < 0 || stateIndex >= this._statesArray.length) {
-        return;
+    if (this._shouldStateLayersCoexistOutsideTransitions === false) {
+      if (this._stateIndex !== null) {
+        // No this._stateIndex on first goToState
+        layerIndicesToRemove = this._statesArray[this._stateIndex];
       }
 
-      if (shouldCancelTransition === true) {
-        // Ensure layerTransitions will be forced to end
-        this._currentTransition.shouldForceToEnd = true;
+      layerIndicesToAdd = this._statesArray[stateIndex]; // For layer transitions
+    } else if (isGoingForward === true || stateIndex === this._statesArray.length - 1) {
+      // Same approach when coming back indeed
+      let i = stateIndex === this._statesArray.length - 1 ? 0 : this._stateIndex || 0;
+
+      while (i < stateIndex && i < this._statesArray.length) {
+        this._statesArray[i].forEach(layerIndex => {
+          const layer = this._layerPile.getLayerAtIndex(layerIndex);
+
+          this._addLayerContent(layer, layerIndex, isGoingForward, this._stateIndex || 0);
+
+          const {
+            content
+          } = layer || {};
+          content.setVisibility(true);
+          layer.finalizeEntry(); // Do note that those layers are added right away, and thus will not appear
+          // in layerIndicesToAdd, which is only concerned with the final layer,
+          // for which an entry layerTransition may play!
+        });
+
+        i += 1;
       }
 
-      var oldStateIndex = this._stateIndex;
-      var layerIndicesToRemove = [];
-      var layerIndicesToAdd = []; // For page transitions
+      if (i === stateIndex) {
+        layerIndicesToAdd.push(...this._statesArray[i]);
+      }
+    } else {
+      // Going backward (i.e. stateIndex < this._stateIndex)
+      let i = this._statesArray.length - 1;
 
-      if (this._shouldStateLayersCoexistOutsideTransitions === false) {
-        if (this._stateIndex !== null) {
-          // No this._stateIndex on first goToState
-          layerIndicesToRemove = this._statesArray[this._stateIndex];
+      while (i > stateIndex && i >= 0) {
+        layerIndicesToRemove.push(...this._statesArray[i]);
+        i -= 1;
+      }
+    }
+
+    if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
+      this._reset(); // To counter the above shouldForceToEnd = true
+
+
+      return;
+    }
+
+    const layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex);
+
+    this._currentTransition.status = "started";
+    this._currentTransition.oldStateIndex = oldStateIndex;
+    this._currentTransition.newStateIndex = stateIndex;
+    this._currentTransition.isGoingForward = isGoingForward;
+    this._currentTransition.layerTransitionsArray = layerTransitionsArray;
+    this._currentTransition.nbOfRunningLayerTransitions = layerTransitionsArray.length;
+
+    if (this._layerPile.doOnStateChangeStart) {
+      this._layerPile.doOnStateChangeStart(stateIndex);
+    }
+
+    this._currentTransition.status = "looping";
+
+    this._startAllLayerTransitions();
+  }
+
+  _addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex) {
+    // Make content invisible (in case a fade-in has to be run)
+    const {
+      content
+    } = layer || {};
+    content.setVisibility(false); // Add new layer at appropriate depth
+
+    const depth = this._layerPile.getDepthOfNewLayer(oldStateIndex, isGoingForward);
+
+    this._layerPile.addChildAtIndex(content, depth);
+
+    layer.setupForEntry(isGoingForward);
+  }
+
+  _createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex) {
+    const layerTransitionsArray = [];
+    layerIndicesToAdd.forEach(layerIndex => {
+      const layer = this._layerPile.getLayerAtIndex(layerIndex); // Add layer content
+
+
+      this._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex); // Now create layerTransitions
+
+
+      const {
+        content,
+        entryForward,
+        entryBackward
+      } = layer || {};
+      const entry = isGoingForward === true ? entryForward : entryBackward;
+      const {
+        type,
+        duration,
+        direction,
+        sliceType,
+        slice,
+        controlled
+      } = entry || {};
+      let layerTransition = {
+        layer,
+        isExiting: false
+      };
+
+      if (entry && (type === "fade-in" || type === "fade-out" // No "remove" transition here
+      || type === "slide-in" || type === "slide-out" || type === "animation")) {
+        let actualDuration = duration; // May still be undefined
+
+        if (sliceType !== "video" || !slice) {
+          actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
         }
 
-        layerIndicesToAdd = this._statesArray[stateIndex]; // For layer transitions
-      } else if (isGoingForward === true || stateIndex === this._statesArray.length - 1) {
-        // Same approach when coming back indeed
-        var i = stateIndex === this._statesArray.length - 1 ? 0 : this._stateIndex || 0;
+        layerTransition = { ...layerTransition,
+          type,
+          duration: actualDuration
+        }; // All start with same zero date as the first one in the list!
 
-        while (i < stateIndex && i < this._statesArray.length) {
-          this._statesArray[i].forEach(function (layerIndex) {
-            var layer = _this._layerPile.getLayerAtIndex(layerIndex);
+        if (type === "slide-in" || type === "slide-out") {
+          layerTransition.direction = direction; // Prevent resize from impacting the content's position
 
-            _this._addLayerContent(layer, layerIndex, isGoingForward, _this._stateIndex || 0);
+          if (direction === "ltr" || direction === "rtl") {
+            content.setIsXPositionUpdating(true);
+          } else if (direction === "ttb" || direction === "btt") {
+            content.setIsYPositionUpdating(true);
+          }
+        } else if (type === "animation" && slice) {
+          layerTransition.sliceType = sliceType;
+          layerTransition.slice = slice;
 
-            var _ref2 = layer || {},
-                content = _ref2.content;
+          if (sliceType === "video" && slice && !actualDuration) {
+            slice.setDoOnEnd(this.forceChangesToEnd.bind(this, null, this._currentTransition.isGoingForward));
+          }
 
-            content.setVisibility(true);
-            layer.finalizeEntry(); // Do note that those layers are added right away, and thus will not appear
-            // in layerIndicesToAdd, which is only concerned with the final layer,
-            // for which an entry layerTransition may play!
-          });
+          slice.resize();
 
-          i += 1;
+          this._layerPile.addChild(slice);
+        }
+      }
+
+      layerTransitionsArray.push(layerTransition);
+    });
+    layerIndicesToRemove.forEach(layerIndex => {
+      const layer = this._layerPile.getLayerAtIndex(layerIndex);
+
+      const {
+        content,
+        exitForward,
+        exitBackward
+      } = layer || {};
+      const exit = isGoingForward === true ? exitForward : exitBackward;
+      const {
+        type,
+        duration,
+        direction,
+        sliceType,
+        slice,
+        controlled
+      } = exit || {};
+      let layerTransition = {
+        layer,
+        isExiting: true
+      };
+
+      if (exit && (type === "remove" || type === "fade-in" || type === "fade-out" || type === "slide-in" || type === "slide-out" || type === "animation")) {
+        let actualDuration = duration; // Can be undefined!
+
+        if (type !== "animation") {
+          actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
         }
 
-        if (i === stateIndex) {
-          var _layerIndicesToAdd;
+        layerTransition = { ...layerTransition,
+          type,
+          duration: actualDuration
+        }; // All start with same zero date as the first one in the list!
 
-          (_layerIndicesToAdd = layerIndicesToAdd).push.apply(_layerIndicesToAdd, _toConsumableArray(this._statesArray[i]));
+        if (type === "slide-in" || type === "slide-out") {
+          layerTransition.direction = direction; // Prevent resize from impacting the content's position
+
+          if (direction === "ltr" || direction === "rtl") {
+            content.setIsXPositionUpdating(true);
+          } else if (direction === "ttb" || direction === "btt") {
+            content.setIsYPositionUpdating(true);
+          }
+        } else if (type === "animation" && slice) {
+          layerTransition.sliceType = sliceType;
+          layerTransition.slice = slice;
         }
+      }
+
+      layerTransitionsArray.push(layerTransition);
+    });
+    return layerTransitionsArray;
+  }
+
+  _startAllLayerTransitions() {
+    this._startTime = Date.now();
+
+    this._currentTransition.layerTransitionsArray.forEach(layerTransition => {
+      const {
+        sliceType,
+        slice
+      } = layerTransition; // If the layerTransition is a video or sequence with no duration,
+      // or a sequence with no frames loaded, skip it
+
+      if (sliceType && (!slice || slice.canPlay === false)) {
+        this._endLayerTransition(layerTransition); // Otherwise play the layerTransition
+
       } else {
-        // Going backward (i.e. stateIndex < this._stateIndex)
-        var _i = this._statesArray.length - 1;
+        if (slice) {
+          slice.finalizeEntry();
+        }
 
-        while (_i > stateIndex && _i >= 0) {
-          var _layerIndicesToRemove;
+        this._runLayerTransition(layerTransition, null);
+      }
+    });
+  } // The function will below shall loop if layerTransitionPercent !== null
 
-          (_layerIndicesToRemove = layerIndicesToRemove).push.apply(_layerIndicesToRemove, _toConsumableArray(this._statesArray[_i]));
 
-          _i -= 1;
+  _runLayerTransition(layerTransition, layerTransitionPercent = null) {
+    const {
+      layer,
+      type,
+      // Type is layerTransition type (not layer type)
+      duration,
+      // Can be undefined for a video (or controlled sequence)
+      direction,
+      sliceType,
+      slice
+    } = layerTransition;
+    let percent = 1;
+
+    if (layerTransitionPercent !== null) {
+      percent = layerTransitionPercent;
+    } else if (duration && duration > 0) {
+      percent = (Date.now() - this._startTime) / duration;
+    } else if (sliceType === "video" && slice) {
+      // Play a video transition until percent = 1
+      percent = 0;
+    } // If the user has forced the transition to its end...
+
+
+    if (this._currentTransition.shouldForceToEnd === true // ... or it is not a video running to its end, and it has actually ended
+    || percent >= 1) {
+      this._endLayerTransition(layerTransition); // Otherwise just apply the required changes based on time
+
+    } else if (type === "animation") {
+      // Continue playing the layerTransition, waiting for its eventual end
+      requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
+    } else {
+      const {
+        viewportRect
+      } = this._player;
+      const {
+        width,
+        height
+      } = viewportRect;
+      const {
+        content
+      } = layer;
+
+      if (type === "fade-in") {
+        content.setAlpha(percent);
+      } else if (type === "fade-out") {
+        content.setAlpha(1 - percent);
+      } else if (type === "slide-in") {
+        switch (direction) {
+          case "ltr":
+            content.setXOffset((percent - 1) * width);
+            break;
+
+          case "rtl":
+            content.setXOffset((1 - percent) * width);
+            break;
+
+          case "ttb":
+            content.setYOffset((percent - 1) * height);
+            break;
+
+          case "btt":
+            content.setYOffset((1 - percent) * height);
+            break;
+
+          default:
+            break;
+        }
+      } else if (type === "slide-out") {
+        switch (direction) {
+          case "ltr":
+            content.setXOffset(percent * width);
+            break;
+
+          case "rtl":
+            content.setXOffset(-percent * width);
+            break;
+
+          case "ttb":
+            content.setYOffset(percent * height);
+            break;
+
+          case "btt":
+            content.setYOffset(-percent * height);
+            break;
+
+          default:
+            break;
         }
       }
 
-      if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
-        this._reset(); // To counter the above shouldForceToEnd = true
+      content.setVisibility(true);
 
-
-        return;
-      }
-
-      var layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex);
-
-      this._currentTransition.status = "started";
-      this._currentTransition.oldStateIndex = oldStateIndex;
-      this._currentTransition.newStateIndex = stateIndex;
-      this._currentTransition.isGoingForward = isGoingForward;
-      this._currentTransition.layerTransitionsArray = layerTransitionsArray;
-      this._currentTransition.nbOfRunningLayerTransitions = layerTransitionsArray.length;
-
-      if (this._layerPile.doOnStateChangeStart) {
-        this._layerPile.doOnStateChangeStart(stateIndex);
-      }
-
-      this._currentTransition.status = "looping";
-
-      this._startAllLayerTransitions();
-    }
-  }, {
-    key: "_addLayerContent",
-    value: function _addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex) {
-      // Make content invisible (in case a fade-in has to be run)
-      var _ref3 = layer || {},
-          content = _ref3.content;
-
-      content.setVisibility(false); // Add new layer at appropriate depth
-
-      var depth = this._layerPile.getDepthOfNewLayer(oldStateIndex, isGoingForward);
-
-      this._layerPile.addChildAtIndex(content, depth);
-
-      layer.setupForEntry(isGoingForward);
-    }
-  }, {
-    key: "_createLayerTransitions",
-    value: function _createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex) {
-      var _this2 = this;
-
-      var layerTransitionsArray = [];
-      layerIndicesToAdd.forEach(function (layerIndex) {
-        var layer = _this2._layerPile.getLayerAtIndex(layerIndex); // Add layer content
-
-
-        _this2._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex); // Now create layerTransitions
-
-
-        var _ref4 = layer || {},
-            content = _ref4.content,
-            entryForward = _ref4.entryForward,
-            entryBackward = _ref4.entryBackward;
-
-        var entry = isGoingForward === true ? entryForward : entryBackward;
-
-        var _ref5 = entry || {},
-            type = _ref5.type,
-            duration = _ref5.duration,
-            direction = _ref5.direction,
-            sliceType = _ref5.sliceType,
-            slice = _ref5.slice,
-            controlled = _ref5.controlled;
-
-        var layerTransition = {
-          layer: layer,
-          isExiting: false
-        };
-
-        if (entry && (type === "fade-in" || type === "fade-out" // No "remove" transition here
-        || type === "slide-in" || type === "slide-out" || type === "animation")) {
-          var actualDuration = duration; // May still be undefined
-
-          if (sliceType !== "video" || !slice) {
-            actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
-          }
-
-          layerTransition = _objectSpread({}, layerTransition, {
-            type: type,
-            duration: actualDuration
-          }); // All start with same zero date as the first one in the list!
-
-          if (type === "slide-in" || type === "slide-out") {
-            layerTransition.direction = direction; // Prevent resize from impacting the content's position
-
-            if (direction === "ltr" || direction === "rtl") {
-              content.setIsXPositionUpdating(true);
-            } else if (direction === "ttb" || direction === "btt") {
-              content.setIsYPositionUpdating(true);
-            }
-          } else if (type === "animation" && slice) {
-            layerTransition.sliceType = sliceType;
-            layerTransition.slice = slice;
-
-            if (sliceType === "video" && slice && !actualDuration) {
-              slice.setDoOnEnd(_this2.forceChangesToEnd.bind(_this2, null, _this2._currentTransition.isGoingForward));
-            }
-
-            slice.resize();
-
-            _this2._layerPile.addChild(slice);
-          }
-        }
-
-        layerTransitionsArray.push(layerTransition);
-      });
-      layerIndicesToRemove.forEach(function (layerIndex) {
-        var layer = _this2._layerPile.getLayerAtIndex(layerIndex);
-
-        var _ref6 = layer || {},
-            content = _ref6.content,
-            exitForward = _ref6.exitForward,
-            exitBackward = _ref6.exitBackward;
-
-        var exit = isGoingForward === true ? exitForward : exitBackward;
-
-        var _ref7 = exit || {},
-            type = _ref7.type,
-            duration = _ref7.duration,
-            direction = _ref7.direction,
-            sliceType = _ref7.sliceType,
-            slice = _ref7.slice,
-            controlled = _ref7.controlled;
-
-        var layerTransition = {
-          layer: layer,
-          isExiting: true
-        };
-
-        if (exit && (type === "remove" || type === "fade-in" || type === "fade-out" || type === "slide-in" || type === "slide-out" || type === "animation")) {
-          var actualDuration = duration; // Can be undefined!
-
-          if (type !== "animation") {
-            actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
-          }
-
-          layerTransition = _objectSpread({}, layerTransition, {
-            type: type,
-            duration: actualDuration
-          }); // All start with same zero date as the first one in the list!
-
-          if (type === "slide-in" || type === "slide-out") {
-            layerTransition.direction = direction; // Prevent resize from impacting the content's position
-
-            if (direction === "ltr" || direction === "rtl") {
-              content.setIsXPositionUpdating(true);
-            } else if (direction === "ttb" || direction === "btt") {
-              content.setIsYPositionUpdating(true);
-            }
-          } else if (type === "animation" && slice) {
-            layerTransition.sliceType = sliceType;
-            layerTransition.slice = slice;
-          }
-        }
-
-        layerTransitionsArray.push(layerTransition);
-      });
-      return layerTransitionsArray;
-    }
-  }, {
-    key: "_startAllLayerTransitions",
-    value: function _startAllLayerTransitions() {
-      var _this3 = this;
-
-      this._startTime = Date.now();
-
-      this._currentTransition.layerTransitionsArray.forEach(function (layerTransition) {
-        var sliceType = layerTransition.sliceType,
-            slice = layerTransition.slice; // If the layerTransition is a video or sequence with no duration,
-        // or a sequence with no frames loaded, skip it
-
-        if (sliceType && (!slice || slice.canPlay === false)) {
-          _this3._endLayerTransition(layerTransition); // Otherwise play the layerTransition
-
-        } else {
-          if (slice) {
-            slice.finalizeEntry();
-          }
-
-          _this3._runLayerTransition(layerTransition, null);
-        }
-      });
-    } // The function will below shall loop if layerTransitionPercent !== null
-
-  }, {
-    key: "_runLayerTransition",
-    value: function _runLayerTransition(layerTransition) {
-      var layerTransitionPercent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var layer = layerTransition.layer,
-          type = layerTransition.type,
-          duration = layerTransition.duration,
-          direction = layerTransition.direction,
-          sliceType = layerTransition.sliceType,
-          slice = layerTransition.slice;
-      var percent = 1;
-
-      if (layerTransitionPercent !== null) {
-        percent = layerTransitionPercent;
-      } else if (duration && duration > 0) {
-        percent = (Date.now() - this._startTime) / duration;
-      } else if (sliceType === "video" && slice) {
-        // Play a video transition until percent = 1
-        percent = 0;
-      } // If the user has forced the transition to its end...
-
-
-      if (this._currentTransition.shouldForceToEnd === true // ... or it is not a video running to its end, and it has actually ended
-      || percent >= 1) {
-        this._endLayerTransition(layerTransition); // Otherwise just apply the required changes based on time
-
-      } else if (type === "animation") {
-        // Continue playing the layerTransition, waiting for its eventual end
+      if (layerTransitionPercent === null) {
         requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-      } else {
-        var viewportRect = this._player.viewportRect;
-        var width = viewportRect.width,
-            height = viewportRect.height;
-        var content = layer.content;
-
-        if (type === "fade-in") {
-          content.setAlpha(percent);
-        } else if (type === "fade-out") {
-          content.setAlpha(1 - percent);
-        } else if (type === "slide-in") {
-          switch (direction) {
-            case "ltr":
-              content.setXOffset((percent - 1) * width);
-              break;
-
-            case "rtl":
-              content.setXOffset((1 - percent) * width);
-              break;
-
-            case "ttb":
-              content.setYOffset((percent - 1) * height);
-              break;
-
-            case "btt":
-              content.setYOffset((1 - percent) * height);
-              break;
-
-            default:
-              break;
-          }
-        } else if (type === "slide-out") {
-          switch (direction) {
-            case "ltr":
-              content.setXOffset(percent * width);
-              break;
-
-            case "rtl":
-              content.setXOffset(-percent * width);
-              break;
-
-            case "ttb":
-              content.setYOffset(percent * height);
-              break;
-
-            case "btt":
-              content.setYOffset(-percent * height);
-              break;
-
-            default:
-              break;
-          }
-        }
-
-        content.setVisibility(true);
-
-        if (layerTransitionPercent === null) {
-          requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-        }
       }
     }
-  }, {
-    key: "_endLayerTransition",
-    value: function _endLayerTransition(layerTransition) {
-      var layer = layerTransition.layer,
-          isExiting = layerTransition.isExiting,
-          slice = layerTransition.slice;
+  }
+
+  _endLayerTransition(layerTransition) {
+    const {
+      layer,
+      isExiting,
+      slice
+    } = layerTransition;
+
+    if (slice) {
+      slice.finalizeExit();
+      slice.removeFromParent();
+    }
+
+    const {
+      content
+    } = layer;
+    content.setAlpha(1);
+    content.setVisibility(true);
+    content.setIsXPositionUpdating(false);
+    content.setIsYPositionUpdating(false);
+    content.resetPosition();
+
+    if (isExiting === true) {
+      layer.finalizeExit();
+      content.removeFromParent();
+    } else {
+      layer.finalizeEntry();
+    }
+
+    this._currentTransition.nbOfRunningLayerTransitions -= 1;
+
+    if (this._currentTransition.nbOfRunningLayerTransitions === 0) {
+      const {
+        newStateIndex,
+        endCallback
+      } = this._currentTransition;
+      this._stateIndex = newStateIndex;
+
+      this._layerPile.finalizeEntry();
+
+      this._reset(); // Run the callback if there was one
+
+
+      if (endCallback) {
+        endCallback();
+      }
+    }
+  } // Functions linked to role in LayerPile
+
+
+  attemptToGoForward(shouldCancelTransition = false, doIfIsUndergoingChanges = null, percent = null) {
+    // Go to next state
+    const isGoingForward = true;
+
+    if (this.isUndergoingChanges === true) {
+      // If has looping layerTransitions
+      this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+      return true;
+    }
+
+    if (this._statesArray.length === 0 || this._stateIndex >= this._statesArray.length - 1) {
+      return false;
+    }
+
+    this.goToState(this._stateIndex + 1, isGoingForward, shouldCancelTransition, percent);
+    return true;
+  }
+
+  attemptToGoBackward(shouldCancelTransition = false, doIfIsUndergoingChanges = null, percent = null) {
+    // Go to previous state
+    const isGoingForward = false;
+
+    if (this.isUndergoingChanges === true) {
+      // If has looping layerTransitions
+      this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+      return true;
+    }
+
+    if (this._statesArray.length === 0 || this._stateIndex === 0) {
+      return false;
+    }
+
+    this.goToState(this._stateIndex - 1, isGoingForward, shouldCancelTransition, percent);
+    return true;
+  } // Go to start or end state depending on whether goes forward or not
+
+
+  setupForEntry(isGoingForward) {
+    this._reset();
+
+    if (isGoingForward === true) {
+      this.goToState(0, isGoingForward);
+    } else {
+      // Go to last state
+      this.goToState(this._statesArray.length - 1, isGoingForward);
+    }
+  }
+
+  finalizeExit() {
+    this._stateIndex = null;
+  }
+
+  resize() {
+    if (this.isUndergoingChanges === false) {
+      return;
+    }
+
+    this._currentTransition.layerTransitionsArray.forEach(layerTransition => {
+      const {
+        slice
+      } = layerTransition;
 
       if (slice) {
-        slice.finalizeExit();
-        slice.removeFromParent();
+        slice.resize();
       }
+    });
+  }
 
-      var content = layer.content;
-      content.setAlpha(1);
-      content.setVisibility(true);
-      content.setIsXPositionUpdating(false);
-      content.setIsYPositionUpdating(false);
-      content.resetPosition();
-
-      if (isExiting === true) {
-        layer.finalizeExit();
-        content.removeFromParent();
-      } else {
-        layer.finalizeEntry();
-      }
-
-      this._currentTransition.nbOfRunningLayerTransitions -= 1;
-
-      if (this._currentTransition.nbOfRunningLayerTransitions === 0) {
-        var _this$_currentTransit = this._currentTransition,
-            newStateIndex = _this$_currentTransit.newStateIndex,
-            endCallback = _this$_currentTransit.endCallback;
-        this._stateIndex = newStateIndex;
-
-        this._layerPile.finalizeEntry();
-
-        this._reset(); // Run the callback if there was one
-
-
-        if (endCallback) {
-          endCallback();
-        }
-      }
-    } // Functions linked to role in LayerPile
-
-  }, {
-    key: "attemptToGoForward",
-    value: function attemptToGoForward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var percent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      // Go to next state
-      var isGoingForward = true;
-
-      if (this.isUndergoingChanges === true) {
-        // If has looping layerTransitions
-        this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
-        return true;
-      }
-
-      if (this._statesArray.length === 0 || this._stateIndex >= this._statesArray.length - 1) {
-        return false;
-      }
-
-      this.goToState(this._stateIndex + 1, isGoingForward, shouldCancelTransition, percent);
-      return true;
-    }
-  }, {
-    key: "attemptToGoBackward",
-    value: function attemptToGoBackward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
-      var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var percent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      // Go to previous state
-      var isGoingForward = false;
-
-      if (this.isUndergoingChanges === true) {
-        // If has looping layerTransitions
-        this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
-        return true;
-      }
-
-      if (this._statesArray.length === 0 || this._stateIndex === 0) {
-        return false;
-      }
-
-      this.goToState(this._stateIndex - 1, isGoingForward, shouldCancelTransition, percent);
-      return true;
-    } // Go to start or end state depending on whether goes forward or not
-
-  }, {
-    key: "setupForEntry",
-    value: function setupForEntry(isGoingForward) {
-      this._reset();
-
-      if (isGoingForward === true) {
-        this.goToState(0, isGoingForward);
-      } else {
-        // Go to last state
-        this.goToState(this._statesArray.length - 1, isGoingForward);
-      }
-    }
-  }, {
-    key: "finalizeExit",
-    value: function finalizeExit() {
-      this._stateIndex = null;
-    }
-  }, {
-    key: "resize",
-    value: function resize() {
-      if (this.isUndergoingChanges === false) {
-        return;
-      }
-
-      this._currentTransition.layerTransitionsArray.forEach(function (layerTransition) {
-        var slice = layerTransition.slice;
-
-        if (slice) {
-          slice.resize();
-        }
-      });
-    }
-  }]);
-
-  return StateHandler;
-}();
-
-
+}
 
 /***/ }),
 
@@ -61687,396 +60449,387 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Page__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./Page */ "./src/StoryBuilder/Page.js");
 /* harmony import */ var _Segment__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./Segment */ "./src/StoryBuilder/Segment.js");
 /* harmony import */ var _Layer__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./Layer */ "./src/StoryBuilder/Layer.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
 
 
 
+class StoryBuilder {
+  static createPageNavigatorsInfo(storyData) {
+    const {
+      metadata,
+      mainLinkObjectsArray,
+      guidedLinkObjectsArray
+    } = storyData || {};
+    const {
+      readingProgression,
+      continuous,
+      fit,
+      overflow,
+      clipped,
+      spread
+    } = metadata || {};
+    const cleanMetadata = {
+      direction: readingProgression,
+      fit,
+      overflow,
+      clipped
+    };
+    const pageNavigatorsInfo = {
+      metadata: cleanMetadata
+    };
 
+    if (continuous === true) {
+      pageNavigatorsInfo.scroll = StoryBuilder.createPageNavigatorInfo("scroll", mainLinkObjectsArray);
+    } else {
+      pageNavigatorsInfo.single = StoryBuilder.createPageNavigatorInfo("single", mainLinkObjectsArray); // If the double page reading mode is a possibility
 
-var StoryBuilder =
-/*#__PURE__*/
-function () {
-  function StoryBuilder() {
-    _classCallCheck(this, StoryBuilder);
+      if (spread !== "none") {
+        const direction = readingProgression === "rtl" ? "rtl" : "ltr";
+        pageNavigatorsInfo.double = StoryBuilder.createPageNavigatorInfo("double", mainLinkObjectsArray, direction);
+      }
+    }
+
+    if (guidedLinkObjectsArray) {
+      pageNavigatorsInfo.guided = StoryBuilder.createPageNavigatorInfo("guided", guidedLinkObjectsArray);
+    }
+
+    return pageNavigatorsInfo;
   }
 
-  _createClass(StoryBuilder, null, [{
-    key: "createPageNavigatorsInfo",
-    value: function createPageNavigatorsInfo(storyData) {
-      var _ref = storyData || {},
-          metadata = _ref.metadata,
-          mainLinkObjectsArray = _ref.mainLinkObjectsArray,
-          guidedLinkObjectsArray = _ref.guidedLinkObjectsArray;
+  static createPageNavigatorInfo(type, linkObjectsArray, direction) {
+    let metadata = {};
+    let grouping = null;
 
-      var _ref2 = metadata || {},
-          readingProgression = _ref2.readingProgression,
-          continuous = _ref2.continuous,
-          fit = _ref2.fit,
-          overflow = _ref2.overflow,
-          clipped = _ref2.clipped,
-          spread = _ref2.spread;
+    switch (type) {
+      case "single":
+        grouping = "single";
+        break;
 
-      var cleanMetadata = {
-        direction: readingProgression,
-        fit: fit,
-        overflow: overflow,
-        clipped: clipped
-      };
-      var pageNavigatorsInfo = {
-        metadata: cleanMetadata
-      };
+      case "double":
+        // Transitions will be discarded
+        metadata = {
+          direction,
+          // Force direction to be ltr or rtl
+          forcedFit: "contain",
+          forcedTransitionType: "cut"
+        };
+        grouping = "double";
+        break;
 
-      if (continuous === true) {
-        pageNavigatorsInfo.scroll = StoryBuilder.createPageNavigatorInfo("scroll", mainLinkObjectsArray);
-      } else {
-        pageNavigatorsInfo.single = StoryBuilder.createPageNavigatorInfo("single", mainLinkObjectsArray); // If the double page reading mode is a possibility
+      case "scroll":
+        grouping = "stitched";
+        break;
 
-        if (spread !== "none") {
-          var direction = readingProgression === "rtl" ? "rtl" : "ltr";
-          pageNavigatorsInfo["double"] = StoryBuilder.createPageNavigatorInfo("double", mainLinkObjectsArray, direction);
-        }
-      }
+      case "guided":
+        metadata = {
+          forcedFit: "contain"
+        };
+        grouping = "single";
+        break;
 
-      if (guidedLinkObjectsArray) {
-        pageNavigatorsInfo.guided = StoryBuilder.createPageNavigatorInfo("guided", guidedLinkObjectsArray);
-      }
-
-      return pageNavigatorsInfo;
+      default:
+        break;
     }
-  }, {
-    key: "createPageNavigatorInfo",
-    value: function createPageNavigatorInfo(type, linkObjectsArray, direction) {
-      var metadata = {};
-      var grouping = null;
 
-      switch (type) {
-        case "single":
-          grouping = "single";
-          break;
+    const pageNavInfo = {
+      metadata
+    };
+    let pageIndex = -1;
+    let segmentIndex = 0;
 
-        case "double":
-          // Transitions will be discarded
-          metadata = {
-            direction: direction,
-            // Force direction to be ltr or rtl
-            forcedFit: "contain",
-            forcedTransitionType: "cut"
-          };
-          grouping = "double";
-          break;
+    if (grouping === "single" || grouping === "stitched") {
+      const transitionsArray = [];
+      linkObjectsArray.forEach(linkObject => {
+        const {
+          slice,
+          transitionForward,
+          transitionBackward,
+          children
+        } = linkObject; // It is time to create a new page...
 
-        case "scroll":
-          grouping = "stitched";
-          break;
+        if (pageIndex === -1 // ... if we are at the beginning of the story
+        || grouping === "single" // ... or with each new resource in a discontinuous story
+        || transitionForward) {
+          // ... or with each new "chapter" in a "chaptered webtoon"
+          pageIndex += 1;
+          segmentIndex = 0;
+        }
 
-        case "guided":
-          metadata = {
-            forcedFit: "contain"
-          };
-          grouping = "single";
-          break;
+        slice.setPageNavInfo(type, {
+          pageIndex,
+          segmentIndex
+        }); // Only consider transitions on the first segment of a page
 
-        default:
-          break;
-      }
-
-      var pageNavInfo = {
-        metadata: metadata
-      };
-      var pageIndex = -1;
-      var segmentIndex = 0;
-
-      if (grouping === "single" || grouping === "stitched") {
-        var transitionsArray = [];
-        linkObjectsArray.forEach(function (linkObject) {
-          var slice = linkObject.slice,
-              transitionForward = linkObject.transitionForward,
-              transitionBackward = linkObject.transitionBackward,
-              children = linkObject.children; // It is time to create a new page...
-
-          if (pageIndex === -1 // ... if we are at the beginning of the story
-          || grouping === "single" // ... or with each new resource in a discontinuous story
-          || transitionForward) {
-            // ... or with each new "chapter" in a "chaptered webtoon"
-            pageIndex += 1;
-            segmentIndex = 0;
-          }
-
-          slice.setPageNavInfo(type, {
-            pageIndex: pageIndex,
-            segmentIndex: segmentIndex
-          }); // Only consider transitions on the first segment of a page
-
-          if (transitionForward && segmentIndex === 0) {
-            transitionsArray.push({
-              transition: transitionForward,
-              isForward: true,
-              pageIndex: pageIndex
-            });
-
-            if (transitionForward.slice) {
-              transitionForward.slice.setPageNavInfo(type, {
-                pageIndex: pageIndex,
-                segmentIndex: segmentIndex
-              });
-            }
-          }
-
-          if (transitionBackward && segmentIndex === 0) {
-            transitionsArray.push({
-              transition: transitionBackward,
-              isForward: false,
-              pageIndex: pageIndex
-            });
-
-            if (transitionBackward.slice) {
-              transitionBackward.slice.setPageNavInfo(type, {
-                pageIndex: pageIndex,
-                segmentIndex: segmentIndex
-              });
-            }
-          } // For layer slices
-
-
-          if (children) {
-            children.forEach(function (child) {
-              if (child.linkObject && child.linkObject.slice) {
-                var childSlice = child.linkObject.slice;
-                childSlice.setPageNavInfo(type, {
-                  pageIndex: pageIndex,
-                  segmentIndex: segmentIndex
-                });
-              }
-            });
-          }
-
-          segmentIndex += 1;
-        });
-        pageNavInfo.transitionsArray = transitionsArray;
-      } else if (grouping === "double") {
-        // Transitions are discarded in double page reading mode
-        var lastPageSide = null;
-        var isLonely = false;
-        linkObjectsArray.forEach(function (linkObject, i) {
-          var slice = linkObject.slice;
-
-          var _ref3 = slice || {},
-              resource = _ref3.resource;
-
-          var _ref4 = resource || {},
-              pageSide = _ref4.pageSide;
-
-          if (!lastPageSide || lastPageSide === "center" || lastPageSide === null || pageSide === "center" || pageSide === null || direction === "ltr" && (lastPageSide === "right" || pageSide === "left") || direction === "rtl" && (lastPageSide === "left" || pageSide === "right")) {
-            pageIndex += 1;
-            var nextLinkObject = i < linkObjectsArray.length - 1 ? linkObjectsArray[i + 1] : null;
-            var nextPageSide = nextLinkObject && nextLinkObject.slice && nextLinkObject.slice.resource ? nextLinkObject.slice.resource.pageSide : null;
-
-            if (direction === "ltr") {
-              segmentIndex = pageSide === "right" ? 1 : 0;
-
-              if (pageSide === "left" && nextPageSide !== "right") {
-                isLonely = true;
-              }
-            } else {
-              // direction === "rtl"
-              segmentIndex = pageSide === "left" ? 1 : 0;
-
-              if (pageSide === "right" && nextPageSide !== "left") {
-                isLonely = true;
-              }
-            }
-          }
-
-          slice.setPageNavInfo(type, {
-            pageIndex: pageIndex,
-            segmentIndex: segmentIndex,
-            isLonely: isLonely
+        if (transitionForward && segmentIndex === 0) {
+          transitionsArray.push({
+            transition: transitionForward,
+            isForward: true,
+            pageIndex
           });
-          isLonely = false;
-          lastPageSide = pageSide;
-          segmentIndex += 1;
-        });
-      } // Do not forget to add the last created page to the list
 
-
-      pageIndex += 1;
-      pageNavInfo.nbOfPages = pageIndex;
-      return pageNavInfo;
-    }
-  }, {
-    key: "createPageNavigator",
-    value: function createPageNavigator(type, linkObjectsArray, pageNavigatorInfo, defaultMetadata, player) {
-      var metadata = pageNavigatorInfo.metadata,
-          transitionsArray = pageNavigatorInfo.transitionsArray;
-
-      var fullMetadata = _objectSpread({}, defaultMetadata, {}, metadata);
-
-      var pageLayersArray = StoryBuilder.buildPageLayersArray(type, fullMetadata, linkObjectsArray, transitionsArray, player);
-      var pageNavigator = new _Slideshow__WEBPACK_IMPORTED_MODULE_1__["default"](type, fullMetadata, pageLayersArray, player);
-      return pageNavigator;
-    }
-  }, {
-    key: "buildPageLayersArray",
-    value: function buildPageLayersArray(type, metadata, linkObjectsArray, transitionsArray, player) {
-      var overflow = metadata.overflow;
-      var pagesArray = [];
-      var currentPageIndex = -1;
-      var currentSegmentIndex = 0;
-      var currentPage = null;
-      linkObjectsArray.forEach(function (linkObject) {
-        var slice = linkObject.slice,
-            children = linkObject.children,
-            snapPoints = linkObject.snapPoints;
-        var pageNavInfo = slice.pageNavInfo;
-        var info = pageNavInfo[type];
-
-        if (info) {
-          var pageIndex = info.pageIndex,
-              segmentIndex = info.segmentIndex,
-              isLonely = info.isLonely;
-
-          if (pageIndex > currentPageIndex) {
-            if (currentPage) {
-              pagesArray.push(currentPage);
-            }
-
-            currentPageIndex += 1;
-            currentSegmentIndex = 0;
-            currentPage = new _Page__WEBPACK_IMPORTED_MODULE_2__["default"](currentPageIndex, overflow, player);
-          }
-
-          var sliceLayersArray = [new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", slice)];
-
-          if (children) {
-            children.forEach(function (child) {
-              var entryForward = child.entryForward,
-                  exitForward = child.exitForward,
-                  entryBackward = child.entryBackward,
-                  exitBackward = child.exitBackward;
-              var layerSlice = child.linkObject.slice;
-              var sliceLayer = new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", layerSlice);
-
-              if (entryForward) {
-                sliceLayer.setEntryForward(entryForward);
-              }
-
-              if (exitForward) {
-                sliceLayer.setExitForward(exitForward);
-              }
-
-              if (entryBackward) {
-                sliceLayer.setEntryBackward(entryBackward);
-              }
-
-              if (exitBackward) {
-                sliceLayer.setExitBackward(exitBackward);
-              }
-
-              sliceLayersArray.push(sliceLayer);
+          if (transitionForward.slice) {
+            transitionForward.slice.setPageNavInfo(type, {
+              pageIndex,
+              segmentIndex
             });
-          } // Now create a segment for the slice and add it to the page
-          // (do note that, for a divina, a page can only have several segments if continuous=true)
-
-
-          var segment = null;
-
-          if (type === "double" && currentSegmentIndex === 0 && segmentIndex === 1) {
-            currentSegmentIndex = 1;
-            segment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](currentSegmentIndex, currentPage, sliceLayersArray, player);
-            var neighbor = segment;
-            StoryBuilder.addEmptySegmentToPage(currentPage, 0, neighbor, player);
-          } else {
-            segment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](currentSegmentIndex, currentPage, sliceLayersArray, player);
           }
-
-          currentPage.addSegment(segment); // If the linkObject has snapPoints, add them to the page too
-
-          if (snapPoints) {
-            currentPage.addSnapPointsForLastSegment(snapPoints);
-          }
-
-          if (type === "double" && segmentIndex === 0 && isLonely === true) {
-            var _neighbor = segment;
-            StoryBuilder.addEmptySegmentToPage(currentPage, 1, _neighbor, player);
-          }
-
-          currentSegmentIndex += 1;
         }
-      }); // Do not forget to add the last created page to the list
 
-      if (currentPage) {
-        pagesArray.push(currentPage);
-      } // Create pageLayerDataArray
+        if (transitionBackward && segmentIndex === 0) {
+          transitionsArray.push({
+            transition: transitionBackward,
+            isForward: false,
+            pageIndex
+          });
 
-
-      var pageLayersArray = pagesArray.map(function (page) {
-        return new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("page", page);
-      }); // Now assign entry and exit (half-)transitions
-      // If forcedTransitionType === "cut", don't add a transition at all!
-
-      var forcedTransitionType = metadata.forcedTransitionType;
-
-      if (!forcedTransitionType && transitionsArray) {
-        transitionsArray.forEach(function (_ref5) {
-          var transition = _ref5.transition,
-              isForward = _ref5.isForward,
-              pageIndex = _ref5.pageIndex;
-          var slice = transition.slice;
-
-          if (slice) {
-            // Set the second page in the readingOrder as parent for a transition slice
-            slice.setParent(pagesArray[pageIndex]);
+          if (transitionBackward.slice) {
+            transitionBackward.slice.setPageNavInfo(type, {
+              pageIndex,
+              segmentIndex
+            });
           }
+        } // For layer slices
 
-          var _transition$getEntryA = transition.getEntryAndExitTransitions(isForward),
-              entry = _transition$getEntryA.entry,
-              exit = _transition$getEntryA.exit;
 
-          if (isForward === true) {
-            if (pageIndex > 0) {
-              pageLayersArray[pageIndex - 1].setExitForward(exit);
+        if (children) {
+          children.forEach(child => {
+            if (child.linkObject && child.linkObject.slice) {
+              const childSlice = child.linkObject.slice;
+              childSlice.setPageNavInfo(type, {
+                pageIndex,
+                segmentIndex
+              });
             }
+          });
+        }
 
-            pageLayersArray[pageIndex].setEntryForward(entry);
+        segmentIndex += 1;
+      });
+      pageNavInfo.transitionsArray = transitionsArray;
+    } else if (grouping === "double") {
+      // Transitions are discarded in double page reading mode
+      let lastPageSide = null;
+      let isLonely = false;
+      linkObjectsArray.forEach((linkObject, i) => {
+        const {
+          slice
+        } = linkObject;
+        const {
+          resource
+        } = slice || {};
+        const {
+          pageSide
+        } = resource || {};
+
+        if (!lastPageSide || lastPageSide === "center" || lastPageSide === null || pageSide === "center" || pageSide === null || direction === "ltr" && (lastPageSide === "right" || pageSide === "left") || direction === "rtl" && (lastPageSide === "left" || pageSide === "right")) {
+          pageIndex += 1;
+          const nextLinkObject = i < linkObjectsArray.length - 1 ? linkObjectsArray[i + 1] : null;
+          const nextPageSide = nextLinkObject && nextLinkObject.slice && nextLinkObject.slice.resource ? nextLinkObject.slice.resource.pageSide : null;
+
+          if (direction === "ltr") {
+            segmentIndex = pageSide === "right" ? 1 : 0;
+
+            if (pageSide === "left" && nextPageSide !== "right") {
+              isLonely = true;
+            }
           } else {
-            if (pageIndex > 0) {
-              pageLayersArray[pageIndex - 1].setEntryBackward(entry);
+            // direction === "rtl"
+            segmentIndex = pageSide === "left" ? 1 : 0;
+
+            if (pageSide === "right" && nextPageSide !== "left") {
+              isLonely = true;
+            }
+          }
+        }
+
+        slice.setPageNavInfo(type, {
+          pageIndex,
+          segmentIndex,
+          isLonely
+        });
+        isLonely = false;
+        lastPageSide = pageSide;
+        segmentIndex += 1;
+      });
+    } // Do not forget to add the last created page to the list
+
+
+    pageIndex += 1;
+    pageNavInfo.nbOfPages = pageIndex;
+    return pageNavInfo;
+  }
+
+  static createPageNavigator(type, linkObjectsArray, pageNavigatorInfo, defaultMetadata, player) {
+    const {
+      metadata,
+      transitionsArray
+    } = pageNavigatorInfo;
+    const fullMetadata = { ...defaultMetadata,
+      ...metadata
+    };
+    const pageLayersArray = StoryBuilder.buildPageLayersArray(type, fullMetadata, linkObjectsArray, transitionsArray, player);
+    const pageNavigator = new _Slideshow__WEBPACK_IMPORTED_MODULE_1__["default"](type, fullMetadata, pageLayersArray, player);
+    return pageNavigator;
+  }
+
+  static buildPageLayersArray(type, metadata, linkObjectsArray, transitionsArray, player) {
+    const {
+      overflow
+    } = metadata;
+    const pagesArray = [];
+    let currentPageIndex = -1;
+    let currentSegmentIndex = 0;
+    let currentPage = null;
+    linkObjectsArray.forEach(linkObject => {
+      const {
+        slice,
+        children,
+        snapPoints
+      } = linkObject;
+      const {
+        pageNavInfo
+      } = slice;
+      const info = pageNavInfo[type];
+
+      if (info) {
+        const {
+          pageIndex,
+          segmentIndex,
+          isLonely
+        } = info;
+
+        if (pageIndex > currentPageIndex) {
+          if (currentPage) {
+            pagesArray.push(currentPage);
+          }
+
+          currentPageIndex += 1;
+          currentSegmentIndex = 0;
+          currentPage = new _Page__WEBPACK_IMPORTED_MODULE_2__["default"](currentPageIndex, overflow, player);
+        }
+
+        const sliceLayersArray = [new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", slice)];
+
+        if (children) {
+          children.forEach(child => {
+            const {
+              entryForward,
+              exitForward,
+              entryBackward,
+              exitBackward
+            } = child;
+            const layerSlice = child.linkObject.slice;
+            const sliceLayer = new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", layerSlice);
+
+            if (entryForward) {
+              sliceLayer.setEntryForward(entryForward);
             }
 
-            pageLayersArray[pageIndex].setExitBackward(exit);
-          }
-        });
+            if (exitForward) {
+              sliceLayer.setExitForward(exitForward);
+            }
+
+            if (entryBackward) {
+              sliceLayer.setEntryBackward(entryBackward);
+            }
+
+            if (exitBackward) {
+              sliceLayer.setExitBackward(exitBackward);
+            }
+
+            sliceLayersArray.push(sliceLayer);
+          });
+        } // Now create a segment for the slice and add it to the page
+        // (do note that, for a divina, a page can only have several segments if continuous=true)
+
+
+        let segment = null;
+
+        if (type === "double" && currentSegmentIndex === 0 && segmentIndex === 1) {
+          currentSegmentIndex = 1;
+          segment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](currentSegmentIndex, currentPage, sliceLayersArray, player);
+          const neighbor = segment;
+          StoryBuilder.addEmptySegmentToPage(currentPage, 0, neighbor, player);
+        } else {
+          segment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](currentSegmentIndex, currentPage, sliceLayersArray, player);
+        }
+
+        currentPage.addSegment(segment); // If the linkObject has snapPoints, add them to the page too
+
+        if (snapPoints) {
+          currentPage.addSnapPointsForLastSegment(snapPoints);
+        }
+
+        if (type === "double" && segmentIndex === 0 && isLonely === true) {
+          const neighbor = segment;
+          StoryBuilder.addEmptySegmentToPage(currentPage, 1, neighbor, player);
+        }
+
+        currentSegmentIndex += 1;
       }
+    }); // Do not forget to add the last created page to the list
 
-      return pageLayersArray;
+    if (currentPage) {
+      pagesArray.push(currentPage);
+    } // Create pageLayerDataArray
+
+
+    const pageLayersArray = pagesArray.map(page => new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("page", page)); // Now assign entry and exit (half-)transitions
+    // If forcedTransitionType === "cut", don't add a transition at all!
+
+    const {
+      forcedTransitionType
+    } = metadata;
+
+    if (!forcedTransitionType && transitionsArray) {
+      transitionsArray.forEach(({
+        transition,
+        isForward,
+        pageIndex
+      }) => {
+        const {
+          slice
+        } = transition;
+
+        if (slice) {
+          // Set the second page in the readingOrder as parent for a transition slice
+          slice.setParent(pagesArray[pageIndex]);
+        }
+
+        const {
+          entry,
+          exit
+        } = transition.getEntryAndExitTransitions(isForward);
+
+        if (isForward === true) {
+          if (pageIndex > 0) {
+            pageLayersArray[pageIndex - 1].setExitForward(exit);
+          }
+
+          pageLayersArray[pageIndex].setEntryForward(entry);
+        } else {
+          if (pageIndex > 0) {
+            pageLayersArray[pageIndex - 1].setEntryBackward(entry);
+          }
+
+          pageLayersArray[pageIndex].setExitBackward(exit);
+        }
+      });
     }
-  }, {
-    key: "addEmptySegmentToPage",
-    value: function addEmptySegmentToPage(page, segmentIndex, neighbor, player) {
-      var emptySlice = _Slice__WEBPACK_IMPORTED_MODULE_0__["Slice"].createEmptySlice(player, neighbor);
-      var emptySliceLayersArray = [new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", emptySlice)];
-      var emptySegment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](segmentIndex, page, emptySliceLayersArray, player);
-      var shouldAddSegmentAtStart = segmentIndex === 0;
-      page.addSegment(emptySegment, shouldAddSegmentAtStart);
-    }
-  }]);
 
-  return StoryBuilder;
-}();
+    return pageLayersArray;
+  }
 
+  static addEmptySegmentToPage(page, segmentIndex, neighbor, player) {
+    const emptySlice = _Slice__WEBPACK_IMPORTED_MODULE_0__["Slice"].createEmptySlice(player, neighbor);
+    const emptySliceLayersArray = [new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", emptySlice)];
+    const emptySegment = new _Segment__WEBPACK_IMPORTED_MODULE_3__["default"](segmentIndex, page, emptySliceLayersArray, player);
+    const shouldAddSegmentAtStart = segmentIndex === 0;
+    page.addSegment(emptySegment, shouldAddSegmentAtStart);
+  }
 
+}
 
 /***/ }),
 
@@ -62106,94 +60859,61 @@ __webpack_require__.r(__webpack_exports__);
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return TextManager; });
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./Renderer */ "./src/Renderer/index.js");
-function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
-
-function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
-
-function _possibleConstructorReturn(self, call) { if (call && (_typeof(call) === "object" || typeof call === "function")) { return call; } return _assertThisInitialized(self); }
-
-function _getPrototypeOf(o) { _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) { return o.__proto__ || Object.getPrototypeOf(o); }; return _getPrototypeOf(o); }
-
-function _assertThisInitialized(self) { if (self === void 0) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return self; }
-
-function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function"); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, writable: true, configurable: true } }); if (superClass) _setPrototypeOf(subClass, superClass); }
-
-function _setPrototypeOf(o, p) { _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) { o.__proto__ = p; return o; }; return _setPrototypeOf(o, p); }
-
-
-
-var TextManager =
-/*#__PURE__*/
-function (_Container) {
-  _inherits(TextManager, _Container);
-
-  function TextManager(mainContainer) {
-    var _this;
-
-    _classCallCheck(this, TextManager);
-
-    _this = _possibleConstructorReturn(this, _getPrototypeOf(TextManager).call(this, "textManager", mainContainer));
-    _this._textElement = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["TextElement"]("textElement", _assertThisInitialized(_this));
-    return _this;
+class TextManager extends _Renderer__WEBPACK_IMPORTED_MODULE_0__["Container"] {
+  constructor(mainContainer) {
+    super("textManager", mainContainer);
+    this._textElement = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["TextElement"]("textElement", this);
   }
 
-  _createClass(TextManager, [{
-    key: "showMessage",
-    value: function showMessage(message) {
-      // Where message should be = { type, data }
-      // Beware: we can have message.text = 0 (when divina loading starts)
-      if (!message || !message.type || message.data === undefined) {
-        return;
-      } // Write full text based on message type
+  showMessage(message) {
+    // Where message should be = { type, data }
+    // Beware: we can have message.text = 0 (when divina loading starts)
+    if (!message || !message.type || message.data === undefined) {
+      return;
+    } // Write full text based on message type
 
 
-      var type = message.type,
-          data = message.data;
-      var text = null;
+    const {
+      type,
+      data
+    } = message;
+    let text = null;
 
-      switch (type) {
-        case "loading":
-          text = "Loading... ".concat(data, "%");
-          break;
+    switch (type) {
+      case "loading":
+        text = `Loading... ${data}%`;
+        break;
 
-        case "error":
-          text = "ERROR!\n".concat(data);
-          break;
+      case "error":
+        text = `ERROR!\n${data}`;
+        break;
 
-        default:
-          break;
-      }
-
-      if (!this._textElement || !text) {
-        return;
-      }
-
-      this._textElement.setText(text);
+      default:
+        break;
     }
-  }, {
-    key: "destroy",
-    value: function destroy() {
-      // Since this destroy function already runs after all first resources have loaded,
-      // ensure the Player's ultimate call to it does not try and achieve the same
-      if (!this._textElement) {
-        return;
-      }
 
-      this._textElement.destroy();
-
-      this._textElement = null;
-      this.removeFromParent();
+    if (!this._textElement || !text) {
+      return;
     }
-  }]);
 
-  return TextManager;
-}(_Renderer__WEBPACK_IMPORTED_MODULE_0__["Container"]);
+    this._textElement.setText(text);
+  }
 
+  destroy() {
+    // Since this destroy function already runs after all first resources have loaded,
+    // ensure the Player's ultimate call to it does not try and achieve the same
+    if (!this._textElement) {
+      return;
+    }
 
+    this._textElement.destroy();
+
+    this._textElement = null;
+    this.removeFromParent();
+  }
+
+}
 
 /***/ }),
 
@@ -62242,78 +60962,78 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "snapJumpSpeedFactor", function() { return snapJumpSpeedFactor; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stickyMoveSpeedFactor", function() { return stickyMoveSpeedFactor; });
 // General
-var possiblePixelError = 0.5; // Margin of error for pixel computations
+const possiblePixelError = 0.5; // Margin of error for pixel computations
 
-var defaultManifestFilename = "manifest.json"; // Title of the JSON file in a divina folder
+const defaultManifestFilename = "manifest.json"; // Title of the JSON file in a divina folder
 
-var defaultBackgroundColor = 0x000000; // Black to ensure the loading message is visible
+const defaultBackgroundColor = 0x000000; // Black to ensure the loading message is visible
 
-var defaultDummyColor = 0x333333;
-var possibleTagNames = ["language", "resolution"]; // List of allowed tags
+const defaultDummyColor = 0x333333;
+const possibleTagNames = ["language", "resolution"]; // List of allowed tags
 // Resources
 
-var acceptableVideoExtensions = ["mp4"]; //export const acceptableImageExtensions = ["png", "jpg"] // Not used
+const acceptableVideoExtensions = ["mp4"]; //export const acceptableImageExtensions = ["png", "jpg"] // Not used
 // Loading message
 
-var textFontFamily = "Arial";
-var textFontSize = 24;
-var textFillColor = 0xFFFFFF; // White to ensure the message is visible
+const textFontFamily = "Arial";
+const textFontSize = 24;
+const textFillColor = 0xFFFFFF; // White to ensure the message is visible
 
-var wordWrapWidth = 275; // Maximum line width
+const wordWrapWidth = 275; // Maximum line width
 // Loading parameters
 
-var defaultAllowsDestroy = true;
-var defaultAllowsParallel = true; // Nb of pages after the current one for which slice textures should be stored in memory
+const defaultAllowsDestroy = true;
+const defaultAllowsParallel = true; // Nb of pages after the current one for which slice textures should be stored in memory
 
-var defaultMaxNbOfPagesAfter = 1; // Nb of pages before the current one for which slice textures should be stored in memory,
+const defaultMaxNbOfPagesAfter = 1; // Nb of pages before the current one for which slice textures should be stored in memory,
 // as a share of defaultMaxNbOfPagesAfter
 
-var maxShareOfPagesBefore = 1 / 3; // Timeout to cancel video load (only in non-parallel loading mode)
+const maxShareOfPagesBefore = 1 / 3; // Timeout to cancel video load (only in non-parallel loading mode)
 
-var defaultVideoLoadTimeout = 2000; // Story
+const defaultVideoLoadTimeout = 2000; // Story
 
-var defaultContinuous = true; // If no value is specified or if the value is invalid
+const defaultContinuous = true; // If no value is specified or if the value is invalid
 
-var defaultFit = "contain"; // If no value is specified or if the value is invalid
+const defaultFit = "contain"; // If no value is specified or if the value is invalid
 
-var defaultOverflow = "scrolled"; // If no value is specified or if the value is invalid or "auto"
+const defaultOverflow = "scrolled"; // If no value is specified or if the value is invalid or "auto"
 
-var defaultClipped = false; // If no value is specified or if the value is invalid
+const defaultClipped = false; // If no value is specified or if the value is invalid
 
-var defaultSpread = "none"; // If no value is specified or if the value is invalid or "auto"
+const defaultSpread = "none"; // If no value is specified or if the value is invalid or "auto"
 
-var defaultDuration = 750; // In milliseconds (used for transitions and snap point jumps)
+const defaultDuration = 750; // In milliseconds (used for transitions and snap point jumps)
 // User controls
 
-var defaultAllowsZoom = true;
-var defaultAllowsSwipe = true;
-var defaultAllowsWheelScroll = true; // To allow discontinuous gestures to trigger pagination jumps (when overflow === "scrolled")
+const defaultAllowsZoom = true;
+const defaultAllowsSwipe = true;
+const defaultAllowsWheelScroll = true; // To allow discontinuous gestures to trigger pagination jumps (when overflow === "scrolled")
 
-var defaultAllowsPaginatedScroll = true; // To make pagination sticky (only when overflow === "paginated")
+const defaultAllowsPaginatedScroll = true; // To make pagination sticky (only when overflow === "paginated")
 
-var defaultIsPaginationSticky = true; // To compute automatically-computed snap points from the page start (vs. from the current position)
+const defaultIsPaginationSticky = true; // To compute automatically-computed snap points from the page start (vs. from the current position)
 
-var defaultIsPaginationGridBased = true; // Interactions
+const defaultIsPaginationGridBased = true; // Interactions
 // Percentage of the relevant viewport dimension (width or height, depending on the story's
 // reading direction) defining an "active" hit zone (to detect forward/backward clicks/taps)
 
-var referencePercent = 0.3;
-var velocityFactor = 10; // For a kinetic scroll
+const referencePercent = 0.3;
+const velocityFactor = 10; // For a kinetic scroll
 
-var timeConstant = 325; // For a kinetic scroll
+const timeConstant = 325; // For a kinetic scroll
 
-var maxZoomFactor = 3; // Maximum zoom
+const maxZoomFactor = 3; // Maximum zoom
 
-var zoomSensitivityConstant = 3; // To compute zoom based on scroll
+const zoomSensitivityConstant = 3; // To compute zoom based on scroll
 // Percentage of the relevant dimension to scroll to trigger a valid controlled transition
 
-var viewportDimensionPercent = 0.5; // Snap point speeds: speeds are computed such that the viewport will move by 1 relevant dimension
+const viewportDimensionPercent = 0.5; // Snap point speeds: speeds are computed such that the viewport will move by 1 relevant dimension
 // (= the viewport's width or height in pixels) in defaultDuration milliseconds
 
-var snapJumpSpeedFactor = 1 / defaultDuration; // (with the above, duration of a snap point jump = distance in px / speed,
+const snapJumpSpeedFactor = 1 / defaultDuration; // (with the above, duration of a snap point jump = distance in px / speed,
 // where speed is defaultDuration * snapJumpSpeedFactor (used in Camera))
 
-var stickyMoveSpeedFactor = 1 / defaultDuration; // (with the above, duration of a sticky snap point move = distance in px / speed,
+const stickyMoveSpeedFactor = 1 / defaultDuration; // (with the above, duration of a sticky snap point move = distance in px / speed,
 // where speed is defaultDuration * stickyMoveSpeedFactor (used in Camera))
 
 /***/ }),
@@ -62363,44 +61083,31 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "parseCoordinate", function() { return parseCoordinate; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDistance", function() { return getDistance; });
 /* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./constants */ "./src/constants.js");
-function _slicedToArray(arr, i) { return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest(); }
-
-function _nonIterableRest() { throw new TypeError("Invalid attempt to destructure non-iterable instance"); }
-
-function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) || Object.prototype.toString.call(arr) === "[object Arguments]")) { return; } var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"] != null) _i["return"](); } finally { if (_d) throw _e; } } return _arr; }
-
-function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
-
  // For type checking (used below)
 
-var isAString = function isAString(value) {
-  return (// Used below
-    typeof value === "string" || value instanceof String
-  );
-};
+const isAString = value => // Used below
+typeof value === "string" || value instanceof String;
 
-var isANumber = function isANumber(value) {
-  return Number.isFinite(value);
-}; // Used below
+const isANumber = value => Number.isFinite(value); // Used below
 // For handling resources
 
 
-var getFileExtension = function getFileExtension(path) {
+const getFileExtension = path => {
   if (!path) {
     return null;
   }
 
-  var pathParts = path.split(".");
-  var extension = pathParts[pathParts.length - 1];
+  const pathParts = path.split(".");
+  const extension = pathParts[pathParts.length - 1];
   return extension;
 };
 
-var isOfType = function isOfType(path, acceptableGeneralType, acceptableExtensions) {
-  var extension = getFileExtension(path);
-  var isExtensionAcceptable = false;
+const isOfType = (path, acceptableGeneralType, acceptableExtensions) => {
+  const extension = getFileExtension(path);
+  let isExtensionAcceptable = false;
 
   if (extension && acceptableExtensions) {
-    acceptableExtensions.forEach(function (acceptableExtension) {
+    acceptableExtensions.forEach(acceptableExtension => {
       // Compare the uppercase versions of the extension strings
       if (extension.toUpperCase() === acceptableExtension.toUpperCase()) {
         isExtensionAcceptable = true;
@@ -62411,28 +61118,26 @@ var isOfType = function isOfType(path, acceptableGeneralType, acceptableExtensio
   return isExtensionAcceptable;
 };
 
-var isAVideo = function isAVideo(path) {
-  return isOfType(path, "video", _constants__WEBPACK_IMPORTED_MODULE_0__["acceptableVideoExtensions"]);
-};
+const isAVideo = path => isOfType(path, "video", _constants__WEBPACK_IMPORTED_MODULE_0__["acceptableVideoExtensions"]);
 /*const isAnImage = (path) => (
 	isOfType(path, "image", constants.acceptableImageExtensions)
 )*/
 // For parsing the aspect ratio value written as a string in the divina's viewportRatio property
 
 
-var parseAspectRatio = function parseAspectRatio(ratio) {
+const parseAspectRatio = ratio => {
   if (!ratio) {
     return null;
   }
 
-  var parts = ratio.split(":");
+  const parts = ratio.split(":");
 
   if (parts.length !== 2) {
     return null;
   }
 
-  var width = Number(parts[0]);
-  var height = Number(parts[1]);
+  const width = Number(parts[0]);
+  const height = Number(parts[1]);
 
   if (isANumber(width) === true && isANumber(height) === true && height !== 0) {
     return width / height;
@@ -62442,46 +61147,37 @@ var parseAspectRatio = function parseAspectRatio(ratio) {
 }; // For splitting an href into path and mediaFragment
 
 
-var getPathAndMediaFragment = function getPathAndMediaFragment(href) {
-  var hrefParts = href && href.split ? href.split("#") : [];
-  var path = hrefParts[0];
-  var mediaFragment = hrefParts.length > 1 ? hrefParts[1] : null;
+const getPathAndMediaFragment = href => {
+  const hrefParts = href && href.split ? href.split("#") : [];
+  const path = hrefParts[0];
+  const mediaFragment = hrefParts.length > 1 ? hrefParts[1] : null;
   return {
-    path: path,
-    mediaFragment: mediaFragment
+    path,
+    mediaFragment
   };
 }; // For parsing a media fragment string
 
 
-var parseMediaFragment = function parseMediaFragment(mediaFragment) {
+const parseMediaFragment = mediaFragment => {
   if (!mediaFragment) {
     return null;
   }
 
-  var mediaFragmentParts = mediaFragment.split("=");
+  const mediaFragmentParts = mediaFragment.split("=");
 
   if (mediaFragmentParts.length !== 2) {
     return null;
   }
 
-  var unit = "pixel";
-  var xywh = null;
-  var fragmentInfo = mediaFragmentParts[1];
+  let unit = "pixel";
+  let xywh = null;
+  let fragmentInfo = mediaFragmentParts[1];
   fragmentInfo = fragmentInfo.split(":");
 
   if (fragmentInfo.length === 1) {
-    var _fragmentInfo = fragmentInfo;
-
-    var _fragmentInfo2 = _slicedToArray(_fragmentInfo, 1);
-
-    xywh = _fragmentInfo2[0];
+    [xywh] = fragmentInfo;
   } else if (fragmentInfo.length === 2) {
-    var _fragmentInfo3 = fragmentInfo;
-
-    var _fragmentInfo4 = _slicedToArray(_fragmentInfo3, 2);
-
-    unit = _fragmentInfo4[0];
-    xywh = _fragmentInfo4[1];
+    [unit, xywh] = fragmentInfo;
   } else {
     return null;
   }
@@ -62490,18 +61186,13 @@ var parseMediaFragment = function parseMediaFragment(mediaFragment) {
     return null;
   }
 
-  var xywhArray = xywh.split(",");
+  const xywhArray = xywh.split(",");
 
   if (xywhArray.length !== 4) {
     return null;
   }
 
-  var _xywhArray = _slicedToArray(xywhArray, 4),
-      x = _xywhArray[0],
-      y = _xywhArray[1],
-      w = _xywhArray[2],
-      h = _xywhArray[3];
-
+  let [x, y, w, h] = xywhArray;
   x = Number(x);
   y = Number(y);
   w = Number(w);
@@ -62512,33 +61203,37 @@ var parseMediaFragment = function parseMediaFragment(mediaFragment) {
   }
 
   return {
-    unit: unit,
-    x: x,
-    y: y,
-    w: w,
-    h: h
+    unit,
+    x,
+    y,
+    w,
+    h
   };
 };
 
-var getRectForMediaFragmentAndSize = function getRectForMediaFragmentAndSize(mediaFragment, _ref) {
-  var width = _ref.width,
-      height = _ref.height;
-
+const getRectForMediaFragmentAndSize = (mediaFragment, {
+  width,
+  height
+}) => {
   if (!mediaFragment) {
     return null;
   }
 
-  var parsedString = parseMediaFragment(mediaFragment);
+  const parsedString = parseMediaFragment(mediaFragment);
 
   if (!parsedString || parsedString.unit !== "percent" && parsedString.unit !== "pixel") {
     return null;
   }
 
-  var unit = parsedString.unit;
-  var x = parsedString.x,
-      y = parsedString.y,
-      w = parsedString.w,
-      h = parsedString.h;
+  const {
+    unit
+  } = parsedString;
+  let {
+    x,
+    y,
+    w,
+    h
+  } = parsedString;
 
   if (isANumber(x) === false || isANumber(y) === false || isANumber(w) === false || isANumber(h) === false) {
     return null;
@@ -62558,14 +61253,14 @@ var getRectForMediaFragmentAndSize = function getRectForMediaFragmentAndSize(med
   w = Math.min(Math.max(w, 0), width - x);
   h = Math.min(Math.max(h, 0), height - y);
   return {
-    x: x,
-    y: y,
+    x,
+    y,
     width: w,
     height: h
   };
 };
 
-var getShortenedHref = function getShortenedHref(href) {
+const getShortenedHref = href => {
   if (!href) {
     return null;
   }
@@ -62574,7 +61269,7 @@ var getShortenedHref = function getShortenedHref(href) {
 }; // For parsing and computing the coordinate of a relative resource point
 
 
-var parseCoordinate = function parseCoordinate(value, dimensionLength) {
+const parseCoordinate = (value, dimensionLength) => {
   if (!value) {
     return null;
   }
@@ -62583,8 +61278,8 @@ var parseCoordinate = function parseCoordinate(value, dimensionLength) {
     return null;
   }
 
-  var valueParts = value.split("%");
-  var relValue = valueParts[0];
+  let valueParts = value.split("%");
+  let relValue = valueParts[0];
 
   if (valueParts.length !== 2) {
     return null;
@@ -62605,9 +61300,7 @@ var parseCoordinate = function parseCoordinate(value, dimensionLength) {
 }; // For measuring a distance between 2 points (used for snap points and pinch)
 
 
-var getDistance = function getDistance(point1, point2) {
-  return Math.sqrt(Math.pow(point2.x - point1.x, 2) + Math.pow(point2.y - point1.y, 2));
-};
+const getDistance = (point1, point2) => Math.sqrt((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2);
 
 
 

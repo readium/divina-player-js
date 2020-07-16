@@ -18,7 +18,7 @@
 			bottom: 0;
 		}
 	</style>
-	<script type="text/javascript" src="./divinaPlayer.js"></script>
+	<script type="module" src="../dist/divina.js"></script>
 </head>
 <body>
 	<script type="text/javascript">
@@ -46,8 +46,9 @@
 		}
 
 		window.onload = function () {
-			let Player = window.divinaPlayer
+			let Player = divinaPlayer;
 			if (!Player) {
+				console.error("ERROR TO LOAD THE LOAD PLAYER")
 				return
 			}
 
