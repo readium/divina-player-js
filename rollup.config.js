@@ -43,7 +43,6 @@ export default [
                 sourcemap: true,
             }
         ],
-        watch: true,
         watch: {
             include: 'src/**'
         },        
