@@ -1,7 +1,3 @@
-dist/
-lib/
-public/divinaPlayer.js
-public/divinaPlayer.js.map
 
 # Typescript v1 declaration files
 typings/
