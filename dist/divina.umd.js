@@ -51151,7 +51151,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				this.setReadingMode("single");
 			}
 			customData.readingModesArray = Object.keys(actualReadingModes);
-			this._eventEmitter.emit("readingmodesupdate", customData);
+			this._eventEmitter.emit("readingmodeupdate", customData);
 
 			this._wasDoublePageReadingModeAvailable = !this._wasDoublePageReadingModeAvailable;
 		}
