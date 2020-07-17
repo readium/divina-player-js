@@ -2,7 +2,6 @@
 import { nodeResolve } from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
-import nodePolyfills from 'rollup-plugin-node-polyfills';
 
 const nodeResolveOpt = {
     browser: true,
@@ -61,7 +60,6 @@ export default [
         plugins: [
             nodeResolve(nodeResolveOpt),
             commonjs(),
-            nodePolyfills(),
         ],
     },
     {
