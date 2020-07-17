@@ -44,7 +44,17 @@ export default [
             }
         ],
         watch: {
-            include: 'src/**'
+            buildDelay: 100000,
+            include: [
+                'src/**',
+            ],
+            clearScreen: true,
+            exclude: [
+                '.git/**',
+                'node_modules/**',
+                'dist/**',
+                'lib/**'
+            ],
         },        
         plugins: [
             nodeResolve(nodeResolveOpt),
@@ -103,6 +113,7 @@ export default [
                 sourcemap: true,
             },
         ],
+        watch: false,
         plugins: [
             // alias({
             //     entries: [
@@ -125,6 +136,5 @@ export default [
             'pixi.js',
             'hammerjs',
         ],
-        watch: false,
     },
 ]
