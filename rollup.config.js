@@ -4,11 +4,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import { terser } from 'rollup-plugin-terser';
 // import alias from '@rollup/plugin-alias';
 import replace from '@rollup/plugin-replace';
-import rollup from 'rollup';
-
-rollup.watch().on("event", (a) => {
-    console.log("event", a);
-})
 
 const nodeResolveOpt = {
     browser: false, // https://github.com/rollup/plugins/blob/master/packages/node-resolve/README.md#mainfields
@@ -50,7 +45,7 @@ export default [
         ],
         watch: true,
         watch: {
-            exclude: 'node_modules/**'
+            include: 'src/**'
         },        
         plugins: [
             nodeResolve(nodeResolveOpt),
