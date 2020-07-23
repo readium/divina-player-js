@@ -50102,7 +50102,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		}
 
 		// If required, do something with the page change information (e.g. signal it via an event)
-		const customData = { pageIndex: this.pageIndex, nbOfPages: this.nbOfPages, currentPage: this.currentPage };
+		const customData = { pageIndex: this.pageIndex, nbOfPages: this.nbOfPages };
 		this._eventEmitter.emit("pagechange", customData);
 	}
 
