@@ -193,7 +193,7 @@ export default class PageNavigator extends LayerPile {
 		}
 
 		// If required, do something with the page change information (e.g. signal it via an event)
-		const customData = { pageIndex: this.pageIndex, nbOfPages: this.nbOfPages }
+		const customData = { pageIndex: this.pageIndex, nbOfPages: this.nbOfPages, currentPage: this.currentPage }
 		this._eventEmitter.emit("pagechange", customData)
 	}
 
