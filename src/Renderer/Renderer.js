@@ -18,7 +18,7 @@ export default class Renderer {
 		// Create the PIXI application with a default background color
 		this._app = new PIXIApplication({
 			backgroundColor,
-			resolution: window.devicePixelRatio || 1, // Will improve resolution on Retina displays
+			resolution: /*window.devicePixelRatio ||*/ 1, // Will improve resolution on Retina displays
 		})
 		this._app.renderer.autoDensity = true
 
