@@ -44,7 +44,6 @@ export default [
             }
         ],
         watch: {
-            buildDelay: 100000,
             include: [
                 'src/**',
             ],
