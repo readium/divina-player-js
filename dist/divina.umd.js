@@ -42326,7 +42326,7 @@ Object.assign(extract, canvasExtract);class Container$1 {
 		// Create the PIXI application with a default background color
 		this._app = new Application({
 			backgroundColor,
-			resolution: window.devicePixelRatio || 1, // Will improve resolution on Retina displays
+			resolution: /*window.devicePixelRatio ||*/ 1, // Will improve resolution on Retina displays
 		});
 		this._app.renderer.autoDensity = true;
 
