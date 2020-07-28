@@ -27,11 +27,35 @@ export default class Page extends LayerPile {
 
 	get inScrollDirection() { return this._inScrollDirection }
 
-	constructor(pageIndex, overflow, player) {
+	get size() {
+		let width = 0
+		let height = 0
+		// The size is derived from the sizes of all segments
+		this.segmentsArray.forEach((segment) => {
+			const { size } = segment
+			const { rootSize } = this._player
+			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+				width += size.width
+				if (this._isADoublePage === true) {
+					height = Math.max(height, size.height)
+				} else {
+					height = rootSize.height
+				}
+			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+				height += size.height
+				width = rootSize.width
+			}
+		})
+		return { width, height }
+	}
+
+	constructor(pageIndex, isADoublePage, overflow, player) {
 		const name = `page${pageIndex}`
 		super(name)
 
 		this._pageIndex = pageIndex
+		this._isADoublePage = isADoublePage
+		this._player = player
 
 		this._hitZoneToPrevious = null
 		this._hitZoneToNext = null

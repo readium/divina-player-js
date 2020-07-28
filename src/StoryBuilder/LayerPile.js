@@ -27,39 +27,14 @@ export default class LayerPile extends Container {
 		return this._layersArray[0].resourcePath
 	}
 
-	get size() {
-		// Size of a page (in a divina)
-		if (this._handler && this._handler.type === "overflowHandler") {
-			const { inScrollDirection } = this._handler
-			let width = 0
-			let height = 0
-			// The size is derived from the sizes of all segments
-			this._layersArray.forEach((layer) => {
-				const { size } = layer
-				if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-					width += size.width
-					if (height === 0) {
-						height = size.height
-					}
-				} else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-					height += size.height
-					if (width === 0) {
-						width = size.width
-					}
-				}
-			})
-			return { width, height }
-		}
+	get size() { // Note that Page overrides this function
 
-		// Size of a segment (in a divina)
-
-		// If multiple layers (a Segment with multiple layers should have a parentSlice)
+		// If a Segment with multiple layers
 		if (this._parentSlice) {
 			return this._parentSlice.size
 		}
 
-		// If a unique layer
-		if (this._layersArray.length === 1 && this._layersArray[0]) {
+		if (this._layersArray.length > 0) {
 			return this._layersArray[0].size
 		}
 

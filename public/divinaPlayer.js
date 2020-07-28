@@ -55268,10 +55268,9 @@ function () {
     // Create the PIXI application with a default background color
     this._app = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Application"]({
       backgroundColor: backgroundColor,
-      resolution: window.devicePixelRatio || 1 // Will improve resolution on Retina displays
-
-    });
-    this._app.renderer.autoDensity = true; // Add the PIXI app's canvas to the DOM
+      resolution: 1,
+      autoDensity: true
+    }); // Add the PIXI app's canvas to the DOM
 
     rootElement.appendChild(this._app.view); // Create root container
 
@@ -58227,44 +58226,13 @@ function (_Container) {
   }, {
     key: "size",
     get: function get() {
-      // Size of a page (in a divina)
-      if (this._handler && this._handler.type === "overflowHandler") {
-        var inScrollDirection = this._handler.inScrollDirection;
-        var width = 0;
-        var height = 0; // The size is derived from the sizes of all segments
-
-        this._layersArray.forEach(function (layer) {
-          var size = layer.size;
-
-          if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-            width += size.width;
-
-            if (height === 0) {
-              height = size.height;
-            }
-          } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-            height += size.height;
-
-            if (width === 0) {
-              width = size.width;
-            }
-          }
-        });
-
-        return {
-          width: width,
-          height: height
-        };
-      } // Size of a segment (in a divina)
-      // If multiple layers (a Segment with multiple layers should have a parentSlice)
-
-
+      // Note that Page overrides this function
+      // If a Segment with multiple layers
       if (this._parentSlice) {
         return this._parentSlice.size;
-      } // If a unique layer
+      }
 
-
-      if (this._layersArray.length === 1 && this._layersArray[0]) {
+      if (this._layersArray.length > 0) {
         return this._layersArray[0].size;
       } // All cases must have been covered already, but just in case
 
@@ -60235,9 +60203,39 @@ function (_LayerPile) {
     get: function get() {
       return this._inScrollDirection;
     }
+  }, {
+    key: "size",
+    get: function get() {
+      var _this2 = this;
+
+      var width = 0;
+      var height = 0; // The size is derived from the sizes of all segments
+
+      this.segmentsArray.forEach(function (segment) {
+        var size = segment.size;
+        var rootSize = _this2._player.rootSize;
+
+        if (_this2._inScrollDirection === "ltr" || _this2._inScrollDirection === "rtl") {
+          width += size.width;
+
+          if (_this2._isADoublePage === true) {
+            height = Math.max(height, size.height);
+          } else {
+            height = rootSize.height;
+          }
+        } else if (_this2._inScrollDirection === "ttb" || _this2._inScrollDirection === "btt") {
+          height += size.height;
+          width = rootSize.width;
+        }
+      });
+      return {
+        width: width,
+        height: height
+      };
+    }
   }]);
 
-  function Page(pageIndex, overflow, player) {
+  function Page(pageIndex, isADoublePage, overflow, player) {
     var _this;
 
     _classCallCheck(this, Page);
@@ -60245,6 +60243,8 @@ function (_LayerPile) {
     var name = "page".concat(pageIndex);
     _this = _possibleConstructorReturn(this, _getPrototypeOf(Page).call(this, name));
     _this._pageIndex = pageIndex;
+    _this._isADoublePage = isADoublePage;
+    _this._player = player;
     _this._hitZoneToPrevious = null;
     _this._hitZoneToNext = null;
     _this._inScrollDirection = null;
@@ -60391,7 +60391,7 @@ function (_LayerPile) {
   }, {
     key: "resizePage",
     value: function resizePage() {
-      var _this2 = this;
+      var _this3 = this;
 
       var storyNavigator = this._parent;
 
@@ -60400,8 +60400,8 @@ function (_LayerPile) {
           var content = layer.content,
               isActive = layer.isActive; // content is a Page
 
-          if (content === _this2 && isActive === true) {
-            _this2.resize();
+          if (content === _this3 && isActive === true) {
+            _this3.resize();
           }
         });
       }
@@ -61935,6 +61935,7 @@ function () {
       var currentPageIndex = -1;
       var currentSegmentIndex = 0;
       var currentPage = null;
+      var isADoublePage = type === "double";
       linkObjectsArray.forEach(function (linkObject) {
         var slice = linkObject.slice,
             children = linkObject.children,
@@ -61954,7 +61955,7 @@ function () {
 
             currentPageIndex += 1;
             currentSegmentIndex = 0;
-            currentPage = new _Page__WEBPACK_IMPORTED_MODULE_2__["default"](currentPageIndex, overflow, player);
+            currentPage = new _Page__WEBPACK_IMPORTED_MODULE_2__["default"](currentPageIndex, isADoublePage, overflow, player);
           }
 
           var sliceLayersArray = [new _Layer__WEBPACK_IMPORTED_MODULE_4__["default"]("slice", slice)];
