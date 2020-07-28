@@ -80,10 +80,12 @@ export default class Transition {
 		let entry = {
 			type: this._type,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		}
 		let exit = {
 			type: this._type,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		}
 
 		switch (this._type) {
