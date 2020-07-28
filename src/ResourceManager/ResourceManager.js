@@ -1,4 +1,5 @@
 import { Loader } from "../Renderer"
+import Task from "./Task"
 import TextureResource from "./TextureResource"
 import ResourceLoadTaskQueue from "./ResourceLoadTaskQueue"
 
@@ -96,7 +97,9 @@ export default class ResourceManager {
 				const { id, hasStartedLoading } = textureResource
 				if (hasStartedLoading === false) {
 					if (taskId === null) {
-						taskId = id
+						taskId = String(id)
+					} else {
+						taskId += String(id)
 					}
 					pathsToLoadArray.push(path)
 				}
@@ -122,35 +125,33 @@ export default class ResourceManager {
 
 		// If is already loading, still consider if priority order > that of when started loading!!!
 
-		// Add resource load task to queue if not already in queue
 		let task = this._taskQueue.getTaskWithId(taskId)
+		const data = { pageIndex }
+
+		// Add resource load task to queue if not already in queue
 		if (!task) {
 			const loader = new Loader()
-			task = {
-				id: taskId,
-				data: { pageIndex },
-				doAsync: () => this._loadResources(pathsToLoadArray, pageIndex, loader),
-				doOnEnd: callback,
-				kill: () => {
-					// Cancel loading for resources not loaded yet
-					const { slices } = this._player
-					pathsToLoadArray.forEach((path) => {
-						if (path && this._textureResources[path]) {
-							const textureResource = this._textureResources[path]
-							if (textureResource.hasLoaded === false) {
-								textureResource.cancelLoad(slices)
-							}
+			const doAsync = () => this._loadResources(pathsToLoadArray, pageIndex, loader)
+			const doOnEnd = callback
+			const doOnKill = () => {
+				// Cancel loading for resources not loaded yet (and thus change their load status)
+				const { slices } = this._player
+				pathsToLoadArray.forEach((path) => {
+					if (path && this._textureResources[path]) {
+						const textureResource = this._textureResources[path]
+						if (textureResource.hasLoaded === false) {
+							textureResource.cancelLoad(slices)
 						}
-					})
-					loader.reset()
-				},
+					}
+				})
+				loader.reset()
 			}
-			this._taskQueue.addOrUpdateTask(task)
+			task = new Task(taskId, data, doAsync, doOnEnd, doOnKill)
+			this._taskQueue.addTask(task)
 
-		// In serial mode, if task exists, add data to potentially update its priority
+		// In serial mode, if task exists, update data to potentially update its priority
 		} else if (this._allowsParallel === false) {
-			task.data.pageIndex = pageIndex
-			this._taskQueue.addOrUpdateTask(task)
+			this._taskQueue.updateTaskWithData(data)
 		}
 	}
 
@@ -254,12 +255,14 @@ export default class ResourceManager {
 	// Used in Player
 	addStoryOpenTaskAndLoad(doOnLoadEnd, maxPriority) {
 		// Add a last task to trigger doOnLoadEnd
-		const task = {
-			id: -1,
-			doOnEnd: doOnLoadEnd,
-			forcedPriority: maxPriority,
-		}
-		this._taskQueue.addOrUpdateTask(task)
+		const id = -1
+		const data = null
+		const doAsync = null
+		const doOnEnd = doOnLoadEnd
+		const doOnKill = null
+		const forcedPriority = maxPriority
+		const task = new Task(id, data, doAsync, doOnEnd, doOnKill, forcedPriority)
+		this._taskQueue.addTask(task)
 
 		// Start the async queue with a function to handle a change in load percent
 		this._nbOfCompletedTasks = 0

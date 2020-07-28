@@ -175,7 +175,7 @@ export default class TextureResource {
 		Object.values(this._textures).forEach(({ sliceIdsSet }) => {
 			sliceIdsSet.forEach((sliceId) => {
 				const slice = slices[sliceId]
-				slice._loadStatus = 0 // UGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				slice.cancelTextureLoad()
 			})
 		})
 

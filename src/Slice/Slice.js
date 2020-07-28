@@ -70,9 +70,7 @@ export default class Slice extends TextureElement {
 		const { path } = this._getRelevantPathAndMediaFragment(this._resource)
 
 		this._loadStatus = (!path) ? 0 : 1
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus()
-		}
+		this._updateParentLoadStatus()
 
 		return (path) ? [{ pathsArray: [path], sliceId: this._id }] : []
 	}
@@ -97,6 +95,13 @@ export default class Slice extends TextureElement {
 		}
 
 		return { path, mediaFragment }
+	}
+
+	_updateParentLoadStatus() {
+		if (!this._parent || !this._parent.updateLoadStatus) {
+			return
+		}
+		this._parent.updateLoadStatus()
 	}
 
 	// Once the associated texture has been created, it can be applied to the slice
@@ -144,9 +149,7 @@ export default class Slice extends TextureElement {
 			this._loadStatus = (isAFallback === true) ? -1 : 2
 		}
 
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus()
-		}
+		this._updateParentLoadStatus()
 	}
 
 	// On the first successful loading of the resource's texture
@@ -160,6 +163,11 @@ export default class Slice extends TextureElement {
 		if (this._parent) {
 			this._parent.resizePage()
 		}
+	}
+
+	cancelTextureLoad() {
+		this._loadStatus = 0
+		this._updateParentLoadStatus()
 	}
 
 	play() {
@@ -243,9 +251,7 @@ export default class Slice extends TextureElement {
 	destroyTexturesIfPossible() {
 		const pathsArray = this.unlinkTexturesAndGetPaths()
 
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus()
-		}
+		this._updateParentLoadStatus()
 
 		if (!pathsArray) {
 			return

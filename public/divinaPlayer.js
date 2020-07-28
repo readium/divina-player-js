@@ -55975,12 +55975,6 @@ __webpack_require__.r(__webpack_exports__);
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return AsyncTaskQueue; });
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
@@ -55997,16 +55991,12 @@ function () {
     }
   }]);
 
-  function AsyncTaskQueue(maxPriority, allowsParallel, getPriorityFunction) {
+  function AsyncTaskQueue(maxPriority, allowsParallel, getPriorityFromTaskData) {
     _classCallCheck(this, AsyncTaskQueue);
 
     this._maxPriority = maxPriority;
     this._allowsParallel = allowsParallel;
-
-    this._getPriority = getPriorityFunction || function (task) {
-      return task.priority || 0;
-    };
-
+    this._getPriorityFromTaskData = getPriorityFromTaskData;
     this._tasksArray = [];
     this.reset();
     this._nbOfInitialTasks = 0;
@@ -56018,9 +56008,7 @@ function () {
     key: "reset",
     value: function reset() {
       this._tasksArray.forEach(function (task) {
-        if (task.isRunning === true && task.kill) {
-          task.kill();
-        }
+        task.kill();
       }); // Useful in serial mode only
 
 
@@ -56032,82 +56020,78 @@ function () {
       var _this = this;
 
       this._tasksArray.forEach(function (task, i) {
-        // Allow the task to have a forced priority, otherwise evaluate the priority
-        var priority = task.forcedPriority !== undefined ? task.forcedPriority : _this._getPriority(task); // In serial mode, update task priorities
+        var priority = _this._getPriorityAndUpdateTaskIfRelevant(task, task.data); // In parallel mode, remove task if relevant
 
-        if (_this._allowsParallel === false) {
-          _this._tasksArray[i].priority = priority; // Whereas in parallel mode, remove task if relevant
-        } else if (priority > _this._maxPriority) {
-          if (task.isRunning === true && task.kill) {
-            task.kill();
-          }
+
+        if (_this._allowsParallel === true && priority > _this._maxPriority) {
+          task.kill();
 
           _this._tasksArray.splice(i, 1);
         }
       });
     }
   }, {
-    key: "addOrUpdateTask",
-    value: function addOrUpdateTask(task) {
-      var fullTask = _objectSpread({}, task, {
-        isRunning: false
-      });
+    key: "_getPriorityAndUpdateTaskIfRelevant",
+    value: function _getPriorityAndUpdateTaskIfRelevant(task, data) {
+      var priority = task.priority,
+          forcedPriority = task.forcedPriority;
 
-      if (this._allowsParallel === true) {
-        this._tasksArray.push(fullTask);
+      if (forcedPriority !== null) {
+        return forcedPriority;
+      }
+
+      var possiblyNewPriority = this._getPriorityFromTaskData ? this._getPriorityFromTaskData(data) : 0;
+
+      if (priority === null || possiblyNewPriority <= priority) {
+        task.setData(data);
+        task.setPriority(possiblyNewPriority);
+      }
+
+      return possiblyNewPriority;
+    }
+  }, {
+    key: "addTask",
+    value: function addTask(task) {
+      var priority = this._getPriorityAndUpdateTaskIfRelevant(task, task.data);
+
+      if (this._allowsParallel === false) {
+        this._tasksArray.push(task);
+
+        if (this._hasStarted === true && this._isRunning === false) {
+          this._runNextTaskInQueue();
+        }
+      } else if (priority <= this._maxPriority) {
+        this._tasksArray.push(task);
 
         if (this._hasStarted === true) {
-          this._runTask(fullTask);
-        }
-      } else {
-        // If in serial mode, only add the task if not already in queue...
-        var id = fullTask.id;
-
-        var index = this._tasksArray.findIndex(function (arrayTask) {
-          return arrayTask.id === id;
-        });
-
-        if (index < 0) {
-          // ...and add it with a priority property
-          fullTask.priority = task.forcedPriority !== undefined ? task.forcedPriority : this._getPriority(task);
-
-          this._tasksArray.push(fullTask);
-
-          if (this._hasStarted === true && this._isRunning === false) {
-            this._runNextTaskInQueue();
-          }
-        } else {
-          // Otherwise update the task
-          this._tasksArray[index] = task;
+          this._runTask(task);
         }
       }
+    }
+  }, {
+    key: "updateTaskWithData",
+    value: function updateTaskWithData(task, data) {
+      // The task cannot be running already at this stage
+      this._getPriorityAndUpdateTaskIfRelevant(task, data);
     }
   }, {
     key: "_runTask",
     value: function _runTask(task) {
       var _this2 = this;
 
-      var id = task.id,
-          doAsync = task.doAsync,
-          doOnEnd = task.doOnEnd;
-
       if (this._allowsParallel === false) {
         this._isRunning = true;
       }
 
-      task.isRunning = true;
-
       var callback = function callback() {
         // Remove task from list
+        var id = task.id;
+
         var index = _this2._tasksArray.findIndex(function (arrayTask) {
           return arrayTask.id === id;
         });
 
         _this2._tasksArray.splice(index, 1);
-
-        if (doOnEnd) {
-          doOnEnd();
-        }
 
         if (_this2._doAfterEachInitialTask) {
           _this2._doAfterEachInitialTask();
@@ -56126,11 +56110,7 @@ function () {
         }
       };
 
-      if (doAsync) {
-        doAsync().then(callback);
-      } else {
-        callback();
-      }
+      task.run(callback);
     }
   }, {
     key: "_runNextTaskInQueue",
@@ -56155,7 +56135,9 @@ function () {
       var nextTask = null;
 
       this._tasksArray.forEach(function (task) {
-        if (!nextTask || task.priority < nextTask.priority) {
+        var priority = task.priority;
+
+        if (!nextTask || priority < nextTask.priority) {
           nextTask = task;
         }
       });
@@ -56172,6 +56154,8 @@ function () {
       this._hasStarted = true;
 
       if (this._allowsParallel === true) {
+        console.log(this._tasksArray);
+
         this._tasksArray.forEach(function (task) {
           _this3._runTask(task);
         });
@@ -56243,17 +56227,15 @@ function (_AsyncTaskQueue) {
     _classCallCheck(this, ResourceLoadTaskQueue);
 
     // Task priorities will be evaluated based on page differences
-    var getPriority = function getPriority(task) {
-      if (!task.data || task.data.pageIndex === undefined || _this._targetPageIndex === undefined) {
-        return task.priority || 0;
+    var getPriorityFromTaskData = function getPriorityFromTaskData(data) {
+      var priority = 0;
+
+      if (!data || data.pageIndex === null || _this._targetPageIndex === null) {
+        return priority;
       }
 
-      var taskPageIndex = task.data.pageIndex;
-      var priority = task.priority;
-
-      if (priority === undefined || Math.abs(taskPageIndex - _this._targetPageIndex) < Math.abs(priority)) {
-        priority = taskPageIndex - _this._targetPageIndex;
-      }
+      var taskPageIndex = data.pageIndex;
+      priority = taskPageIndex - _this._targetPageIndex;
 
       if (priority < 0) {
         if (priorityFactor) {
@@ -56267,7 +56249,9 @@ function (_AsyncTaskQueue) {
       return priority;
     };
 
-    return _this = _possibleConstructorReturn(this, _getPrototypeOf(ResourceLoadTaskQueue).call(this, maxPriority, allowsParallel, getPriority));
+    _this = _possibleConstructorReturn(this, _getPrototypeOf(ResourceLoadTaskQueue).call(this, maxPriority, allowsParallel, getPriorityFromTaskData));
+    _this._targetPageIndex = null;
+    return _this;
   }
 
   _createClass(ResourceLoadTaskQueue, [{
@@ -56297,14 +56281,16 @@ function (_AsyncTaskQueue) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return ResourceManager; });
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Renderer */ "./src/Renderer/index.js");
-/* harmony import */ var _TextureResource__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TextureResource */ "./src/ResourceManager/TextureResource.js");
-/* harmony import */ var _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./ResourceLoadTaskQueue */ "./src/ResourceManager/ResourceLoadTaskQueue.js");
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
+/* harmony import */ var _Task__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Task */ "./src/ResourceManager/Task.js");
+/* harmony import */ var _TextureResource__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TextureResource */ "./src/ResourceManager/TextureResource.js");
+/* harmony import */ var _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ResourceLoadTaskQueue */ "./src/ResourceManager/ResourceLoadTaskQueue.js");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 
 
 
@@ -56331,9 +56317,9 @@ function () {
 
     var _ref = options || {},
         _ref$allowsParallel = _ref.allowsParallel,
-        allowsParallel = _ref$allowsParallel === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_3__["defaultAllowsParallel"] : _ref$allowsParallel,
+        allowsParallel = _ref$allowsParallel === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_4__["defaultAllowsParallel"] : _ref$allowsParallel,
         _ref$videoLoadTimeout = _ref.videoLoadTimeout,
-        videoLoadTimeout = _ref$videoLoadTimeout === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_3__["defaultVideoLoadTimeout"] : _ref$videoLoadTimeout;
+        videoLoadTimeout = _ref$videoLoadTimeout === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_4__["defaultVideoLoadTimeout"] : _ref$videoLoadTimeout;
 
     this._allowsParallel = allowsParallel;
     this._videoLoadTimeout = videoLoadTimeout;
@@ -56385,7 +56371,7 @@ function () {
       }
 
       if (!this._textureResources[path]) {
-        this._textureResources[path] = new _TextureResource__WEBPACK_IMPORTED_MODULE_1__["default"](textureInfo, sliceId);
+        this._textureResources[path] = new _TextureResource__WEBPACK_IMPORTED_MODULE_2__["default"](textureInfo, sliceId);
       } else {
         this._textureResources[path].addTextureInfo(textureInfo, sliceId);
       }
@@ -56396,7 +56382,7 @@ function () {
     value: function reset(maxPriority, priorityFactor) {
       // Build async task queue if there is none...
       if (!this._taskQueue) {
-        this._taskQueue = new _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_2__["default"](maxPriority, priorityFactor, this._allowsParallel); // ...or stop all loading tasks otherwise
+        this._taskQueue = new _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_3__["default"](maxPriority, priorityFactor, this._allowsParallel); // ...or stop all loading tasks otherwise
       } else {
         this._taskQueue.reset();
 
@@ -56430,7 +56416,9 @@ function () {
 
           if (hasStartedLoading === false) {
             if (taskId === null) {
-              taskId = id;
+              taskId = String(id);
+            } else {
+              taskId += String(id);
             }
 
             pathsToLoadArray.push(path);
@@ -56455,44 +56443,44 @@ function () {
         callback();
         return;
       } // If is already loading, still consider if priority order > that of when started loading!!!
-      // Add resource load task to queue if not already in queue
 
 
       var task = this._taskQueue.getTaskWithId(taskId);
 
+      var data = {
+        pageIndex: pageIndex
+      }; // Add resource load task to queue if not already in queue
+
       if (!task) {
         var loader = new _Renderer__WEBPACK_IMPORTED_MODULE_0__["Loader"]();
-        task = {
-          id: taskId,
-          data: {
-            pageIndex: pageIndex
-          },
-          doAsync: function doAsync() {
-            return _this2._loadResources(pathsToLoadArray, pageIndex, loader);
-          },
-          doOnEnd: callback,
-          kill: function kill() {
-            // Cancel loading for resources not loaded yet
-            var slices = _this2._player.slices;
-            pathsToLoadArray.forEach(function (path) {
-              if (path && _this2._textureResources[path]) {
-                var textureResource = _this2._textureResources[path];
 
-                if (textureResource.hasLoaded === false) {
-                  textureResource.cancelLoad(slices);
-                }
-              }
-            });
-            loader.reset();
-          }
+        var doAsync = function doAsync() {
+          return _this2._loadResources(pathsToLoadArray, pageIndex, loader);
         };
 
-        this._taskQueue.addOrUpdateTask(task); // In serial mode, if task exists, add data to potentially update its priority
+        var doOnEnd = callback;
+
+        var doOnKill = function doOnKill() {
+          // Cancel loading for resources not loaded yet (and thus change their load status)
+          var slices = _this2._player.slices;
+          pathsToLoadArray.forEach(function (path) {
+            if (path && _this2._textureResources[path]) {
+              var textureResource = _this2._textureResources[path];
+
+              if (textureResource.hasLoaded === false) {
+                textureResource.cancelLoad(slices);
+              }
+            }
+          });
+          loader.reset();
+        };
+
+        task = new _Task__WEBPACK_IMPORTED_MODULE_1__["default"](taskId, data, doAsync, doOnEnd, doOnKill);
+
+        this._taskQueue.addTask(task); // In serial mode, if task exists, update data to potentially update its priority
 
       } else if (this._allowsParallel === false) {
-        task.data.pageIndex = pageIndex;
-
-        this._taskQueue.addOrUpdateTask(task);
+        this._taskQueue.updateTaskWithData(data);
       }
     }
   }, {
@@ -56638,13 +56626,15 @@ function () {
       var _this8 = this;
 
       // Add a last task to trigger doOnLoadEnd
-      var task = {
-        id: -1,
-        doOnEnd: doOnLoadEnd,
-        forcedPriority: maxPriority
-      };
+      var id = -1;
+      var data = null;
+      var doAsync = null;
+      var doOnEnd = doOnLoadEnd;
+      var doOnKill = null;
+      var forcedPriority = maxPriority;
+      var task = new _Task__WEBPACK_IMPORTED_MODULE_1__["default"](id, data, doAsync, doOnEnd, doOnKill, forcedPriority);
 
-      this._taskQueue.addOrUpdateTask(task); // Start the async queue with a function to handle a change in load percent
+      this._taskQueue.addTask(task); // Start the async queue with a function to handle a change in load percent
 
 
       this._nbOfCompletedTasks = 0;
@@ -56718,6 +56708,114 @@ function () {
   }]);
 
   return ResourceManager;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/ResourceManager/Task.js":
+/*!*************************************!*\
+  !*** ./src/ResourceManager/Task.js ***!
+  \*************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return Task; });
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+var Task =
+/*#__PURE__*/
+function () {
+  _createClass(Task, [{
+    key: "id",
+    // Used in AsyncTaskQueue
+    get: function get() {
+      return this._id;
+    }
+  }, {
+    key: "data",
+    get: function get() {
+      return this._data;
+    }
+  }, {
+    key: "priority",
+    get: function get() {
+      return this._priority;
+    }
+  }, {
+    key: "forcedPriority",
+    get: function get() {
+      return this._forcedPriority;
+    }
+  }]);
+
+  function Task(id, data, doAsync, doOnEnd, doOnKill, forcedPriority) {
+    _classCallCheck(this, Task);
+
+    this._id = id;
+    this.setData(data);
+    this._doAsync = doAsync;
+    this._doOnEnd = doOnEnd;
+    this._doOnKill = doOnKill;
+    this._forcedPriority = forcedPriority !== undefined ? forcedPriority : null;
+    this._priority = this._forcedPriority;
+    this._isRunning = false;
+  }
+
+  _createClass(Task, [{
+    key: "setData",
+    value: function setData(data) {
+      this._data = data;
+    }
+  }, {
+    key: "setPriority",
+    value: function setPriority(priority) {
+      this._priority = priority;
+    }
+  }, {
+    key: "run",
+    value: function run(callback) {
+      var _this = this;
+
+      this._isRunning = true;
+
+      var fullCallback = function fullCallback() {
+        if (_this._doOnEnd) {
+          _this._doOnEnd();
+        }
+
+        _this._isRunning = false;
+
+        if (callback) {
+          callback();
+        }
+      };
+
+      if (this._doAsync) {
+        this._doAsync().then(fullCallback);
+      } else {
+        fullCallback();
+      }
+    }
+  }, {
+    key: "kill",
+    value: function kill() {
+      if (this._isRunning === true && this._doOnKill) {
+        this._doOnKill();
+      }
+
+      this._isRunning = false;
+    }
+  }]);
+
+  return Task;
 }();
 
 
@@ -56961,7 +57059,7 @@ function () {
         var sliceIdsSet = _ref.sliceIdsSet;
         sliceIdsSet.forEach(function (sliceId) {
           var slice = slices[sliceId];
-          slice._loadStatus = 0; // UGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          slice.cancelTextureLoad();
         });
       });
       this.clearVideoTraces();
@@ -57536,9 +57634,7 @@ function (_TextureElement) {
 
       this._loadStatus = !path ? 0 : 1;
 
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
+      this._updateParentLoadStatus();
 
       return path ? [{
         pathsArray: [path],
@@ -57578,6 +57674,15 @@ function (_TextureElement) {
         path: path,
         mediaFragment: mediaFragment
       };
+    }
+  }, {
+    key: "_updateParentLoadStatus",
+    value: function _updateParentLoadStatus() {
+      if (!this._parent || !this._parent.updateLoadStatus) {
+        return;
+      }
+
+      this._parent.updateLoadStatus();
     } // Once the associated texture has been created, it can be applied to the slice
 
   }, {
@@ -57625,9 +57730,7 @@ function (_TextureElement) {
         this._loadStatus = isAFallback === true ? -1 : 2;
       }
 
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
+      this._updateParentLoadStatus();
     } // On the first successful loading of the resource's texture
 
   }, {
@@ -57646,6 +57749,13 @@ function (_TextureElement) {
       if (this._parent) {
         this._parent.resizePage();
       }
+    }
+  }, {
+    key: "cancelTextureLoad",
+    value: function cancelTextureLoad() {
+      this._loadStatus = 0;
+
+      this._updateParentLoadStatus();
     }
   }, {
     key: "play",
@@ -57743,9 +57853,7 @@ function (_TextureElement) {
 
       var pathsArray = this.unlinkTexturesAndGetPaths();
 
-      if (this._parent && this._parent.updateLoadStatus) {
-        this._parent.updateLoadStatus();
-      }
+      this._updateParentLoadStatus();
 
       if (!pathsArray) {
         return;
