@@ -1,5 +1,6 @@
 import LinkObject from "./LinkObject"
 
+import * as Utils from "../utils"
 import * as constants from "../constants"
 
 export default class DivinaParser {
@@ -10,8 +11,8 @@ export default class DivinaParser {
 		this._doWithParsedDivinaData = doWithParsedDivinaData
 	}
 
-	loadFromPath(folderPath) {
-		DivinaParser.loadJson(folderPath)
+	loadFromPath(path, pathType) {
+		DivinaParser.loadJson(path, pathType)
 			.then((json) => {
 				this._buildStoryFromJson(json)
 			}, (error) => {
@@ -23,13 +24,16 @@ export default class DivinaParser {
 			})
 	}
 
-	static loadJson(folderPath) {
+	static loadJson(path, pathType) {
 		return new Promise((resolve, reject) => {
-			if (!folderPath) {
-				reject(Error("No folder path was specified"))
+			if (!path) {
+				reject(Error("No path was specified"))
 			}
 			const xhr = new XMLHttpRequest()
-			xhr.open("GET", `${folderPath}/${constants.defaultManifestFilename}`)
+			const manifestPath = (pathType === "manifest") // Otherwise pathType should be = "folder"
+				? path
+				: `${path}/${constants.defaultManifestFilename}`
+			xhr.open("GET", manifestPath)
 			xhr.responseType = "text"
 			xhr.onload = () => {
 				const text = xhr.response
@@ -47,18 +51,29 @@ export default class DivinaParser {
 		})
 	}
 
-	loadFromData(data) {
-		if (data && data.json) {
-			this._buildStoryFromJson(data.json)
+	loadFromJson(json = null) {
+		if (json) {
+			this._buildStoryFromJson(json)
+		} else if (this._textManager) {
+			this._textManager.showMessage({
+				type: "error", data: "No json was passed",
+			})
 		}
 	}
 
-	loadFromJsonAndPath(json) {
-		this._buildStoryFromJson(json)
-	}
-
 	_buildStoryFromJson(json) {
-		const { metadata, readingOrder, guided } = json
+		if (!json) {
+			if (this._textManager) {
+				this._textManager.showMessage({
+					type: "error", data: "Manifest is null",
+				})
+			}
+			return
+		}
+
+		const {
+			metadata, links, readingOrder, guided,
+		} = json
 		if (!metadata || !readingOrder) {
 			if (this._textManager) {
 				this._textManager.showMessage({
@@ -68,7 +83,17 @@ export default class DivinaParser {
 			return
 		}
 
-		const parsedMetadata = this._parseMetadata(metadata)
+		let updatedFolderPath = null
+		if (links && links.length > 0) {
+			links.forEach((link) => {
+				const { rel, href } = link
+				if (rel === "self" && href && Utils.hasAScheme(href) === true) {
+					updatedFolderPath = Utils.getFolderPathFromManifestPath(href)
+				}
+			})
+		}
+
+		const parsedMetadata = DivinaParser._parseMetadata(metadata)
 		if (!parsedMetadata) {
 			return
 		}
@@ -85,29 +110,20 @@ export default class DivinaParser {
 		if (!this._doWithParsedDivinaData) {
 			return
 		}
-		this._doWithParsedDivinaData(parsedDivinaData)
+		this._doWithParsedDivinaData(parsedDivinaData, updatedFolderPath)
 	}
 
-	_parseMetadata(metadata) {
-		const { readingProgression, language, presentation } = metadata
+	static _parseMetadata(metadata) {
+		const {
+			readingProgression,
+			language,
+			presentation,
+		} = metadata
 
-		if (!readingProgression) {
-			if (this._textManager) {
-				this._textManager.showMessage({
-					type: "error", data: "Missing readingProgression information",
-				})
-			}
-			return null
-		}
-		if (readingProgression !== "ltr" && readingProgression !== "rtl"
-			&& readingProgression !== "ttb" && readingProgression !== "btt") {
-			if (this._textManager) {
-				this._textManager.showMessage({
-					type: "error", data: "Value for readingProgression is not valid",
-				})
-			}
-			return null
-		}
+		const storyReadingProgression = (readingProgression === "ltr" || readingProgression === "rtl"
+			|| readingProgression === "ttb" || readingProgression === "btt")
+			? readingProgression
+			: constants.defaultReadingProgression
 
 		const {
 			continuous,
@@ -116,7 +132,7 @@ export default class DivinaParser {
 			clipped,
 			spread,
 			viewportRatio,
-			orientation,
+			// orientation,
 		} = presentation || {}
 
 		const storyContinuous = (continuous === true || continuous === false)
@@ -145,14 +161,13 @@ export default class DivinaParser {
 		}
 
 		return {
-			readingProgression,
+			readingProgression: storyReadingProgression,
 			continuous: storyContinuous,
 			fit: storyFit,
 			overflow: storyOverflow,
 			clipped: storyClipped,
 			spread: storySpread,
 			viewportRatio,
-			orientation,
 			languagesArray,
 		}
 	}

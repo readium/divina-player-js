@@ -56,9 +56,9 @@
 
 			// Create the player
 			let player = new Player(stage)
-
+console.log(player)
 			// Load the divina from its folder path
-			player.openDivinaFromPath(divinaFoldersArray[0], targetUrl, options)
+			player.openDivinaFromFolderPath(divinaFoldersArray[0], targetUrl, options)
 
 			// Handle events emitted by the player
 			let eventEmitter = player.eventEmitter

@@ -33,17 +33,17 @@ export default class Page extends LayerPile {
 		// The size is derived from the sizes of all segments
 		this.segmentsArray.forEach((segment) => {
 			const { size } = segment
-			const { rootSize } = this._player
+			const { viewportRect } = this._player
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
 				width += size.width
 				if (this._isADoublePage === true) {
 					height = Math.max(height, size.height)
 				} else {
-					height = rootSize.height
+					height = viewportRect.height
 				}
 			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
 				height += size.height
-				width = rootSize.width
+				width = viewportRect.width
 			}
 		})
 		return { width, height }
@@ -139,13 +139,6 @@ export default class Page extends LayerPile {
 			return false
 		}
 		return this._handler.attemptStickyStep()
-	}
-
-	handleScroll(scrollData, isWheelScroll) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
-			return
-		}
-		this._handler.handleScroll(scrollData, isWheelScroll)
 	}
 
 	zoom(zoomData) {

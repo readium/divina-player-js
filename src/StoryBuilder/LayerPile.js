@@ -107,41 +107,74 @@ export default class LayerPile extends Container {
 
 	// Following a discontinuous gesture
 
-	attemptToGoForward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+	attemptToGoForward(shouldSkipTransition = false, doIfIsUndergoingChanges = null) {
 		// If a change is under way, end it
 		if (this._handler && this.isUndergoingChanges === true) {
-			return (this._handler.attemptToGoForward(shouldCancelTransition,
+			return (this._handler.attemptToGoForward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
 		}
 		// If not, try to go forward in the first layer (child)
 		if (this.activeLayersArray.length > 0) {
 			const layer = this.activeLayersArray[0]
-			if (layer.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+			if (layer.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
 				return true
 			}
 		}
 		// Otherwise try go forward via the handler if there is one
 		return (this._handler
-			&& this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true)
+			&& this._handler.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true)
 	}
 
-	attemptToGoBackward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+	attemptToGoBackward(shouldSkipTransition = false, doIfIsUndergoingChanges = null) {
 		// If a change is under way, end it then go backward
 		if (this._handler && this.isUndergoingChanges === true) {
-			return (this._handler.attemptToGoBackward(shouldCancelTransition,
+			return (this._handler.attemptToGoBackward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
 		}
 		// If not, try to go backward in the last layer (child)
 		if (this.activeLayersArray.length > 0) {
 			const layer = this.activeLayersArray[this.activeLayersArray.length - 1]
-			if (layer.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+			if (layer.attemptToGoBackward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
 				return true
 			}
 		}
 		// Otherwise try go backward via the handler if there is one
 		return (this._handler
-			&& this._handler.attemptToGoBackward(shouldCancelTransition,
+			&& this._handler.attemptToGoBackward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
+	}
+
+	// Following a continuous gesture
+
+	handleScroll(scrollData, isWheelScroll) {
+		if (!this._handler) {
+			return false
+		}
+		if (this._handler.type === "overflowHandler"
+			&& this._handler.handleScroll(scrollData, isWheelScroll) === true) {
+			return true
+		}
+		return (this._handler.type === "stateHandler"
+			&& this._handler.handleScroll(scrollData, isWheelScroll) === true)
+	}
+
+	endControlledTransition(viewportPercent, shouldBeAnimated = true) {
+		if (!this._handler) {
+			return false
+		}
+
+		if (this._handler.type === "overflowHandler") {
+			if (this._layersArray.length === 1) {
+				const layer = this._layersArray[0] // Check only the first Segment in a Page
+				const { content } = layer
+				if (content.endControlledTransition(viewportPercent, shouldBeAnimated) === true) {
+					return true
+				}
+			}
+		}
+
+		return (this._handler.type === "stateHandler"
+			&& this._handler.endControlledTransition(viewportPercent, shouldBeAnimated) === true)
 	}
 
 	resize() {

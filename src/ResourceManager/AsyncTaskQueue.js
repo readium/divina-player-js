@@ -124,7 +124,6 @@ export default class AsyncTaskQueue {
 		this._nbOfInitialTasks = this._tasksArray.length
 		this._hasStarted = true
 		if (this._allowsParallel === true) {
-			console.log(this._tasksArray)
 			this._tasksArray.forEach((task) => {
 				this._runTask(task)
 			})

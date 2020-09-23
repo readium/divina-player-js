@@ -3,6 +3,7 @@ import Task from "./Task"
 import TextureResource from "./TextureResource"
 import ResourceLoadTaskQueue from "./ResourceLoadTaskQueue"
 
+import * as Utils from "../utils"
 import * as constants from "../constants"
 
 export default class ResourceManager {
@@ -123,7 +124,7 @@ export default class ResourceManager {
 			return
 		}
 
-		// If is already loading, still consider if priority order > that of when started loading!!!
+		// If is already loading, still consider if priority order > that of when started loading
 
 		let task = this._taskQueue.getTaskWithId(taskId)
 		const data = { pageIndex }
@@ -202,14 +203,19 @@ export default class ResourceManager {
 
 	_getSrc(path, fallbackPath = null) {
 		let src = fallbackPath || path
+
 		const { folderPath, data } = this._textureSource
-		if (folderPath) {
+
+		// If src has a scheme, use the address as is, otherwise add folderPath as prefix
+		if (folderPath && Utils.hasAScheme(src) === false) {
 			src = `${folderPath}/${src}`
+
 		// If the story was opened with data (i.e. not from a folder)
 		// and the resource is a video, use the dataURI as src
 		} else if (data && data.base64DataByHref) {
 			src = data.base64DataByHref[path]
 		}
+
 		return src
 	}
 

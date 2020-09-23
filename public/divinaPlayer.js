@@ -46571,7 +46571,7 @@ module.exports = function parseURI (str, opts) {
 /*!***********************************************************!*\
   !*** ./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js ***!
   \***********************************************************/
-/*! exports provided: CanvasRenderer, canvasUtils, CanvasMeshRenderer, CanvasGraphicsRenderer, CanvasSpriteRenderer, accessibility, extract, interaction, prepare, utils, VERSION, filters, useDeprecated, Application, AbstractBatchRenderer, AbstractRenderer, Attribute, BaseRenderTexture, BaseTexture, BatchDrawCall, BatchGeometry, BatchPluginFactory, BatchRenderer, BatchShaderGenerator, BatchTextureArray, Buffer, CubeTexture, Filter, Framebuffer, GLProgram, GLTexture, Geometry, MaskData, ObjectRenderer, Program, Quad, QuadUv, RenderTexture, RenderTexturePool, Renderer, Shader, SpriteMaskFilter, State, System, Texture, TextureMatrix, TextureUvs, UniformGroup, ViewableBuffer, autoDetectRenderer, checkMaxIfStatementsInShader, defaultFilterVertex, defaultVertex, resources, systems, AppLoaderPlugin, Loader, LoaderResource, TextureLoader, ParticleContainer, ParticleRenderer, Spritesheet, SpritesheetLoader, TilingSprite, TilingSpriteRenderer, BitmapFontLoader, BitmapText, Ticker, TickerPlugin, UPDATE_PRIORITY, ALPHA_MODES, BLEND_MODES, DRAW_MODES, ENV, FORMATS, GC_MODES, MASK_TYPES, MIPMAP_MODES, PRECISION, RENDERER_TYPE, SCALE_MODES, TARGETS, TYPES, WRAP_MODES, Bounds, Container, DisplayObject, FillStyle, GRAPHICS_CURVES, Graphics, GraphicsData, GraphicsGeometry, LineStyle, graphicsUtils, Circle, DEG_TO_RAD, Ellipse, Matrix, ObservablePoint, PI_2, Point, Polygon, RAD_TO_DEG, Rectangle, RoundedRectangle, SHAPES, Transform, groupD8, Mesh, MeshBatchUvs, MeshGeometry, MeshMaterial, NineSlicePlane, PlaneGeometry, RopeGeometry, SimpleMesh, SimplePlane, SimpleRope, Runner, Sprite, AnimatedSprite, TEXT_GRADIENT, Text, TextMetrics, TextStyle, isMobile, settings */
+/*! exports provided: CanvasRenderer, canvasUtils, CanvasMeshRenderer, CanvasGraphicsRenderer, CanvasSpriteRenderer, accessibility, extract, interaction, prepare, utils, Application, AbstractBatchRenderer, AbstractRenderer, Attribute, BaseRenderTexture, BaseTexture, BatchDrawCall, BatchGeometry, BatchPluginFactory, BatchRenderer, BatchShaderGenerator, BatchTextureArray, Buffer, CubeTexture, Filter, Framebuffer, GLProgram, GLTexture, Geometry, MaskData, ObjectRenderer, Program, Quad, QuadUv, RenderTexture, RenderTexturePool, Renderer, Shader, SpriteMaskFilter, State, System, Texture, TextureMatrix, TextureUvs, UniformGroup, ViewableBuffer, autoDetectRenderer, checkMaxIfStatementsInShader, defaultFilterVertex, defaultVertex, resources, systems, AppLoaderPlugin, Loader, LoaderResource, TextureLoader, ParticleContainer, ParticleRenderer, Spritesheet, SpritesheetLoader, TilingSprite, TilingSpriteRenderer, BitmapFontLoader, BitmapText, Ticker, TickerPlugin, UPDATE_PRIORITY, ALPHA_MODES, BLEND_MODES, DRAW_MODES, ENV, FORMATS, GC_MODES, MASK_TYPES, MIPMAP_MODES, PRECISION, RENDERER_TYPE, SCALE_MODES, TARGETS, TYPES, WRAP_MODES, Bounds, Container, DisplayObject, FillStyle, GRAPHICS_CURVES, Graphics, GraphicsData, GraphicsGeometry, LineStyle, graphicsUtils, Circle, DEG_TO_RAD, Ellipse, Matrix, ObservablePoint, PI_2, Point, Polygon, RAD_TO_DEG, Rectangle, RoundedRectangle, SHAPES, Transform, groupD8, Mesh, MeshBatchUvs, MeshGeometry, MeshMaterial, NineSlicePlane, PlaneGeometry, RopeGeometry, SimpleMesh, SimplePlane, SimpleRope, Runner, Sprite, AnimatedSprite, TEXT_GRADIENT, Text, TextMetrics, TextStyle, isMobile, settings, VERSION, filters, useDeprecated */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -46586,12 +46586,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "prepare", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["prepare"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "utils", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["utils"]; });
-
-/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "VERSION", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["VERSION"]; });
-
-/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "filters", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["filters"]; });
-
-/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "useDeprecated", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["useDeprecated"]; });
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "Application", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["Application"]; });
 
@@ -46821,6 +46815,12 @@ __webpack_require__.r(__webpack_exports__);
 
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "settings", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["settings"]; });
 
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "VERSION", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["VERSION"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "filters", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["filters"]; });
+
+/* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "useDeprecated", function() { return pixi_js__WEBPACK_IMPORTED_MODULE_0__["useDeprecated"]; });
+
 /* harmony import */ var _pixi_canvas_renderer__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! @pixi/canvas-renderer */ "./node_modules/@pixi/canvas-renderer/lib/canvas-renderer.es.js");
 /* harmony reexport (safe) */ __webpack_require__.d(__webpack_exports__, "CanvasRenderer", function() { return _pixi_canvas_renderer__WEBPACK_IMPORTED_MODULE_1__["CanvasRenderer"]; });
 
@@ -46886,7 +46886,7 @@ Object.assign(pixi_js__WEBPACK_IMPORTED_MODULE_0__["extract"], _pixi_canvas_extr
 /*!*********************************************!*\
   !*** ./node_modules/pixi.js/lib/pixi.es.js ***!
   \*********************************************/
-/*! exports provided: accessibility, extract, interaction, prepare, utils, VERSION, filters, useDeprecated, Application, AbstractBatchRenderer, AbstractRenderer, Attribute, BaseRenderTexture, BaseTexture, BatchDrawCall, BatchGeometry, BatchPluginFactory, BatchRenderer, BatchShaderGenerator, BatchTextureArray, Buffer, CubeTexture, Filter, Framebuffer, GLProgram, GLTexture, Geometry, MaskData, ObjectRenderer, Program, Quad, QuadUv, RenderTexture, RenderTexturePool, Renderer, Shader, SpriteMaskFilter, State, System, Texture, TextureMatrix, TextureUvs, UniformGroup, ViewableBuffer, autoDetectRenderer, checkMaxIfStatementsInShader, defaultFilterVertex, defaultVertex, resources, systems, AppLoaderPlugin, Loader, LoaderResource, TextureLoader, ParticleContainer, ParticleRenderer, Spritesheet, SpritesheetLoader, TilingSprite, TilingSpriteRenderer, BitmapFontLoader, BitmapText, Ticker, TickerPlugin, UPDATE_PRIORITY, ALPHA_MODES, BLEND_MODES, DRAW_MODES, ENV, FORMATS, GC_MODES, MASK_TYPES, MIPMAP_MODES, PRECISION, RENDERER_TYPE, SCALE_MODES, TARGETS, TYPES, WRAP_MODES, Bounds, Container, DisplayObject, FillStyle, GRAPHICS_CURVES, Graphics, GraphicsData, GraphicsGeometry, LineStyle, graphicsUtils, Circle, DEG_TO_RAD, Ellipse, Matrix, ObservablePoint, PI_2, Point, Polygon, RAD_TO_DEG, Rectangle, RoundedRectangle, SHAPES, Transform, groupD8, Mesh, MeshBatchUvs, MeshGeometry, MeshMaterial, NineSlicePlane, PlaneGeometry, RopeGeometry, SimpleMesh, SimplePlane, SimpleRope, Runner, Sprite, AnimatedSprite, TEXT_GRADIENT, Text, TextMetrics, TextStyle, isMobile, settings */
+/*! exports provided: accessibility, extract, interaction, prepare, utils, Application, AbstractBatchRenderer, AbstractRenderer, Attribute, BaseRenderTexture, BaseTexture, BatchDrawCall, BatchGeometry, BatchPluginFactory, BatchRenderer, BatchShaderGenerator, BatchTextureArray, Buffer, CubeTexture, Filter, Framebuffer, GLProgram, GLTexture, Geometry, MaskData, ObjectRenderer, Program, Quad, QuadUv, RenderTexture, RenderTexturePool, Renderer, Shader, SpriteMaskFilter, State, System, Texture, TextureMatrix, TextureUvs, UniformGroup, ViewableBuffer, autoDetectRenderer, checkMaxIfStatementsInShader, defaultFilterVertex, defaultVertex, resources, systems, AppLoaderPlugin, Loader, LoaderResource, TextureLoader, ParticleContainer, ParticleRenderer, Spritesheet, SpritesheetLoader, TilingSprite, TilingSpriteRenderer, BitmapFontLoader, BitmapText, Ticker, TickerPlugin, UPDATE_PRIORITY, ALPHA_MODES, BLEND_MODES, DRAW_MODES, ENV, FORMATS, GC_MODES, MASK_TYPES, MIPMAP_MODES, PRECISION, RENDERER_TYPE, SCALE_MODES, TARGETS, TYPES, WRAP_MODES, Bounds, Container, DisplayObject, FillStyle, GRAPHICS_CURVES, Graphics, GraphicsData, GraphicsGeometry, LineStyle, graphicsUtils, Circle, DEG_TO_RAD, Ellipse, Matrix, ObservablePoint, PI_2, Point, Polygon, RAD_TO_DEG, Rectangle, RoundedRectangle, SHAPES, Transform, groupD8, Mesh, MeshBatchUvs, MeshGeometry, MeshMaterial, NineSlicePlane, PlaneGeometry, RopeGeometry, SimpleMesh, SimplePlane, SimpleRope, Runner, Sprite, AnimatedSprite, TEXT_GRADIENT, Text, TextMetrics, TextStyle, isMobile, settings, VERSION, filters, useDeprecated */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -52441,12 +52441,14 @@ module.exports = function(module) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return DivinaParser; });
 /* harmony import */ var _LinkObject__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LinkObject */ "./src/DivinaParser/LinkObject.js");
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 
 
 
@@ -52464,10 +52466,10 @@ function () {
 
   _createClass(DivinaParser, [{
     key: "loadFromPath",
-    value: function loadFromPath(folderPath) {
+    value: function loadFromPath(path, pathType) {
       var _this = this;
 
-      DivinaParser.loadJson(folderPath).then(function (json) {
+      DivinaParser.loadJson(path, pathType).then(function (json) {
         _this._buildStoryFromJson(json);
       }, function (error) {
         if (_this._textManager) {
@@ -52479,21 +52481,35 @@ function () {
       });
     }
   }, {
-    key: "loadFromData",
-    value: function loadFromData(data) {
-      if (data && data.json) {
-        this._buildStoryFromJson(data.json);
+    key: "loadFromJson",
+    value: function loadFromJson() {
+      var json = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (json) {
+        this._buildStoryFromJson(json);
+      } else if (this._textManager) {
+        this._textManager.showMessage({
+          type: "error",
+          data: "No json was passed"
+        });
       }
-    }
-  }, {
-    key: "loadFromJsonAndPath",
-    value: function loadFromJsonAndPath(json) {
-      this._buildStoryFromJson(json);
     }
   }, {
     key: "_buildStoryFromJson",
     value: function _buildStoryFromJson(json) {
+      if (!json) {
+        if (this._textManager) {
+          this._textManager.showMessage({
+            type: "error",
+            data: "Manifest is null"
+          });
+        }
+
+        return;
+      }
+
       var metadata = json.metadata,
+          links = json.links,
           readingOrder = json.readingOrder,
           guided = json.guided;
 
@@ -52508,7 +52524,20 @@ function () {
         return;
       }
 
-      var parsedMetadata = this._parseMetadata(metadata);
+      var updatedFolderPath = null;
+
+      if (links && links.length > 0) {
+        links.forEach(function (link) {
+          var rel = link.rel,
+              href = link.href;
+
+          if (rel === "self" && href && _utils__WEBPACK_IMPORTED_MODULE_1__["hasAScheme"](href) === true) {
+            updatedFolderPath = _utils__WEBPACK_IMPORTED_MODULE_1__["getFolderPathFromManifestPath"](href);
+          }
+        });
+      }
+
+      var parsedMetadata = DivinaParser._parseMetadata(metadata);
 
       if (!parsedMetadata) {
         return;
@@ -52527,70 +52556,7 @@ function () {
         return;
       }
 
-      this._doWithParsedDivinaData(parsedDivinaData);
-    }
-  }, {
-    key: "_parseMetadata",
-    value: function _parseMetadata(metadata) {
-      var readingProgression = metadata.readingProgression,
-          language = metadata.language,
-          presentation = metadata.presentation;
-
-      if (!readingProgression) {
-        if (this._textManager) {
-          this._textManager.showMessage({
-            type: "error",
-            data: "Missing readingProgression information"
-          });
-        }
-
-        return null;
-      }
-
-      if (readingProgression !== "ltr" && readingProgression !== "rtl" && readingProgression !== "ttb" && readingProgression !== "btt") {
-        if (this._textManager) {
-          this._textManager.showMessage({
-            type: "error",
-            data: "Value for readingProgression is not valid"
-          });
-        }
-
-        return null;
-      }
-
-      var _ref = presentation || {},
-          continuous = _ref.continuous,
-          fit = _ref.fit,
-          overflow = _ref.overflow,
-          clipped = _ref.clipped,
-          spread = _ref.spread,
-          viewportRatio = _ref.viewportRatio,
-          orientation = _ref.orientation;
-
-      var storyContinuous = continuous === true || continuous === false ? continuous : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultContinuous"];
-      var storyFit = fit === "contain" || fit === "cover" || fit === "width" || fit === "height" ? fit : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultFit"];
-      var storyOverflow = overflow === "scrolled" || overflow === "paginated" ? overflow : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultOverflow"];
-      var storyClipped = clipped === true || clipped === false ? clipped : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultClipped"];
-      var storySpread = spread === "both" || spread === "landscape" || spread === "none" ? spread : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultSpread"];
-      var languagesArray = [];
-
-      if (language) {
-        languagesArray = Array.isArray(language) === true ? language : [language];
-      } else {
-        languagesArray = ["unspecified"];
-      }
-
-      return {
-        readingProgression: readingProgression,
-        continuous: storyContinuous,
-        fit: storyFit,
-        overflow: storyOverflow,
-        clipped: storyClipped,
-        spread: storySpread,
-        viewportRatio: viewportRatio,
-        orientation: orientation,
-        languagesArray: languagesArray
-      };
+      this._doWithParsedDivinaData(parsedDivinaData, updatedFolderPath);
     }
   }, {
     key: "_parseObjectsList",
@@ -52605,14 +52571,16 @@ function () {
     }
   }], [{
     key: "loadJson",
-    value: function loadJson(folderPath) {
+    value: function loadJson(path, pathType) {
       return new Promise(function (resolve, reject) {
-        if (!folderPath) {
-          reject(Error("No folder path was specified"));
+        if (!path) {
+          reject(Error("No path was specified"));
         }
 
         var xhr = new XMLHttpRequest();
-        xhr.open("GET", "".concat(folderPath, "/").concat(_constants__WEBPACK_IMPORTED_MODULE_1__["defaultManifestFilename"]));
+        var manifestPath = pathType === "manifest" ? // Otherwise pathType should be = "folder"
+        path : "".concat(path, "/").concat(_constants__WEBPACK_IMPORTED_MODULE_2__["defaultManifestFilename"]);
+        xhr.open("GET", manifestPath);
         xhr.responseType = "text";
 
         xhr.onload = function () {
@@ -52632,6 +52600,46 @@ function () {
 
         xhr.send();
       });
+    }
+  }, {
+    key: "_parseMetadata",
+    value: function _parseMetadata(metadata) {
+      var readingProgression = metadata.readingProgression,
+          language = metadata.language,
+          presentation = metadata.presentation;
+      var storyReadingProgression = readingProgression === "ltr" || readingProgression === "rtl" || readingProgression === "ttb" || readingProgression === "btt" ? readingProgression : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultReadingProgression"];
+
+      var _ref = presentation || {},
+          continuous = _ref.continuous,
+          fit = _ref.fit,
+          overflow = _ref.overflow,
+          clipped = _ref.clipped,
+          spread = _ref.spread,
+          viewportRatio = _ref.viewportRatio;
+
+      var storyContinuous = continuous === true || continuous === false ? continuous : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultContinuous"];
+      var storyFit = fit === "contain" || fit === "cover" || fit === "width" || fit === "height" ? fit : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultFit"];
+      var storyOverflow = overflow === "scrolled" || overflow === "paginated" ? overflow : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultOverflow"];
+      var storyClipped = clipped === true || clipped === false ? clipped : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultClipped"];
+      var storySpread = spread === "both" || spread === "landscape" || spread === "none" ? spread : _constants__WEBPACK_IMPORTED_MODULE_2__["defaultSpread"];
+      var languagesArray = [];
+
+      if (language) {
+        languagesArray = Array.isArray(language) === true ? language : [language];
+      } else {
+        languagesArray = ["unspecified"];
+      }
+
+      return {
+        readingProgression: storyReadingProgression,
+        continuous: storyContinuous,
+        fit: storyFit,
+        overflow: storyOverflow,
+        clipped: storyClipped,
+        spread: storySpread,
+        viewportRatio: viewportRatio,
+        languagesArray: languagesArray
+      };
     }
   }]);
 
@@ -52760,15 +52768,37 @@ function () {
         this._children = layers.map(function (layerObject, i) {
           var layerProperties = layerObject.properties || {};
           var entryForward = layerProperties.entryForward,
-              exitForward = layerProperties.exitForward,
-              entryBackward = layerProperties.entryBackward,
-              exitBackward = layerProperties.exitBackward; // Create a new link object, using this link object's slice as the parent slice
+              exitBackward = layerProperties.exitBackward;
+          var exitForward = layerProperties.exitForward,
+              entryBackward = layerProperties.entryBackward; // Create a new link object, using this link object's slice as the parent slice
 
           var parentInformation = {
             slice: _this._slice,
             layerIndex: i
           };
-          var linkObject = new LinkObject(layerObject, parentInformation, player);
+          var linkObject = new LinkObject(layerObject, parentInformation, player); // Transitions shall take precedence over entry and exits
+
+          if (layerProperties.transitionForward) {
+            var transition = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](layerProperties.transitionForward, player);
+            var isForward = true;
+
+            var _transition$getEntryA = transition.getEntryAndExitTransitions(isForward),
+                entry = _transition$getEntryA.entry;
+
+            entryForward = entry;
+          }
+
+          if (layerProperties.transitionBackward) {
+            var _transition = new _Transition__WEBPACK_IMPORTED_MODULE_2__["default"](layerProperties.transitionBackward, player);
+
+            var _isForward = false;
+
+            var _transition$getEntryA2 = _transition.getEntryAndExitTransitions(_isForward),
+                exit = _transition$getEntryA2.exit;
+
+            exitBackward = exit;
+          }
+
           return {
             linkObject: linkObject,
             entryForward: entryForward,
@@ -53063,6 +53093,11 @@ function () {
       return this._type;
     }
   }, {
+    key: "controlled",
+    get: function get() {
+      return this._controlled;
+    }
+  }, {
     key: "duration",
     get: function get() {
       return this._duration;
@@ -53089,12 +53124,14 @@ function () {
 
     var _ref = transition || {},
         type = _ref.type,
+        controlled = _ref.controlled,
         duration = _ref.duration,
         direction = _ref.direction,
         file = _ref.file,
         sequence = _ref.sequence;
 
     this._type = type;
+    this._controlled = controlled;
     this._duration = duration;
     this._direction = direction;
     this._sliceType = null;
@@ -53148,13 +53185,17 @@ function () {
     value: function getEntryAndExitTransitions(isForward) {
       var entry = {
         type: this._type,
-        duration: this._duration // Duration may remain undefined
-
+        controlled: this._controlled,
+        duration: this._duration,
+        // Duration may remain undefined
+        isDiscontinuous: true
       };
       var exit = {
         type: this._type,
-        duration: this._duration // Duration may remain undefined
-
+        controlled: this._controlled,
+        duration: this._duration,
+        // Duration may remain undefined
+        isDiscontinuous: true
       };
 
       switch (this._type) {
@@ -53167,23 +53208,21 @@ function () {
         case "dissolve":
           if (isForward === true) {
             entry.type = "fade-in";
-            exit.type = "remove"; // Will occur after duration
+            exit.type = "show";
           } else {
             exit.type = "fade-out";
-            entry = null;
+            entry.type = "show";
           }
 
           break;
 
         case "slide-in":
           entry.direction = this._direction;
-          exit.type = "remove"; // Will occur after duration
-
+          exit.type = "show";
           break;
 
         case "slide-out":
-          entry.type = "remove"; // Will occur after duration
-
+          entry.type = "show";
           exit.direction = this._direction;
           break;
 
@@ -53197,7 +53236,8 @@ function () {
         case "animation":
           entry.sliceType = this._sliceType;
           entry.slice = this._slice;
-          exit = null;
+          exit.type = "hide";
+          exit.duration = 0;
           break;
 
         default:
@@ -53612,21 +53652,67 @@ function () {
           // If this event immediately follows a panend, cancel it
           if (_this._wasLastEventPanend === true) {
             return;
+          } // Attempt to end a controlled transition; if it fails (because none was currently
+          // under way), attempt a sticky page change if possible; if it fails as well (if
+          // viewportPercent was not enough), then only trigger a drag end (via _releaseScroll)
+
+
+          var viewportPercent = _this._percentFunction(e.deltaX, e.deltaY);
+
+          viewportPercent = Math.min(Math.max(viewportPercent, -1), 1);
+
+          if (_this._pageNavigator.endControlledTransition(viewportPercent) === false && (_this._isPaginationSticky === false || _this._pageNavigator.attemptStickyStep() === false)) {
+            _this._releaseScroll(e);
           }
 
           _this._resetScroll();
 
-          _this._wasLastEventPanend = true; // Attempt a sticky page change if possible, and should it fail,
-          // then only trigger a drag end (via _releaseScroll)
-
-          if (_this._isPaginationSticky === false || _this._pageNavigator.attemptStickyStep() === false) {
-            _this._releaseScroll(e);
-          } // For normal non-wheel scroll
-
+          _this._wasLastEventPanend = true; // For normal non-wheel scroll
         } else {
+          var currentPage = _this._pageNavigator.currentPage;
+          var inScrollDirection = currentPage.inScrollDirection;
+          var viewportRect = _this._player.viewportRect;
+          var width = viewportRect.width,
+              height = viewportRect.height;
+          var viewportDimensionPercent = _constants__WEBPACK_IMPORTED_MODULE_2__["viewportDimensionPercent"];
+
+          switch (inScrollDirection) {
+            case "ltr":
+              _this._percentFunction = function (dx) {
+                return -dx / (width * viewportDimensionPercent);
+              };
+
+              break;
+
+            case "rtl":
+              _this._percentFunction = function (dx) {
+                return dx / (width * viewportDimensionPercent);
+              };
+
+              break;
+
+            case "ttb":
+              _this._percentFunction = function (_, dy) {
+                return -dy / (height * viewportDimensionPercent);
+              };
+
+              break;
+
+            case "btt":
+              _this._percentFunction = function (_, dy) {
+                return dy / (height * viewportDimensionPercent);
+              };
+
+              break;
+
+            default:
+              break;
+          }
+
           var scrollEvent = {
             deltaX: deltaX - _this._lastScrollEvent.deltaX,
-            deltaY: deltaY - _this._lastScrollEvent.deltaY
+            deltaY: deltaY - _this._lastScrollEvent.deltaY,
+            viewportPercent: Math.min(Math.max(_this._percentFunction(deltaX, deltaY), -1), 1)
           };
           var isWheelScroll = false;
 
@@ -53642,7 +53728,8 @@ function () {
     value: function _resetScroll() {
       this._lastScrollEvent = {
         deltaX: 0,
-        deltaY: 0
+        deltaY: 0,
+        viewportPercent: 0
       };
     } // Record velocity and timestamp on drag end (i.e. on scroll release)
 
@@ -53655,7 +53742,7 @@ function () {
       };
       var releaseDate = Date.now();
 
-      this._autoScroll(velocity, releaseDate);
+      this._autoScroll(velocity, releaseDate, e);
     } // Apply kinetic scrolling formula after drag end (i.e. on scroll release)
 
   }, {
@@ -53674,6 +53761,7 @@ function () {
       }
 
       if (Math.abs(deltaX) >= 0.5 || Math.abs(deltaY) >= 0.5) {
+        // On a drag end, viewportPercent information is useless
         this._scroll({
           deltaX: deltaX,
           deltaY: deltaY
@@ -53691,11 +53779,13 @@ function () {
       }
 
       var deltaX = e.deltaX,
-          deltaY = e.deltaY;
+          deltaY = e.deltaY,
+          viewportPercent = e.viewportPercent;
 
       this._pageNavigator.handleScroll({
         deltaX: deltaX,
-        deltaY: deltaY
+        deltaY: deltaY,
+        viewportPercent: viewportPercent
       }, isWheelScroll);
     } // For mouse and trackpad scroll events
 
@@ -53722,6 +53812,8 @@ function () {
 
           _this2._pageNavigator.zoom(zoomData);
         } else {
+          // There is no end to a wheel event, so no viewportPercent information
+          // can be constructed to attempt a sticky page change
           var isWheelScroll = true;
 
           _this2._scroll({
@@ -54064,35 +54156,35 @@ function () {
     key: "_isDoublePageReadingModeAvailable",
     value: function _isDoublePageReadingModeAvailable() {
       return this._spread === "both" || this._spread === "landscape" && this._viewportRect.width >= this._viewportRect.height;
-    } // For loading the divina data from a folder path
+    } // For loading the divina data from a manifest path
 
   }, {
-    key: "openDivinaFromPath",
-    value: function openDivinaFromPath(folderPath) {
+    key: "openDivinaFromManifestPath",
+    value: function openDivinaFromManifestPath(path) {
       var href = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var textureSource = {
-        folderPath: folderPath
+        folderPath: _utils__WEBPACK_IMPORTED_MODULE_7__["getFolderPathFromManifestPath"](path)
       };
 
       var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromPath(folderPath);
+        divinaParser.loadFromPath(path, "manifest");
       };
 
       this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
-    } // For loading the divina data from a json and its file URLs (via folder path)
+    } // For loading the divina data from a folder path
 
   }, {
-    key: "openDivinaFromJsonAndPath",
-    value: function openDivinaFromJsonAndPath(json, folderPath) {
-      var href = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      var options = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
+    key: "openDivinaFromFolderPath",
+    value: function openDivinaFromFolderPath(path) {
+      var href = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
+      var options = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
       var textureSource = {
-        folderPath: folderPath
+        folderPath: path
       };
 
       var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromJsonAndPath(json);
+        divinaParser.loadFromPath(path, "folder");
       };
 
       this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
@@ -54106,9 +54198,10 @@ function () {
       var textureSource = {
         data: data
       };
+      var json = data && data.json ? data.json : null;
 
       var parseAndHandleDivinaData = function parseAndHandleDivinaData(divinaParser) {
-        divinaParser.loadFromData(data);
+        divinaParser.loadFromJson(json);
       };
 
       this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
@@ -54128,12 +54221,18 @@ function () {
       this._setLoadingProperties(); // Set allowed story interactions based on options
 
 
-      this._interactionManager.setStoryInteractions(options); // Create resource manager (now that options and possibly data exist)
+      this._interactionManager.setStoryInteractions(options);
 
+      var updatedTextureSource = textureSource;
 
-      this._createResourceManager(textureSource);
+      var doWithParsedDivinaData = function doWithParsedDivinaData(parsedDivinaData, updatedFolderPath) {
+        // Create resource manager (now that options and possibly data exist)
+        if (updatedFolderPath) {
+          updatedTextureSource.folderPath = updatedFolderPath;
+        }
 
-      var doWithParsedDivinaData = function doWithParsedDivinaData(parsedDivinaData) {
+        _this2._createResourceManager(updatedTextureSource);
+
         var _ref = parsedDivinaData || {},
             metadata = _ref.metadata;
 
@@ -54163,7 +54262,7 @@ function () {
       var nbOfPages = maxNbOfPagesAfter > 0 ? maxNbOfPagesAfter : _constants__WEBPACK_IMPORTED_MODULE_8__["defaultMaxNbOfPagesAfter"];
       this._maxNbOfPagesAfter = Math.ceil(nbOfPages);
       this._maxNbOfPagesBefore = Math.ceil(this._maxNbOfPagesAfter * _constants__WEBPACK_IMPORTED_MODULE_8__["maxShareOfPagesBefore"]);
-      this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore;
+      this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore || 1;
     }
   }, {
     key: "_createResourceManager",
@@ -54453,7 +54552,8 @@ function () {
 
 
       if (this._haveFirstResourcesLoaded === false) {
-        // Add a last task to trigger to start async queue (if not already running)
+        // Add a last task to trigger doAfterInitialLoad and start async queue
+        // (if not already running)
         var doAfterLoadingFirstPagesOrSegments = function doAfterLoadingFirstPagesOrSegments() {
           _this6._haveFirstResourcesLoaded = true; // Remove the _textManager
 
@@ -54549,9 +54649,9 @@ function () {
     value: function _goToTargetPageAndSegmentIndices(target) {
       var pageIndex = target.pageIndex,
           segmentIndex = target.segmentIndex;
-      var shouldCancelTransition = true;
+      var shouldSkipTransition = true;
 
-      this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldCancelTransition);
+      this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldSkipTransition);
     }
   }, {
     key: "setReadingMode",
@@ -54631,9 +54731,9 @@ function () {
       }
 
       var segmentIndex = null;
-      var shouldCancelTransition = true;
+      var shouldSkipTransition = true;
 
-      this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldCancelTransition);
+      this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldSkipTransition);
     }
   }, {
     key: "goRight",
@@ -55268,9 +55368,9 @@ function () {
     // Create the PIXI application with a default background color
     this._app = new pixi_js_legacy__WEBPACK_IMPORTED_MODULE_0__["Application"]({
       backgroundColor: backgroundColor,
-      resolution: 1,
-      autoDensity: true
-    }); // Add the PIXI app's canvas to the DOM
+      resolution: 1
+    });
+    this._app.renderer.autoDensity = true; // Add the PIXI app's canvas to the DOM
 
     rootElement.appendChild(this._app.view); // Create root container
 
@@ -55439,7 +55539,7 @@ function _defineProperties(target, props) { for (var i = 0; i < props.length; i+
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
 
 
- // A texture stored in the loader will need to have the following properties:
+ // A texture stored in the Loader will need to have the following properties:
 // - If it corresponds to an image: .frame.width and .frame.height
 // - If it corresponds to a video: .video (the video itself will need to be a videoElement,
 //   i.e. it should include videoWidth, videoHeight and duration properties)
@@ -56154,8 +56254,6 @@ function () {
       this._hasStarted = true;
 
       if (this._allowsParallel === true) {
-        console.log(this._tasksArray);
-
         this._tasksArray.forEach(function (task) {
           _this3._runTask(task);
         });
@@ -56284,12 +56382,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _Task__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./Task */ "./src/ResourceManager/Task.js");
 /* harmony import */ var _TextureResource__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./TextureResource */ "./src/ResourceManager/TextureResource.js");
 /* harmony import */ var _ResourceLoadTaskQueue__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./ResourceLoadTaskQueue */ "./src/ResourceManager/ResourceLoadTaskQueue.js");
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
+/* harmony import */ var _utils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../utils */ "./src/utils.js");
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
 
 function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
 
 
 
@@ -56317,9 +56417,9 @@ function () {
 
     var _ref = options || {},
         _ref$allowsParallel = _ref.allowsParallel,
-        allowsParallel = _ref$allowsParallel === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_4__["defaultAllowsParallel"] : _ref$allowsParallel,
+        allowsParallel = _ref$allowsParallel === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_5__["defaultAllowsParallel"] : _ref$allowsParallel,
         _ref$videoLoadTimeout = _ref.videoLoadTimeout,
-        videoLoadTimeout = _ref$videoLoadTimeout === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_4__["defaultVideoLoadTimeout"] : _ref$videoLoadTimeout;
+        videoLoadTimeout = _ref$videoLoadTimeout === void 0 ? _constants__WEBPACK_IMPORTED_MODULE_5__["defaultVideoLoadTimeout"] : _ref$videoLoadTimeout;
 
     this._allowsParallel = allowsParallel;
     this._videoLoadTimeout = videoLoadTimeout;
@@ -56442,7 +56542,7 @@ function () {
       if (pathsToLoadArray.length === 0) {
         callback();
         return;
-      } // If is already loading, still consider if priority order > that of when started loading!!!
+      } // If is already loading, still consider if priority order > that of when started loading
 
 
       var task = this._taskQueue.getTaskWithId(taskId);
@@ -56547,9 +56647,9 @@ function () {
       var src = fallbackPath || path;
       var _this$_textureSource = this._textureSource,
           folderPath = _this$_textureSource.folderPath,
-          data = _this$_textureSource.data;
+          data = _this$_textureSource.data; // If src has a scheme, use the address as is, otherwise add folderPath as prefix
 
-      if (folderPath) {
+      if (folderPath && _utils__WEBPACK_IMPORTED_MODULE_4__["hasAScheme"](src) === false) {
         src = "".concat(folderPath, "/").concat(src); // If the story was opened with data (i.e. not from a folder)
         // and the resource is a video, use the dataURI as src
       } else if (data && data.base64DataByHref) {
@@ -58255,7 +58355,7 @@ function () {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return LayerPile; });
 /* harmony import */ var _Renderer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../Renderer */ "./src/Renderer/index.js");
-/* harmony import */ var _StateHandler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./StateHandler */ "./src/StoryBuilder/StateHandler.js");
+/* harmony import */ var _StateHandler__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./StateHandler */ "./src/StoryBuilder/StateHandler/index.js");
 /* harmony import */ var _OverflowHandler__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./OverflowHandler */ "./src/StoryBuilder/OverflowHandler/index.js");
 function _typeof(obj) { if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") { _typeof = function _typeof(obj) { return typeof obj; }; } else { _typeof = function _typeof(obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }; } return _typeof(obj); }
 
@@ -58434,48 +58534,85 @@ function (_Container) {
   }, {
     key: "attemptToGoForward",
     value: function attemptToGoForward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var shouldSkipTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       // If a change is under way, end it
       if (this._handler && this.isUndergoingChanges === true) {
-        return this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+        return this._handler.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true;
       } // If not, try to go forward in the first layer (child)
 
 
       if (this.activeLayersArray.length > 0) {
         var layer = this.activeLayersArray[0];
 
-        if (layer.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+        if (layer.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
           return true;
         }
       } // Otherwise try go forward via the handler if there is one
 
 
-      return this._handler && this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+      return this._handler && this._handler.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true;
     }
   }, {
     key: "attemptToGoBackward",
     value: function attemptToGoBackward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var shouldSkipTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
       // If a change is under way, end it then go backward
       if (this._handler && this.isUndergoingChanges === true) {
-        return this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+        return this._handler.attemptToGoBackward(shouldSkipTransition, doIfIsUndergoingChanges) === true;
       } // If not, try to go backward in the last layer (child)
 
 
       if (this.activeLayersArray.length > 0) {
         var layer = this.activeLayersArray[this.activeLayersArray.length - 1];
 
-        if (layer.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+        if (layer.attemptToGoBackward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
           return true;
         }
       } // Otherwise try go backward via the handler if there is one
 
 
-      return this._handler && this._handler.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true;
+      return this._handler && this._handler.attemptToGoBackward(shouldSkipTransition, doIfIsUndergoingChanges) === true;
+    } // Following a continuous gesture
+
+  }, {
+    key: "handleScroll",
+    value: function handleScroll(scrollData, isWheelScroll) {
+      if (!this._handler) {
+        return false;
+      }
+
+      if (this._handler.type === "overflowHandler" && this._handler.handleScroll(scrollData, isWheelScroll) === true) {
+        return true;
+      }
+
+      return this._handler.type === "stateHandler" && this._handler.handleScroll(scrollData, isWheelScroll) === true;
+    }
+  }, {
+    key: "endControlledTransition",
+    value: function endControlledTransition(viewportPercent) {
+      var shouldBeAnimated = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : true;
+
+      if (!this._handler) {
+        return false;
+      }
+
+      if (this._handler.type === "overflowHandler") {
+        if (this._layersArray.length === 1) {
+          var layer = this._layersArray[0]; // Check only the first Segment in a Page
+
+          var content = layer.content;
+
+          if (content.endControlledTransition(viewportPercent, shouldBeAnimated) === true) {
+            return true;
+          }
+        }
+      }
+
+      return this._handler.type === "stateHandler" && this._handler.endControlledTransition(viewportPercent, shouldBeAnimated) === true;
     }
   }, {
     key: "resize",
@@ -58710,15 +58847,15 @@ function () {
     this._overflow = overflow; // Useful for viewportRect and updateDisplayForZoomFactor (and options just below)
 
     this._player = player;
-    var eventEmitter = player.eventEmitter,
-        options = player.options;
-    this._eventEmitter = eventEmitter;
+    var options = player.options;
     var allowsPaginatedScroll = options.allowsPaginatedScroll,
         isPaginationSticky = options.isPaginationSticky,
-        isPaginationGridBased = options.isPaginationGridBased;
+        isPaginationGridBased = options.isPaginationGridBased,
+        doOnScroll = options.doOnScroll;
     this._allowsPaginatedScroll = allowsPaginatedScroll === true || allowsPaginatedScroll === false ? allowsPaginatedScroll : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultAllowsPaginatedScroll"];
     this._isPaginationSticky = isPaginationSticky === true || isPaginationSticky === false ? isPaginationSticky : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultIsPaginationSticky"];
     this._isPaginationGridBased = isPaginationGridBased === true || isPaginationGridBased === false ? isPaginationGridBased : _constants__WEBPACK_IMPORTED_MODULE_1__["defaultIsPaginationGridBased"];
+    this._doOnScroll = doOnScroll;
     this._inScrollDirection = null;
     this._relativeStart = null;
     this._relativeEnd = null; // Those values can change on a resize (because of the change in viewportRect) but not with zoom
@@ -58901,15 +59038,6 @@ function () {
         default:
           break;
       }
-      /*if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-      	referenceDimension = "width"
-      	coord = "x"
-      } else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-      	referenceDimension = "height"
-      	coord = "y"
-      }
-      const worksBackward = (inScrollDirection === "rtl" || inScrollDirection === "btt")*/
-
 
       this._virtualPointInfo = {
         getPercent: getPercent,
@@ -59290,22 +59418,7 @@ function () {
           var isTheResultOfADragEnd = false;
 
           this._moveToClosestSnapPoint(isTheResultOfADragEnd);
-        }
-        /*
-        // Other method: keep virtual point fixed
-        if (this._virtualPoint) {
-        	const { segmentIndex, x, y } = this._virtualPoint
-        	const virtualSnapPoint = {
-        		segmentIndex,
-        		viewport: "center",
-        		x: `${(x || 0) * 100}%`,
-        		y: `${(y || 0) * 100}%`,
-        	}
-        	const progress = this._getProgressForSnapPoint(virtualSnapPoint)
-        	console.log(this._progress, progress, virtualSnapPoint, this._minX, this._maxX)
-        	this.setProgress(progress, true)
-        }*/
-        // Update snap point-related speeds based on inScrollDirection
+        } // Update snap point-related speeds based on inScrollDirection
 
 
         if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
@@ -59390,7 +59503,9 @@ function () {
       this._progress = p;
       this._virtualPoint = this._getVirtualPoint();
 
-      this._eventEmitter.emit("inpagescroll", this._virtualPoint);
+      if (this._doOnScroll) {
+        this._doOnScroll(this._virtualPoint);
+      }
 
       if (shouldUpdatePosition === false) {
         return;
@@ -59432,10 +59547,6 @@ function () {
           getPercent = _this$_virtualPointIn.getPercent,
           referenceDimension = _this$_virtualPointIn.referenceDimension,
           coord = _this$_virtualPointIn.coord;
-      /*const percent = (coord === "x")
-      	? (this._currentPosition.x - this._minX) / (this._maxX - this._minX)
-      	: (this._currentPosition.y - this._minY) / (this._maxY - this._minY)*/
-
       var percent = getPercent();
       var i = 0;
       var virtualPoint = null;
@@ -59480,7 +59591,6 @@ function () {
 
         case "rtl":
           this._setPosition({
-            //x: this._minX + percent * (this._maxX - this._minX),
             x: this._maxX - percent * (this._maxX - this._minX),
             y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY)
           });
@@ -59498,7 +59608,6 @@ function () {
         case "btt":
           this._setPosition({
             x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-            //y: this._minY + percent * (this._maxY - this._minY),
             y: this._maxY - percent * (this._maxY - this._minY)
           });
 
@@ -59865,7 +59974,7 @@ function () {
     key: "handleScroll",
     value: function handleScroll(scrollData, isWheelScroll) {
       if (this._hasSpaceToMove === false || this.isZoomed === false && this._overflow === "paginated" && (this._isPaginationSticky === false || isWheelScroll === true)) {
-        return;
+        return false;
       }
 
       var deltaX = scrollData.deltaX,
@@ -59879,6 +59988,8 @@ function () {
       var shouldStoreLastNonTemporaryProgress = this._overflow === "paginated" && this._isPaginationSticky === true;
 
       this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress);
+
+      return true;
     }
   }, {
     key: "moveToSegmentIndex",
@@ -60090,18 +60201,28 @@ function () {
     } // Functions to deal with continuous gestures and zoom
 
   }, {
+    key: "handleScroll",
+    value: function handleScroll(scrollData, isWheelScroll) {
+      if (this.activeLayersArray.length === 1) {
+        var layer = this.activeLayersArray[0]; // Check only the first Segment in a Page
+
+        var content = layer.content;
+
+        if (content.handleScroll(scrollData, isWheelScroll) === true) {
+          return true;
+        }
+      }
+
+      if (this.isUndergoingChanges === true) {
+        return true;
+      }
+
+      return this._camera.handleScroll(scrollData, isWheelScroll);
+    }
+  }, {
     key: "attemptStickyStep",
     value: function attemptStickyStep() {
       return this.isUndergoingChanges === false && this._camera.attemptStickyStep();
-    }
-  }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      if (this.isUndergoingChanges === true) {
-        return;
-      }
-
-      this._camera.handleScroll(scrollData, isWheelScroll);
     }
   }, {
     key: "zoom",
@@ -60321,7 +60442,7 @@ function (_LayerPile) {
 
       this.segmentsArray.forEach(function (segment) {
         var size = segment.size;
-        var rootSize = _this2._player.rootSize;
+        var viewportRect = _this2._player.viewportRect;
 
         if (_this2._inScrollDirection === "ltr" || _this2._inScrollDirection === "rtl") {
           width += size.width;
@@ -60329,11 +60450,11 @@ function (_LayerPile) {
           if (_this2._isADoublePage === true) {
             height = Math.max(height, size.height);
           } else {
-            height = rootSize.height;
+            height = viewportRect.height;
           }
         } else if (_this2._inScrollDirection === "ttb" || _this2._inScrollDirection === "btt") {
           height += size.height;
-          width = rootSize.width;
+          width = viewportRect.width;
         }
       });
       return {
@@ -60470,15 +60591,6 @@ function (_LayerPile) {
       return this._handler.attemptStickyStep();
     }
   }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      if (!this._handler || this._handler.type !== "overflowHandler") {
-        return;
-      }
-
-      this._handler.handleScroll(scrollData, isWheelScroll);
-    }
-  }, {
     key: "zoom",
     value: function zoom(zoomData) {
       if (!this._handler || this._handler.type !== "overflowHandler") {
@@ -60577,7 +60689,7 @@ function (_LayerPile) {
   _inherits(PageNavigator, _LayerPile);
 
   _createClass(PageNavigator, [{
-    key: "doOnStateChangeStart",
+    key: "doOnStateChangeStartOrCancel",
     // Used in StateHandler
     get: function get() {
       return this.updateLoadTasks;
@@ -60651,6 +60763,7 @@ function (_LayerPile) {
       endIndex: null
     };
     _this._tags = null;
+    _this._pageDeltaForTransitionControl = null;
     return _this;
   }
 
@@ -60835,16 +60948,6 @@ function (_LayerPile) {
       return this._currentPage.attemptStickyStep();
     }
   }, {
-    key: "handleScroll",
-    value: function handleScroll(scrollData, isWheelScroll) {
-      // If the page is being changed, do nothing
-      if (!this._currentPage || this.isUndergoingChanges === true) {
-        return;
-      }
-
-      this._currentPage.handleScroll(scrollData, isWheelScroll);
-    }
-  }, {
     key: "zoom",
     value: function zoom(zoomData) {
       if (!this._currentPage || this.isUndergoingChanges === true) {
@@ -60860,7 +60963,8 @@ function (_LayerPile) {
       var _this3 = this;
 
       var segmentIndex = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var shouldCancelTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var shouldSkipTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var isChangeControlled = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
       var isGoingForward = true;
       this._targetSegmentIndex = segmentIndex;
 
@@ -60871,10 +60975,15 @@ function (_LayerPile) {
       var callback = function callback() {
         // If changing pages
         if (pageIndex !== _this3.pageIndex) {
-          _this3._handler.goToState(pageIndex, isGoingForward, shouldCancelTransition); // And then the finalizeEntry above will ensure we go to segmentIndex directly
+          if (_this3.pageIndex !== null) {
+            isGoingForward = pageIndex - _this3.pageIndex > 0;
+          }
+
+          _this3._handler.goToState(pageIndex, isGoingForward, shouldSkipTransition, isChangeControlled); // And then the finalizeEntry above will ensure we go to segmentIndex directly
           // Or if staying on the same page but changing segments
 
         } else if (_this3._targetSegmentIndex !== null) {
+          // Leave isGoingForward at true
           _this3._currentPage.goToSegmentIndex(_this3._targetSegmentIndex, isGoingForward);
 
           _this3._targetSegmentIndex = null;
@@ -61087,12 +61196,12 @@ function (_PageNavigator) {
         }
 
         if (targetPageIndex !== null) {
-          var shouldCancelTransition = true;
+          var shouldSkipTransition = true;
 
           if (targetPageIndex !== this.pageIndex) {
-            this.goToPageWithIndex(targetPageIndex, null, shouldCancelTransition);
+            this.goToPageWithIndex(targetPageIndex, null, shouldSkipTransition);
           } else {
-            this.goToPageWithIndex(targetPageIndex, 0, shouldCancelTransition);
+            this.goToPageWithIndex(targetPageIndex, 0, shouldSkipTransition);
           }
         }
       } else {
@@ -61125,24 +61234,14 @@ function (_PageNavigator) {
   }, {
     key: "goForward",
     value: function goForward() {
-      var _this2 = this;
-
-      var doIfIsUndergoingChanges = function doIfIsUndergoingChanges() {
-        _this2.attemptToGoForward(true);
-      };
-
-      this.attemptToGoForward(false, doIfIsUndergoingChanges);
+      var shouldSkipTransition = false;
+      this.attemptToGoForward(shouldSkipTransition);
     }
   }, {
     key: "goBackward",
     value: function goBackward() {
-      var _this3 = this;
-
-      var doIfIsUndergoingChanges = function doIfIsUndergoingChanges() {
-        _this3.attemptToGoBackward(true);
-      };
-
-      this.attemptToGoBackward(false, doIfIsUndergoingChanges);
+      var shouldSkipTransition = false;
+      this.attemptToGoBackward(shouldSkipTransition);
     }
   }]);
 
@@ -61153,23 +61252,318 @@ function (_PageNavigator) {
 
 /***/ }),
 
-/***/ "./src/StoryBuilder/StateHandler.js":
-/*!******************************************!*\
-  !*** ./src/StoryBuilder/StateHandler.js ***!
-  \******************************************/
+/***/ "./src/StoryBuilder/StateHandler/LayerTransition.js":
+/*!**********************************************************!*\
+  !*** ./src/StoryBuilder/StateHandler/LayerTransition.js ***!
+  \**********************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return LayerTransition; });
+/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../../constants */ "./src/constants.js");
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } }
+
+function _createClass(Constructor, protoProps, staticProps) { if (protoProps) _defineProperties(Constructor.prototype, protoProps); if (staticProps) _defineProperties(Constructor, staticProps); return Constructor; }
+
+
+
+var LayerTransition =
+/*#__PURE__*/
+function () {
+  _createClass(LayerTransition, [{
+    key: "controlled",
+    get: function get() {
+      return this._controlled;
+    }
+  }, {
+    key: "slice",
+    get: function get() {
+      return this._slice;
+    }
+  }, {
+    key: "isRunning",
+    get: function get() {
+      return this._isRunning;
+    }
+  }]);
+
+  function LayerTransition(handler, layer, isExiting, entryOrExit) {
+    _classCallCheck(this, LayerTransition);
+
+    this._handler = handler;
+    this._layer = layer;
+    this._isExiting = isExiting;
+    this._type = "cut";
+    this._controlled = false;
+    this._startTime = null;
+    this._isRunning = true;
+
+    var _ref = entryOrExit || {},
+        type = _ref.type,
+        duration = _ref.duration,
+        direction = _ref.direction,
+        sliceType = _ref.sliceType,
+        slice = _ref.slice,
+        controlled = _ref.controlled;
+
+    if (!entryOrExit || !(type === "show" || type === "hide" || type === "fade-in" || type === "fade-out" || type === "slide-in" || type === "slide-out" || type === "animation")) {
+      return;
+    }
+
+    this._type = type;
+    this._controlled = controlled;
+    var actualDuration = duration;
+
+    if (type !== "animation" || sliceType !== "video") {
+      actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"]; // Note that duration can be 0 for a "hide" layer transition
+    }
+
+    this._duration = actualDuration; // May still be undefined (but only for a video)
+
+    if (type === "slide-in" || type === "slide-out") {
+      this._direction = direction;
+    } else if (type === "animation" && slice) {
+      this._sliceType = sliceType;
+      this._slice = slice;
+
+      if (sliceType === "video" && slice && !actualDuration) {
+        this._slice.setDoOnEnd(this.end.bind(this));
+      }
+
+      this._slice.resize();
+    }
+  }
+
+  _createClass(LayerTransition, [{
+    key: "start",
+    value: function start(startTime) {
+      // If the layerTransition is a video or sequence with no duration,
+      // or a sequence with no frames loaded, skip it
+      if (this._sliceType && (!this._slice || this._slice.canPlay === false)) {
+        this.end(); // Otherwise play the layerTransition
+      } else {
+        if (this._slice) {
+          this._slice.finalizeEntry(); // Start playing the transition sequence or video
+
+        } else if (this._type === "slide-in" || this._type === "slide-out") {
+          // Prevent resize from impacting the content's position
+          var content = this._layer.content;
+
+          if (this._direction === "ltr" || this._direction === "rtl") {
+            content.setIsXPositionUpdating(true);
+          } else if (this._direction === "ttb" || this._direction === "btt") {
+            content.setIsYPositionUpdating(true);
+          }
+        }
+
+        this._startTime = startTime;
+
+        this._run();
+      }
+    } // The function will below shall loop if layerTransitionPercent !== null
+
+  }, {
+    key: "_run",
+    value: function _run() {
+      var layerTransitionPercent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
+
+      if (this._isRunning === false) {
+        return;
+      }
+
+      var percent = 1; // For an intermediate state (i.e. a controlled transition - not applicable
+      // to videos for now since we do not want to seek a specific point in a video)
+
+      if (layerTransitionPercent !== null && this._sliceType !== "video") {
+        percent = layerTransitionPercent; // For an uncontrolled (i.e. timed) transition
+        // Note: bear in mind that this._duration may still be undefined at this stage for a video
+      } else if (this._duration && this._duration > 0) {
+        percent = (Date.now() - this._startTime) / this._duration; // For a video transition (keep playing until percent = 1)
+      } else if (this._sliceType === "video" && this._slice) {
+        percent = 0;
+      }
+
+      var stateChange = this._handler.stateChange; // If the user has forced the transition to its end...
+
+      if (stateChange.shouldForceToEnd === true // ... or the transition is not a video running to its end, and it has actually ended
+      // (except if the percent value is given by layerTransitionPercent, i.e. controlled)
+      || this._sliceType !== "video" && percent >= 1 && layerTransitionPercent !== 1) {
+        this.end();
+      } else if (this._type === "animation") {
+        // If the transition is a sequence, we can seek a specific point in it
+        if (this._sliceType === "sequence" && this._slice && layerTransitionPercent !== null) {
+          this._slice.pauseAtPercent(percent);
+        } else {
+          // Bear in mind we do not want to seek a specific point in a video,
+          // so keep on playing the transition, waiting until its eventual end
+          requestAnimationFrame(this._run.bind(this, null));
+        } // Otherwise just apply the required changes based on time
+
+      } else {
+        var viewportRect = this._handler.viewportRect;
+        var width = viewportRect.width,
+            height = viewportRect.height;
+        var content = this._layer.content;
+
+        if (this._type === "fade-in") {
+          content.setAlpha(percent);
+        } else if (this._type === "fade-out") {
+          content.setAlpha(1 - percent);
+        } else if (this._type === "slide-in") {
+          switch (this._direction) {
+            case "ltr":
+              content.setXOffset((percent - 1) * width);
+              break;
+
+            case "rtl":
+              content.setXOffset((1 - percent) * width);
+              break;
+
+            case "ttb":
+              content.setYOffset((percent - 1) * height);
+              break;
+
+            case "btt":
+              content.setYOffset((1 - percent) * height);
+              break;
+
+            default:
+              break;
+          }
+        } else if (this._type === "slide-out") {
+          switch (this._direction) {
+            case "ltr":
+              content.setXOffset(percent * width);
+              break;
+
+            case "rtl":
+              content.setXOffset(-percent * width);
+              break;
+
+            case "ttb":
+              content.setYOffset(percent * height);
+              break;
+
+            case "btt":
+              content.setYOffset(-percent * height);
+              break;
+
+            default:
+              break;
+          }
+        }
+
+        if (this._type !== "hide") {
+          content.setVisibility(true);
+        }
+
+        if (layerTransitionPercent === null) {
+          requestAnimationFrame(this._run.bind(this, null));
+        }
+      }
+    }
+  }, {
+    key: "end",
+    value: function end() {
+      this._isRunning = false;
+
+      var _ref2 = this._layer || {},
+          content = _ref2.content;
+
+      LayerTransition._resetLayerContent(content);
+
+      LayerTransition._removeTemporarySlice(this._slice);
+
+      if (this._isExiting === true) {
+        this._layer.finalizeExit();
+
+        content.removeFromParent();
+      } else {
+        this._layer.finalizeEntry();
+      }
+
+      this._handler.notifyTransitionEnd();
+    }
+  }, {
+    key: "goToIntermediateState",
+    value: function goToIntermediateState(percent) {
+      this._run(percent);
+    }
+  }, {
+    key: "cancel",
+    value: function cancel() {
+      this._isRunning = false;
+
+      var _ref3 = this._layer || {},
+          content = _ref3.content;
+
+      LayerTransition._resetLayerContent(content);
+
+      LayerTransition._removeTemporarySlice(this._slice); // Stop and remove an added layer
+
+
+      if (this._isExiting === false) {
+        this._layer.finalizeExit();
+
+        content.removeFromParent();
+      }
+    }
+  }, {
+    key: "resize",
+    value: function resize() {
+      if (!this._slice) {
+        return;
+      }
+
+      this._slice.resize();
+    }
+  }], [{
+    key: "_resetLayerContent",
+    value: function _resetLayerContent(content) {
+      if (!content) {
+        return;
+      }
+
+      content.setAlpha(1);
+      content.setVisibility(true);
+      content.setIsXPositionUpdating(false);
+      content.setIsYPositionUpdating(false);
+      content.resetPosition();
+    }
+  }, {
+    key: "_removeTemporarySlice",
+    value: function _removeTemporarySlice(sequenceOrVideoSlice) {
+      if (!sequenceOrVideoSlice) {
+        return;
+      }
+
+      sequenceOrVideoSlice.finalizeExit();
+      sequenceOrVideoSlice.removeFromParent();
+    }
+  }]);
+
+  return LayerTransition;
+}();
+
+
+
+/***/ }),
+
+/***/ "./src/StoryBuilder/StateHandler/StateHandler.js":
+/*!*******************************************************!*\
+  !*** ./src/StoryBuilder/StateHandler/StateHandler.js ***!
+  \*******************************************************/
 /*! exports provided: default */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "default", function() { return StateHandler; });
-/* harmony import */ var _constants__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../constants */ "./src/constants.js");
-function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
-
-function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
+/* harmony import */ var _LayerTransition__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./LayerTransition */ "./src/StoryBuilder/StateHandler/LayerTransition.js");
 function _toConsumableArray(arr) { return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread(); }
 
 function _nonIterableSpread() { throw new TypeError("Invalid attempt to spread non-iterable instance"); }
@@ -61208,13 +61602,29 @@ function () {
   }, {
     key: "isUndergoingChanges",
     get: function get() {
-      return this._currentTransition.status !== "none";
+      return this._currentStateChange.status !== "none";
     } // Used in PageNavigator
 
+  }, {
+    key: "isUndergoingControlledChanges",
+    get: function get() {
+      return this._currentStateChange.status === "controlled";
+    }
   }, {
     key: "stateIndex",
     get: function get() {
       return this._stateIndex;
+    } // User in LayerTransition
+
+  }, {
+    key: "stateChange",
+    get: function get() {
+      return this._currentStateChange;
+    }
+  }, {
+    key: "viewportRect",
+    get: function get() {
+      return this._player.viewportRect;
     }
   }]);
 
@@ -61236,7 +61646,9 @@ function () {
     this._statesArray = this._createStatesArray(layersArray);
     this._stateIndex = null;
 
-    this._reset();
+    this._resetStateChange();
+
+    this._stateDeltaForTransitionControl = null;
   }
 
   _createClass(StateHandler, [{
@@ -61273,16 +61685,15 @@ function () {
       return statesArray;
     }
   }, {
-    key: "_reset",
-    value: function _reset() {
-      this._currentTransition = {
+    key: "_resetStateChange",
+    value: function _resetStateChange() {
+      this._currentStateChange = {
         status: "none",
         isGoingForward: true,
         layerTransitionsArray: [],
-        nbOfRunningLayerTransitions: 0,
         shouldForceToEnd: false,
         endCallback: null,
-        shouldForceToStop: false
+        newStateIndex: null
       };
     } // Used here and in PageNavigator
 
@@ -61290,8 +61701,8 @@ function () {
     key: "forceChangesToEnd",
     value: function forceChangesToEnd(callback, isGoingForward) {
       // Only run the callback if the movement directions differ
-      if (isGoingForward !== this._currentTransition.isGoingForward) {
-        if (this._currentTransition.status === "none") {
+      if (isGoingForward !== this._currentStateChange.isGoingForward) {
+        if (this._currentStateChange.status === "none") {
           if (callback) {
             callback();
           }
@@ -61300,28 +61711,95 @@ function () {
         } // else
 
 
-        this._currentTransition.endCallback = callback;
+        this._currentStateChange.endCallback = callback;
       }
 
-      this._currentTransition.shouldForceToEnd = true;
+      this._currentStateChange.shouldForceToEnd = true;
     }
   }, {
     key: "goToState",
     value: function goToState(stateIndex, isGoingForward) {
       var _this = this;
 
-      var shouldCancelTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var shouldSkipTransition = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : false;
+      var isChangeControlled = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
       if (stateIndex < 0 || stateIndex >= this._statesArray.length) {
-        return;
+        return false;
       }
 
-      if (shouldCancelTransition === true) {
-        // Ensure layerTransitions will be forced to end
-        this._currentTransition.shouldForceToEnd = true;
+      var _this$_createLayerInd = this._createLayerIndicesToAddAndRemove(stateIndex, isGoingForward),
+          layerIndicesToAdd = _this$_createLayerInd.layerIndicesToAdd,
+          layerIndicesToRemove = _this$_createLayerInd.layerIndicesToRemove;
+
+      if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
+        this._resetStateChange(); // To counter the above shouldForceToEnd = true
+
+
+        return false;
+      }
+
+      var layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward);
+
+      if (isChangeControlled === true) {
+        var hasControlledTransitions = false;
+        layerTransitionsArray.forEach(function (layerTransition) {
+          var controlled = layerTransition.controlled;
+
+          if (controlled === true) {
+            hasControlledTransitions = true;
+          }
+        });
+
+        if (hasControlledTransitions === false) {
+          return false;
+        }
       }
 
       var oldStateIndex = this._stateIndex;
+      layerIndicesToAdd.forEach(function (layerIndex) {
+        var layer = _this._layerPile.getLayerAtIndex(layerIndex);
+
+        _this._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex);
+      });
+      layerTransitionsArray.forEach(function (layerTransition) {
+        var slice = layerTransition.slice;
+
+        if (slice) {
+          _this._layerPile.addChild(slice);
+        }
+      });
+      this._currentStateChange.status = "initiated";
+      this._currentStateChange.isGoingForward = isGoingForward;
+      this._currentStateChange.layerTransitionsArray = layerTransitionsArray;
+      this._currentStateChange.newStateIndex = stateIndex; // If transitions are to be cancelled, force them to end
+
+      if (shouldSkipTransition === true) {
+        this._currentStateChange.shouldForceToEnd = true;
+      }
+
+      if (this._layerPile.doOnStateChangeStartOrCancel) {
+        this._layerPile.doOnStateChangeStartOrCancel(stateIndex);
+      }
+
+      if (isChangeControlled === true) {
+        this._currentStateChange.status = "controlled";
+      } else {
+        this._currentStateChange.status = "looping"; // Start all layer transitions
+
+        var startTime = Date.now();
+        layerTransitionsArray.forEach(function (layerTransition) {
+          layerTransition.start(startTime);
+        });
+      }
+
+      return true;
+    }
+  }, {
+    key: "_createLayerIndicesToAddAndRemove",
+    value: function _createLayerIndicesToAddAndRemove(stateIndex, isGoingForward) {
+      var _this2 = this;
+
       var layerIndicesToRemove = [];
       var layerIndicesToAdd = []; // For page transitions
 
@@ -61338,9 +61816,9 @@ function () {
 
         while (i < stateIndex && i < this._statesArray.length) {
           this._statesArray[i].forEach(function (layerIndex) {
-            var layer = _this._layerPile.getLayerAtIndex(layerIndex);
+            var layer = _this2._layerPile.getLayerAtIndex(layerIndex);
 
-            _this._addLayerContent(layer, layerIndex, isGoingForward, _this._stateIndex || 0);
+            _this2._addLayerContent(layer, layerIndex, isGoingForward, _this2._stateIndex || 0);
 
             var _ref2 = layer || {},
                 content = _ref2.content;
@@ -61372,29 +61850,10 @@ function () {
         }
       }
 
-      if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
-        this._reset(); // To counter the above shouldForceToEnd = true
-
-
-        return;
-      }
-
-      var layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex);
-
-      this._currentTransition.status = "started";
-      this._currentTransition.oldStateIndex = oldStateIndex;
-      this._currentTransition.newStateIndex = stateIndex;
-      this._currentTransition.isGoingForward = isGoingForward;
-      this._currentTransition.layerTransitionsArray = layerTransitionsArray;
-      this._currentTransition.nbOfRunningLayerTransitions = layerTransitionsArray.length;
-
-      if (this._layerPile.doOnStateChangeStart) {
-        this._layerPile.doOnStateChangeStart(stateIndex);
-      }
-
-      this._currentTransition.status = "looping";
-
-      this._startAllLayerTransitions();
+      return {
+        layerIndicesToAdd: layerIndicesToAdd,
+        layerIndicesToRemove: layerIndicesToRemove
+      };
     }
   }, {
     key: "_addLayerContent",
@@ -61413,299 +61872,105 @@ function () {
     }
   }, {
     key: "_createLayerTransitions",
-    value: function _createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex) {
-      var _this2 = this;
+    value: function _createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward) {
+      var _this3 = this;
 
       var layerTransitionsArray = [];
       layerIndicesToAdd.forEach(function (layerIndex) {
-        var layer = _this2._layerPile.getLayerAtIndex(layerIndex); // Add layer content
-
-
-        _this2._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex); // Now create layerTransitions
-
+        var layer = _this3._layerPile.getLayerAtIndex(layerIndex);
 
         var _ref4 = layer || {},
-            content = _ref4.content,
             entryForward = _ref4.entryForward,
             entryBackward = _ref4.entryBackward;
 
         var entry = isGoingForward === true ? entryForward : entryBackward;
-
-        var _ref5 = entry || {},
-            type = _ref5.type,
-            duration = _ref5.duration,
-            direction = _ref5.direction,
-            sliceType = _ref5.sliceType,
-            slice = _ref5.slice,
-            controlled = _ref5.controlled;
-
-        var layerTransition = {
-          layer: layer,
-          isExiting: false
-        };
-
-        if (entry && (type === "fade-in" || type === "fade-out" // No "remove" transition here
-        || type === "slide-in" || type === "slide-out" || type === "animation")) {
-          var actualDuration = duration; // May still be undefined
-
-          if (sliceType !== "video" || !slice) {
-            actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
-          }
-
-          layerTransition = _objectSpread({}, layerTransition, {
-            type: type,
-            duration: actualDuration
-          }); // All start with same zero date as the first one in the list!
-
-          if (type === "slide-in" || type === "slide-out") {
-            layerTransition.direction = direction; // Prevent resize from impacting the content's position
-
-            if (direction === "ltr" || direction === "rtl") {
-              content.setIsXPositionUpdating(true);
-            } else if (direction === "ttb" || direction === "btt") {
-              content.setIsYPositionUpdating(true);
-            }
-          } else if (type === "animation" && slice) {
-            layerTransition.sliceType = sliceType;
-            layerTransition.slice = slice;
-
-            if (sliceType === "video" && slice && !actualDuration) {
-              slice.setDoOnEnd(_this2.forceChangesToEnd.bind(_this2, null, _this2._currentTransition.isGoingForward));
-            }
-
-            slice.resize();
-
-            _this2._layerPile.addChild(slice);
-          }
-        }
-
+        var isExiting = false;
+        var layerTransition = new _LayerTransition__WEBPACK_IMPORTED_MODULE_0__["default"](_this3, layer, isExiting, entry);
         layerTransitionsArray.push(layerTransition);
       });
       layerIndicesToRemove.forEach(function (layerIndex) {
-        var layer = _this2._layerPile.getLayerAtIndex(layerIndex);
+        var layer = _this3._layerPile.getLayerAtIndex(layerIndex);
 
-        var _ref6 = layer || {},
-            content = _ref6.content,
-            exitForward = _ref6.exitForward,
-            exitBackward = _ref6.exitBackward;
+        var _ref5 = layer || {},
+            exitForward = _ref5.exitForward,
+            exitBackward = _ref5.exitBackward;
 
         var exit = isGoingForward === true ? exitForward : exitBackward;
-
-        var _ref7 = exit || {},
-            type = _ref7.type,
-            duration = _ref7.duration,
-            direction = _ref7.direction,
-            sliceType = _ref7.sliceType,
-            slice = _ref7.slice,
-            controlled = _ref7.controlled;
-
-        var layerTransition = {
-          layer: layer,
-          isExiting: true
-        };
-
-        if (exit && (type === "remove" || type === "fade-in" || type === "fade-out" || type === "slide-in" || type === "slide-out" || type === "animation")) {
-          var actualDuration = duration; // Can be undefined!
-
-          if (type !== "animation") {
-            actualDuration = duration !== undefined ? duration : _constants__WEBPACK_IMPORTED_MODULE_0__["defaultDuration"];
-          }
-
-          layerTransition = _objectSpread({}, layerTransition, {
-            type: type,
-            duration: actualDuration
-          }); // All start with same zero date as the first one in the list!
-
-          if (type === "slide-in" || type === "slide-out") {
-            layerTransition.direction = direction; // Prevent resize from impacting the content's position
-
-            if (direction === "ltr" || direction === "rtl") {
-              content.setIsXPositionUpdating(true);
-            } else if (direction === "ttb" || direction === "btt") {
-              content.setIsYPositionUpdating(true);
-            }
-          } else if (type === "animation" && slice) {
-            layerTransition.sliceType = sliceType;
-            layerTransition.slice = slice;
-          }
-        }
-
+        var isExiting = true;
+        var layerTransition = new _LayerTransition__WEBPACK_IMPORTED_MODULE_0__["default"](_this3, layer, isExiting, exit);
         layerTransitionsArray.push(layerTransition);
       });
       return layerTransitionsArray;
     }
   }, {
-    key: "_startAllLayerTransitions",
-    value: function _startAllLayerTransitions() {
-      var _this3 = this;
-
-      this._startTime = Date.now();
-
-      this._currentTransition.layerTransitionsArray.forEach(function (layerTransition) {
-        var sliceType = layerTransition.sliceType,
-            slice = layerTransition.slice; // If the layerTransition is a video or sequence with no duration,
-        // or a sequence with no frames loaded, skip it
-
-        if (sliceType && (!slice || slice.canPlay === false)) {
-          _this3._endLayerTransition(layerTransition); // Otherwise play the layerTransition
-
-        } else {
-          if (slice) {
-            slice.finalizeEntry();
-          }
-
-          _this3._runLayerTransition(layerTransition, null);
+    key: "notifyTransitionEnd",
+    value: function notifyTransitionEnd() {
+      var layerTransitionsArray = this._currentStateChange.layerTransitionsArray;
+      var nbOfRunningLayerTransitions = 0;
+      layerTransitionsArray.forEach(function (layerTransition) {
+        if (layerTransition.isRunning === true) {
+          nbOfRunningLayerTransitions += 1;
         }
       });
-    } // The function will below shall loop if layerTransitionPercent !== null
 
-  }, {
-    key: "_runLayerTransition",
-    value: function _runLayerTransition(layerTransition) {
-      var layerTransitionPercent = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
-      var layer = layerTransition.layer,
-          type = layerTransition.type,
-          duration = layerTransition.duration,
-          direction = layerTransition.direction,
-          sliceType = layerTransition.sliceType,
-          slice = layerTransition.slice;
-      var percent = 1;
-
-      if (layerTransitionPercent !== null) {
-        percent = layerTransitionPercent;
-      } else if (duration && duration > 0) {
-        percent = (Date.now() - this._startTime) / duration;
-      } else if (sliceType === "video" && slice) {
-        // Play a video transition until percent = 1
-        percent = 0;
-      } // If the user has forced the transition to its end...
-
-
-      if (this._currentTransition.shouldForceToEnd === true // ... or it is not a video running to its end, and it has actually ended
-      || percent >= 1) {
-        this._endLayerTransition(layerTransition); // Otherwise just apply the required changes based on time
-
-      } else if (type === "animation") {
-        // Continue playing the layerTransition, waiting for its eventual end
-        requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-      } else {
-        var viewportRect = this._player.viewportRect;
-        var width = viewportRect.width,
-            height = viewportRect.height;
-        var content = layer.content;
-
-        if (type === "fade-in") {
-          content.setAlpha(percent);
-        } else if (type === "fade-out") {
-          content.setAlpha(1 - percent);
-        } else if (type === "slide-in") {
-          switch (direction) {
-            case "ltr":
-              content.setXOffset((percent - 1) * width);
-              break;
-
-            case "rtl":
-              content.setXOffset((1 - percent) * width);
-              break;
-
-            case "ttb":
-              content.setYOffset((percent - 1) * height);
-              break;
-
-            case "btt":
-              content.setYOffset((1 - percent) * height);
-              break;
-
-            default:
-              break;
-          }
-        } else if (type === "slide-out") {
-          switch (direction) {
-            case "ltr":
-              content.setXOffset(percent * width);
-              break;
-
-            case "rtl":
-              content.setXOffset(-percent * width);
-              break;
-
-            case "ttb":
-              content.setYOffset(percent * height);
-              break;
-
-            case "btt":
-              content.setYOffset(-percent * height);
-              break;
-
-            default:
-              break;
-          }
-        }
-
-        content.setVisibility(true);
-
-        if (layerTransitionPercent === null) {
-          requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-        }
+      if (nbOfRunningLayerTransitions === 0) {
+        this._endStateChange();
       }
     }
   }, {
-    key: "_endLayerTransition",
-    value: function _endLayerTransition(layerTransition) {
-      var layer = layerTransition.layer,
-          isExiting = layerTransition.isExiting,
-          slice = layerTransition.slice;
+    key: "_endStateChange",
+    value: function _endStateChange() {
+      var _this$_currentStateCh = this._currentStateChange,
+          newStateIndex = _this$_currentStateCh.newStateIndex,
+          endCallback = _this$_currentStateCh.endCallback;
+      this._stateIndex = newStateIndex;
 
-      if (slice) {
-        slice.finalizeExit();
-        slice.removeFromParent();
+      this._layerPile.finalizeEntry();
+
+      this._resetStateChange(); // Run the callback if there was one
+
+
+      if (endCallback) {
+        endCallback();
       }
+    }
+  }, {
+    key: "_cancelStateChange",
+    value: function _cancelStateChange() {
+      var layerTransitionsArray = this._currentStateChange.layerTransitionsArray;
+      layerTransitionsArray.forEach(function (layerTransition) {
+        layerTransition.cancel();
+      });
 
-      var content = layer.content;
-      content.setAlpha(1);
-      content.setVisibility(true);
-      content.setIsXPositionUpdating(false);
-      content.setIsYPositionUpdating(false);
-      content.resetPosition();
+      this._resetStateChange();
 
-      if (isExiting === true) {
-        layer.finalizeExit();
-        content.removeFromParent();
-      } else {
-        layer.finalizeEntry();
-      }
-
-      this._currentTransition.nbOfRunningLayerTransitions -= 1;
-
-      if (this._currentTransition.nbOfRunningLayerTransitions === 0) {
-        var _this$_currentTransit = this._currentTransition,
-            newStateIndex = _this$_currentTransit.newStateIndex,
-            endCallback = _this$_currentTransit.endCallback;
-        this._stateIndex = newStateIndex;
-
-        this._layerPile.finalizeEntry();
-
-        this._reset(); // Run the callback if there was one
-
-
-        if (endCallback) {
-          endCallback();
-        }
+      if (this._layerPile.doOnStateChangeStartOrCancel) {
+        this._layerPile.doOnStateChangeStartOrCancel(this.stateIndex);
       }
     } // Functions linked to role in LayerPile
 
   }, {
     key: "attemptToGoForward",
     value: function attemptToGoForward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var shouldSkipTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var percent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      // Go to next state
-      var isGoingForward = true;
+
+      // Disable any new change while a controlled state change is under way
+      if (this.isUndergoingControlledChanges === true) {
+        return true;
+      }
+
+      var isGoingForward = true; // If a (discontinuous) state change is under way
 
       if (this.isUndergoingChanges === true) {
-        // If has looping layerTransitions
-        this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+        // Force it to end if the movement goes the same way
+        if (this._currentStateChange.isGoingForward === true) {
+          this._currentStateChange.shouldForceToEnd = true; // Otherwise cancel it to bring the situation back to the initial state
+        } else {
+          this._cancelStateChange();
+        }
+
         return true;
       }
 
@@ -61713,21 +61978,29 @@ function () {
         return false;
       }
 
-      this.goToState(this._stateIndex + 1, isGoingForward, shouldCancelTransition, percent);
+      this.goToState(this._stateIndex + 1, isGoingForward, shouldSkipTransition, percent);
       return true;
     }
   }, {
     key: "attemptToGoBackward",
     value: function attemptToGoBackward() {
-      var shouldCancelTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
+      var shouldSkipTransition = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : false;
       var doIfIsUndergoingChanges = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var percent = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      // Go to previous state
+
+      if (this.isUndergoingControlledChanges === true) {
+        return true;
+      }
+
       var isGoingForward = false;
 
       if (this.isUndergoingChanges === true) {
-        // If has looping layerTransitions
-        this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+        if (this._currentStateChange.isGoingForward === false) {
+          this._currentStateChange.shouldForceToEnd = true;
+        } else {
+          this._cancelStateChange();
+        }
+
         return true;
       }
 
@@ -61735,14 +62008,14 @@ function () {
         return false;
       }
 
-      this.goToState(this._stateIndex - 1, isGoingForward, shouldCancelTransition, percent);
+      this.goToState(this._stateIndex - 1, isGoingForward, shouldSkipTransition, percent);
       return true;
     } // Go to start or end state depending on whether goes forward or not
 
   }, {
     key: "setupForEntry",
     value: function setupForEntry(isGoingForward) {
-      this._reset();
+      this._resetStateChange();
 
       if (isGoingForward === true) {
         this.goToState(0, isGoingForward);
@@ -61763,13 +62036,129 @@ function () {
         return;
       }
 
-      this._currentTransition.layerTransitionsArray.forEach(function (layerTransition) {
-        var slice = layerTransition.slice;
-
-        if (slice) {
-          slice.resize();
-        }
+      var layerTransitionsArray = this._currentStateChange.layerTransitionsArray;
+      layerTransitionsArray.forEach(function (layerTransition) {
+        layerTransition.resize();
       });
+    }
+  }, {
+    key: "handleScroll",
+    value: function handleScroll(scrollData, isWheelScroll) {
+      if (this._stateIndex === null) {
+        return true;
+      }
+
+      var layersArray = this._statesArray[this._stateIndex];
+
+      if (layersArray.length === 1) {
+        var layerIndex = layersArray[0];
+
+        var layer = this._layerPile.getLayerAtIndex(layerIndex);
+
+        var content = layer.content;
+
+        if (content.handleScroll && content.handleScroll(scrollData, isWheelScroll) === true) {
+          return true;
+        }
+      }
+
+      if (isWheelScroll === true) {
+        return true;
+      }
+
+      var viewportPercent = scrollData.viewportPercent;
+
+      if (!this._stateDeltaForTransitionControl || this.isUndergoingControlledChanges === false) {
+        if (viewportPercent > 0) {
+          this._stateDeltaForTransitionControl = 1;
+        } else if (viewportPercent < 0) {
+          this._stateDeltaForTransitionControl = -1;
+        }
+      } else if (this.isUndergoingControlledChanges === true) {
+        var newStateDelta = null;
+
+        if (viewportPercent > 0) {
+          newStateDelta = 1;
+        } else if (viewportPercent < 0) {
+          newStateDelta = -1;
+        }
+
+        if (newStateDelta !== this._stateDeltaForTransitionControl) {
+          var shouldBeAnimated = false;
+          this.endControlledTransition(0, shouldBeAnimated);
+          this._stateDeltaForTransitionControl = newStateDelta;
+          var isGoingForward = this._stateDeltaForTransitionControl > 0;
+          var shouldSkipTransition = false;
+          var isChangeControlled = true;
+          return this.goToState(this._stateIndex + this._stateDeltaForTransitionControl, isGoingForward, shouldSkipTransition, isChangeControlled) === true;
+        }
+      }
+
+      if (this._stateDeltaForTransitionControl === 1 || this._stateDeltaForTransitionControl === -1) {
+        // Continue controlling changes if controlled changed are under way
+        if (this.isUndergoingControlledChanges === true) {
+          var percent = viewportPercent * this._stateDeltaForTransitionControl;
+          percent = Math.min(Math.max(percent, 0), 1);
+          this.goToIntermediateState(percent);
+          return true;
+        } // Otherwise attempt to start controlled changes
+
+
+        var _isGoingForward = this._stateDeltaForTransitionControl > 0;
+
+        var _shouldSkipTransition = false;
+        var _isChangeControlled = true;
+        return this.goToState(this._stateIndex + this._stateDeltaForTransitionControl, _isGoingForward, _shouldSkipTransition, _isChangeControlled) === true;
+      }
+
+      return false;
+    }
+  }, {
+    key: "goToIntermediateState",
+    value: function goToIntermediateState(percent) {
+      var layerTransitionsArray = this._currentStateChange.layerTransitionsArray;
+      layerTransitionsArray.forEach(function (layerTransition) {
+        layerTransition.goToIntermediateState(percent);
+      });
+    }
+  }, {
+    key: "endControlledTransition",
+    value: function endControlledTransition(viewportPercent, shouldBeAnimated) {
+      if (this._stateIndex === null) {
+        return true;
+      }
+
+      var layersArray = this._statesArray[this._stateIndex];
+
+      if (layersArray.length === 1) {
+        var layerIndex = layersArray[0];
+
+        var layer = this._layerPile.getLayerAtIndex(layerIndex);
+
+        var content = layer.content;
+
+        if (content.endControlledTransition && content.endControlledTransition(viewportPercent, shouldBeAnimated) === true) {
+          return true;
+        }
+      }
+
+      if (this.isUndergoingControlledChanges === false) {
+        return false;
+      }
+
+      var percent = Math.abs(viewportPercent);
+
+      if (percent >= 0.5) {
+        var layerTransitionsArray = this._currentStateChange.layerTransitionsArray;
+        layerTransitionsArray.forEach(function (layerTransition) {
+          layerTransition.end();
+        });
+      } else {
+        this._cancelStateChange();
+      }
+
+      this._stateDeltaForTransitionControl = null;
+      return true;
     }
   }]);
 
@@ -61777,6 +62166,21 @@ function () {
 }();
 
 
+
+/***/ }),
+
+/***/ "./src/StoryBuilder/StateHandler/index.js":
+/*!************************************************!*\
+  !*** ./src/StoryBuilder/StateHandler/index.js ***!
+  \************************************************/
+/*! exports provided: default */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _StateHandler__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./StateHandler */ "./src/StoryBuilder/StateHandler/StateHandler.js");
+
+/* harmony default export */ __webpack_exports__["default"] = (_StateHandler__WEBPACK_IMPORTED_MODULE_0__["default"]);
 
 /***/ }),
 
@@ -62310,7 +62714,7 @@ function (_Container) {
 /*!**************************!*\
   !*** ./src/constants.js ***!
   \**************************/
-/*! exports provided: possiblePixelError, defaultManifestFilename, defaultBackgroundColor, defaultDummyColor, possibleTagNames, acceptableVideoExtensions, textFontFamily, textFontSize, textFillColor, wordWrapWidth, defaultAllowsDestroy, defaultAllowsParallel, defaultMaxNbOfPagesAfter, maxShareOfPagesBefore, defaultVideoLoadTimeout, defaultContinuous, defaultFit, defaultOverflow, defaultClipped, defaultSpread, defaultDuration, defaultAllowsZoom, defaultAllowsSwipe, defaultAllowsWheelScroll, defaultAllowsPaginatedScroll, defaultIsPaginationSticky, defaultIsPaginationGridBased, referencePercent, velocityFactor, timeConstant, maxZoomFactor, zoomSensitivityConstant, viewportDimensionPercent, snapJumpSpeedFactor, stickyMoveSpeedFactor */
+/*! exports provided: possiblePixelError, defaultManifestFilename, defaultBackgroundColor, defaultDummyColor, possibleTagNames, acceptableVideoExtensions, textFontFamily, textFontSize, textFillColor, wordWrapWidth, defaultAllowsDestroy, defaultAllowsParallel, defaultMaxNbOfPagesAfter, maxShareOfPagesBefore, defaultVideoLoadTimeout, defaultReadingProgression, defaultContinuous, defaultFit, defaultOverflow, defaultClipped, defaultSpread, defaultDuration, defaultAllowsZoom, defaultAllowsSwipe, defaultAllowsWheelScroll, defaultAllowsPaginatedScroll, defaultIsPaginationSticky, defaultIsPaginationGridBased, referencePercent, velocityFactor, timeConstant, maxZoomFactor, zoomSensitivityConstant, viewportDimensionPercent, snapJumpSpeedFactor, stickyMoveSpeedFactor */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
@@ -62330,6 +62734,7 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultMaxNbOfPagesAfter", function() { return defaultMaxNbOfPagesAfter; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "maxShareOfPagesBefore", function() { return maxShareOfPagesBefore; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultVideoLoadTimeout", function() { return defaultVideoLoadTimeout; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultReadingProgression", function() { return defaultReadingProgression; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultContinuous", function() { return defaultContinuous; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultFit", function() { return defaultFit; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "defaultOverflow", function() { return defaultOverflow; });
@@ -62372,7 +62777,7 @@ var wordWrapWidth = 275; // Maximum line width
 // Loading parameters
 
 var defaultAllowsDestroy = true;
-var defaultAllowsParallel = true; // Nb of pages after the current one for which slice textures should be stored in memory
+var defaultAllowsParallel = false; // Nb of pages after the current one for which slice textures should be stored in memory
 
 var defaultMaxNbOfPagesAfter = 1; // Nb of pages before the current one for which slice textures should be stored in memory,
 // as a share of defaultMaxNbOfPagesAfter
@@ -62380,6 +62785,8 @@ var defaultMaxNbOfPagesAfter = 1; // Nb of pages before the current one for whic
 var maxShareOfPagesBefore = 1 / 3; // Timeout to cancel video load (only in non-parallel loading mode)
 
 var defaultVideoLoadTimeout = 2000; // Story
+
+var defaultReadingProgression = "ltr"; // If no value is specified or if the value is invalid
 
 var defaultContinuous = true; // If no value is specified or if the value is invalid
 
@@ -62458,11 +62865,13 @@ __webpack_require__.r(__webpack_exports__);
 /*!**********************!*\
   !*** ./src/utils.js ***!
   \**********************/
-/*! exports provided: isANumber, isAVideo, parseAspectRatio, getPathAndMediaFragment, getRectForMediaFragmentAndSize, getShortenedHref, parseCoordinate, getDistance */
+/*! exports provided: hasAScheme, getFolderPathFromManifestPath, isANumber, isAVideo, parseAspectRatio, getPathAndMediaFragment, getRectForMediaFragmentAndSize, getShortenedHref, parseCoordinate, getDistance */
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "hasAScheme", function() { return hasAScheme; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getFolderPathFromManifestPath", function() { return getFolderPathFromManifestPath; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isANumber", function() { return isANumber; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "isAVideo", function() { return isAVideo; });
 /* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "parseAspectRatio", function() { return parseAspectRatio; });
@@ -62480,7 +62889,22 @@ function _iterableToArrayLimit(arr, i) { if (!(Symbol.iterator in Object(arr) ||
 
 function _arrayWithHoles(arr) { if (Array.isArray(arr)) return arr; }
 
- // For type checking (used below)
+
+
+var hasAScheme = function hasAScheme(url) {
+  var regExp = new RegExp("^(?:[a-z]+:)?//", "i");
+  return regExp.test(url) === true;
+};
+
+var getFolderPathFromManifestPath = function getFolderPathFromManifestPath(manifestPath) {
+  if (!manifestPath || manifestPath.split("/").length === 1) {
+    return "";
+  }
+
+  var folderPath = manifestPath.split("/".concat(_constants__WEBPACK_IMPORTED_MODULE_0__["defaultManifestFilename"]))[0];
+  return folderPath;
+}; // For type checking (used below)
+
 
 var isAString = function isAString(value) {
   return (// Used below

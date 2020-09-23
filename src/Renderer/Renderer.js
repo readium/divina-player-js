@@ -19,8 +19,8 @@ export default class Renderer {
 		this._app = new PIXIApplication({
 			backgroundColor,
 			resolution: 1,
-			autoDensity: true,
 		})
+		this._app.renderer.autoDensity = true
 
 		// Add the PIXI app's canvas to the DOM
 		rootElement.appendChild(this._app.view)
