@@ -42398,7 +42398,7 @@ const wordWrapWidth = 275; // Maximum line width
 
 // Loading parameters
 const defaultAllowsDestroy = true;
-const defaultAllowsParallel = true;
+const defaultAllowsParallel = false;
 // Nb of pages after the current one for which slice textures should be stored in memory
 const defaultMaxNbOfPagesAfter = 1;
 // Nb of pages before the current one for which slice textures should be stored in memory,
@@ -42408,6 +42408,7 @@ const maxShareOfPagesBefore = 1 / 3;
 const defaultVideoLoadTimeout = 2000;
 
 // Story
+const defaultReadingProgression = "ltr"; // If no value is specified or if the value is invalid
 const defaultContinuous = true; // If no value is specified or if the value is invalid
 const defaultFit = "contain"; // If no value is specified or if the value is invalid
 const defaultOverflow = "scrolled"; // If no value is specified or if the value is invalid or "auto"
@@ -42445,7 +42446,7 @@ const snapJumpSpeedFactor = 1 / defaultDuration;
 const stickyMoveSpeedFactor = 1 / defaultDuration;
 // (with the above, duration of a sticky snap point move = distance in px / speed,
 // where speed is defaultDuration * stickyMoveSpeedFactor (used in Camera))
-var constants={__proto__:null,possiblePixelError: possiblePixelError,defaultManifestFilename: defaultManifestFilename,defaultBackgroundColor: defaultBackgroundColor,defaultDummyColor: defaultDummyColor,possibleTagNames: possibleTagNames,acceptableVideoExtensions: acceptableVideoExtensions,textFontFamily: textFontFamily,textFontSize: textFontSize,textFillColor: textFillColor,wordWrapWidth: wordWrapWidth,defaultAllowsDestroy: defaultAllowsDestroy,defaultAllowsParallel: defaultAllowsParallel,defaultMaxNbOfPagesAfter: defaultMaxNbOfPagesAfter,maxShareOfPagesBefore: maxShareOfPagesBefore,defaultVideoLoadTimeout: defaultVideoLoadTimeout,defaultContinuous: defaultContinuous,defaultFit: defaultFit,defaultOverflow: defaultOverflow,defaultClipped: defaultClipped,defaultSpread: defaultSpread,defaultDuration: defaultDuration,defaultAllowsZoom: defaultAllowsZoom,defaultAllowsSwipe: defaultAllowsSwipe,defaultAllowsWheelScroll: defaultAllowsWheelScroll,defaultAllowsPaginatedScroll: defaultAllowsPaginatedScroll,defaultIsPaginationSticky: defaultIsPaginationSticky,defaultIsPaginationGridBased: defaultIsPaginationGridBased,referencePercent: referencePercent,velocityFactor: velocityFactor,timeConstant: timeConstant,maxZoomFactor: maxZoomFactor,zoomSensitivityConstant: zoomSensitivityConstant,viewportDimensionPercent: viewportDimensionPercent,snapJumpSpeedFactor: snapJumpSpeedFactor,stickyMoveSpeedFactor: stickyMoveSpeedFactor};// All functions are used in TextManager
+var constants={__proto__:null,possiblePixelError: possiblePixelError,defaultManifestFilename: defaultManifestFilename,defaultBackgroundColor: defaultBackgroundColor,defaultDummyColor: defaultDummyColor,possibleTagNames: possibleTagNames,acceptableVideoExtensions: acceptableVideoExtensions,textFontFamily: textFontFamily,textFontSize: textFontSize,textFillColor: textFillColor,wordWrapWidth: wordWrapWidth,defaultAllowsDestroy: defaultAllowsDestroy,defaultAllowsParallel: defaultAllowsParallel,defaultMaxNbOfPagesAfter: defaultMaxNbOfPagesAfter,maxShareOfPagesBefore: maxShareOfPagesBefore,defaultVideoLoadTimeout: defaultVideoLoadTimeout,defaultReadingProgression: defaultReadingProgression,defaultContinuous: defaultContinuous,defaultFit: defaultFit,defaultOverflow: defaultOverflow,defaultClipped: defaultClipped,defaultSpread: defaultSpread,defaultDuration: defaultDuration,defaultAllowsZoom: defaultAllowsZoom,defaultAllowsSwipe: defaultAllowsSwipe,defaultAllowsWheelScroll: defaultAllowsWheelScroll,defaultAllowsPaginatedScroll: defaultAllowsPaginatedScroll,defaultIsPaginationSticky: defaultIsPaginationSticky,defaultIsPaginationGridBased: defaultIsPaginationGridBased,referencePercent: referencePercent,velocityFactor: velocityFactor,timeConstant: timeConstant,maxZoomFactor: maxZoomFactor,zoomSensitivityConstant: zoomSensitivityConstant,viewportDimensionPercent: viewportDimensionPercent,snapJumpSpeedFactor: snapJumpSpeedFactor,stickyMoveSpeedFactor: stickyMoveSpeedFactor};// All functions are used in TextManager
 
 class TextElement extends Container$1 {
 
@@ -42839,7 +42840,20 @@ class Loader$2 {
 		});
 	}
 
-}// For type checking (used below)
+}const hasAScheme = (url) => {
+	const regExp = new RegExp("^(?:[a-z]+:)?//", "i");
+	return (regExp.test(url) === true)
+};
+
+const getFolderPathFromManifestPath = (manifestPath) => {
+	if (!manifestPath || manifestPath.split("/").length === 1) {
+		return ""
+	}
+	const folderPath = manifestPath.split(`/${defaultManifestFilename}`)[0];
+	return folderPath
+};
+
+// For type checking (used below)
 
 const isAString = (value) => ( // Used below
 	(typeof value === "string" || value instanceof String)
@@ -43027,7 +43041,7 @@ const parseCoordinate = (value, dimensionLength) => {
 // For measuring a distance between 2 points (used for snap points and pinch)
 const getDistance = (point1, point2) => (
 	Math.sqrt((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2)
-);// A texture stored in the loader will need to have the following properties:
+);// A texture stored in the Loader will need to have the following properties:
 // - If it corresponds to an image: .frame.width and .frame.height
 // - If it corresponds to a video: .video (the video itself will need to be a videoElement,
 //   i.e. it should include videoWidth, videoHeight and duration properties)
@@ -46023,21 +46037,50 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				if (this._wasLastEventPanend === true) {
 					return
 				}
-				this._resetScroll();
-				this._wasLastEventPanend = true;
 
-				// Attempt a sticky page change if possible, and should it fail,
-				// then only trigger a drag end (via _releaseScroll)
-				if (this._isPaginationSticky === false
-					|| this._pageNavigator.attemptStickyStep() === false) {
+				// Attempt to end a controlled transition; if it fails (because none was currently
+				// under way), attempt a sticky page change if possible; if it fails as well (if
+				// viewportPercent was not enough), then only trigger a drag end (via _releaseScroll)
+				let viewportPercent = this._percentFunction(e.deltaX, e.deltaY);
+				viewportPercent = Math.min(Math.max(viewportPercent, -1), 1);
+
+				if (this._pageNavigator.endControlledTransition(viewportPercent) === false
+					&& (this._isPaginationSticky === false
+					|| this._pageNavigator.attemptStickyStep() === false)) {
 					this._releaseScroll(e);
 				}
 
+				this._resetScroll();
+				this._wasLastEventPanend = true;
+
 			// For normal non-wheel scroll
 			} else {
+				const { currentPage } = this._pageNavigator;
+				const { inScrollDirection } = currentPage;
+
+				const { viewportRect } = this._player;
+				const { width, height } = viewportRect;
+				const { viewportDimensionPercent } = constants;
+
+				switch (inScrollDirection) {
+				case "ltr":
+					this._percentFunction = (dx) => (-dx / (width * viewportDimensionPercent));
+					break
+				case "rtl":
+					this._percentFunction = (dx) => (dx / (width * viewportDimensionPercent));
+					break
+				case "ttb":
+					this._percentFunction = (_, dy) => (-dy / (height * viewportDimensionPercent));
+					break
+				case "btt":
+					this._percentFunction = (_, dy) => (dy / (height * viewportDimensionPercent));
+					break
+				}
+
 				const scrollEvent = {
 					deltaX: deltaX - this._lastScrollEvent.deltaX,
 					deltaY: deltaY - this._lastScrollEvent.deltaY,
+					viewportPercent: Math.min(Math.max(this._percentFunction(deltaX, deltaY), -1), 1),
 				};
 				const isWheelScroll = false;
 				this._scroll(scrollEvent, isWheelScroll);
@@ -46051,6 +46094,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		this._lastScrollEvent = {
 			deltaX: 0,
 			deltaY: 0,
+			viewportPercent: 0,
 		};
 	}
 
@@ -46061,7 +46105,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			y: -e.velocityY * velocityFactor,
 		};
 		const releaseDate = Date.now();
-		this._autoScroll(velocity, releaseDate);
+		this._autoScroll(velocity, releaseDate, e);
 	}
 
 	// Apply kinetic scrolling formula after drag end (i.e. on scroll release)
@@ -46079,6 +46123,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			deltaY = Math.round(deltaY);
 		}
 		if (Math.abs(deltaX) >= 0.5 || Math.abs(deltaY) >= 0.5) {
+			// On a drag end, viewportPercent information is useless
 			this._scroll({ deltaX, deltaY });
 			requestAnimationFrame(this._autoScroll.bind(this, velocity, releaseDate));
 		}
@@ -46089,8 +46134,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		if (!this._pageNavigator) {
 			return
 		}
-		const { deltaX, deltaY } = e;
-		this._pageNavigator.handleScroll({ deltaX, deltaY }, isWheelScroll);
+		const { deltaX, deltaY, viewportPercent } = e;
+		this._pageNavigator.handleScroll({ deltaX, deltaY, viewportPercent }, isWheelScroll);
 	}
 
 	// For mouse and trackpad scroll events
@@ -46108,6 +46153,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				};
 				this._pageNavigator.zoom(zoomData);
 			} else {
+				// There is no end to a wheel event, so no viewportPercent information
+				// can be constructed to attempt a sticky page change
 				const isWheelScroll = true;
 				this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll);
 			}
@@ -46213,9 +46260,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		const { path } = this._getRelevantPathAndMediaFragment(this._resource);
 
 		this._loadStatus = (!path) ? 0 : 1;
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus();
-		}
+		this._updateParentLoadStatus();
 
 		return (path) ? [{ pathsArray: [path], sliceId: this._id }] : []
 	}
@@ -46240,6 +46285,13 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		}
 
 		return { path, mediaFragment }
+	}
+
+	_updateParentLoadStatus() {
+		if (!this._parent || !this._parent.updateLoadStatus) {
+			return
+		}
+		this._parent.updateLoadStatus();
 	}
 
 	// Once the associated texture has been created, it can be applied to the slice
@@ -46287,9 +46339,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			this._loadStatus = (isAFallback === true) ? -1 : 2;
 		}
 
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus();
-		}
+		this._updateParentLoadStatus();
 	}
 
 	// On the first successful loading of the resource's texture
@@ -46303,6 +46353,11 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		if (this._parent) {
 			this._parent.resizePage();
 		}
+	}
+
+	cancelTextureLoad() {
+		this._loadStatus = 0;
+		this._updateParentLoadStatus();
 	}
 
 	play() {
@@ -46386,9 +46441,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	destroyTexturesIfPossible() {
 		const pathsArray = this.unlinkTexturesAndGetPaths();
 
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus();
-		}
+		this._updateParentLoadStatus();
 
 		if (!pathsArray) {
 			return
@@ -46737,6 +46790,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	get type() { return this._type }
 
+	get controlled() { return this._controlled }
+
 	get duration() { return this._duration }
 
 	get direction() { return this._direction }
@@ -46747,10 +46802,11 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	constructor(transition, player) {
 		const {
-			type, duration, direction, file, sequence,
+			type, controlled, duration, direction, file, sequence,
 		} = transition || {};
 
 		this._type = type;
+		this._controlled = controlled;
 		this._duration = duration;
 
 		this._direction = direction;
@@ -46808,11 +46864,15 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	getEntryAndExitTransitions(isForward) {
 		let entry = {
 			type: this._type,
+			controlled: this._controlled,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		};
 		let exit = {
 			type: this._type,
+			controlled: this._controlled,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		};
 
 		switch (this._type) {
@@ -46823,18 +46883,18 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		case "dissolve":
 			if (isForward === true) {
 				entry.type = "fade-in";
-				exit.type = "remove"; // Will occur after duration
+				exit.type = "show";
 			} else {
 				exit.type = "fade-out";
-				entry = null;
+				entry.type = "show";
 			}
 			break
 		case "slide-in":
 			entry.direction = this._direction;
-			exit.type = "remove"; // Will occur after duration
+			exit.type = "show";
 			break
 		case "slide-out":
-			entry.type = "remove"; // Will occur after duration
+			entry.type = "show";
 			exit.direction = this._direction;
 			break
 		case "push":
@@ -46846,7 +46906,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		case "animation":
 			entry.sliceType = this._sliceType;
 			entry.slice = this._slice;
-			exit = null;
+			exit.type = "hide";
+			exit.duration = 0;
 			break
 		}
 
@@ -46921,10 +46982,14 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		this._slice = new Slice(sliceResource, player, parentInfo);
 
 		if (!parentInfo && layers) { // No need to consider layers for a child link object
+
 			this._children = layers.map((layerObject, i) => {
 				const layerProperties = layerObject.properties || {};
+				let {
+					entryForward, exitBackward,
+				} = layerProperties;
 				const {
-					entryForward, exitForward, entryBackward, exitBackward,
+					exitForward, entryBackward,
 				} = layerProperties;
 				// Create a new link object, using this link object's slice as the parent slice
 				const parentInformation = {
@@ -46932,6 +46997,21 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 					layerIndex: i,
 				};
 				const linkObject = new LinkObject(layerObject, parentInformation, player);
+
+				// Transitions shall take precedence over entry and exits
+				if (layerProperties.transitionForward) {
+					const transition = new Transition(layerProperties.transitionForward, player);
+					const isForward = true;
+					const { entry } = transition.getEntryAndExitTransitions(isForward);
+					entryForward = entry;
+				}
+				if (layerProperties.transitionBackward) {
+					const transition = new Transition(layerProperties.transitionBackward, player);
+					const isForward = false;
+					const { exit } = transition.getEntryAndExitTransitions(isForward);
+					exitBackward = exit;
+				}
+
 				return {
 					linkObject, entryForward, exitForward, entryBackward, exitBackward,
 				}
@@ -46958,8 +47038,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		this._doWithParsedDivinaData = doWithParsedDivinaData;
 	}
 
-	loadFromPath(folderPath) {
-		DivinaParser.loadJson(folderPath)
+	loadFromPath(path, pathType) {
+		DivinaParser.loadJson(path, pathType)
 			.then((json) => {
 				this._buildStoryFromJson(json);
 			}, (error) => {
@@ -46971,13 +47051,16 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			});
 	}
 
-	static loadJson(folderPath) {
+	static loadJson(path, pathType) {
 		return new Promise((resolve, reject) => {
-			if (!folderPath) {
-				reject(Error("No folder path was specified"));
+			if (!path) {
+				reject(Error("No path was specified"));
 			}
 			const xhr = new XMLHttpRequest();
-			xhr.open("GET", `${folderPath}/${defaultManifestFilename}`);
+			const manifestPath = (pathType === "manifest") // Otherwise pathType should be = "folder"
+				? path
+				: `${path}/${defaultManifestFilename}`;
+			xhr.open("GET", manifestPath);
 			xhr.responseType = "text";
 			xhr.onload = () => {
 				const text = xhr.response;
@@ -46995,18 +47078,29 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		})
 	}
 
-	loadFromData(data) {
-		if (data && data.json) {
-			this._buildStoryFromJson(data.json);
+	loadFromJson(json = null) {
+		if (json) {
+			this._buildStoryFromJson(json);
+		} else if (this._textManager) {
+			this._textManager.showMessage({
+				type: "error", data: "No json was passed",
+			});
 		}
 	}
 
-	loadFromJsonAndPath(json) {
-		this._buildStoryFromJson(json);
-	}
-
 	_buildStoryFromJson(json) {
-		const { metadata, readingOrder, guided } = json;
+		if (!json) {
+			if (this._textManager) {
+				this._textManager.showMessage({
+					type: "error", data: "Manifest is null",
+				});
+			}
+			return
+		}
+
+		const {
+			metadata, links, readingOrder, guided,
+		} = json;
 		if (!metadata || !readingOrder) {
 			if (this._textManager) {
 				this._textManager.showMessage({
@@ -47016,7 +47110,17 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			return
 		}
 
-		const parsedMetadata = this._parseMetadata(metadata);
+		let updatedFolderPath = null;
+		if (links && links.length > 0) {
+			links.forEach((link) => {
+				const { rel, href } = link;
+				if (rel === "self" && href && hasAScheme(href) === true) {
+					updatedFolderPath = getFolderPathFromManifestPath(href);
+				}
+			});
+		}
+
+		const parsedMetadata = DivinaParser._parseMetadata(metadata);
 		if (!parsedMetadata) {
 			return
 		}
@@ -47033,29 +47137,20 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		if (!this._doWithParsedDivinaData) {
 			return
 		}
-		this._doWithParsedDivinaData(parsedDivinaData);
+		this._doWithParsedDivinaData(parsedDivinaData, updatedFolderPath);
 	}
 
-	_parseMetadata(metadata) {
-		const { readingProgression, language, presentation } = metadata;
+	static _parseMetadata(metadata) {
+		const {
+			readingProgression,
+			language,
+			presentation,
+		} = metadata;
 
-		if (!readingProgression) {
-			if (this._textManager) {
-				this._textManager.showMessage({
-					type: "error", data: "Missing readingProgression information",
-				});
-			}
-			return null
-		}
-		if (readingProgression !== "ltr" && readingProgression !== "rtl"
-			&& readingProgression !== "ttb" && readingProgression !== "btt") {
-			if (this._textManager) {
-				this._textManager.showMessage({
-					type: "error", data: "Value for readingProgression is not valid",
-				});
-			}
-			return null
-		}
+		const storyReadingProgression = (readingProgression === "ltr" || readingProgression === "rtl"
+			|| readingProgression === "ttb" || readingProgression === "btt")
+			? readingProgression
+			: defaultReadingProgression;
 
 		const {
 			continuous,
@@ -47064,7 +47159,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			clipped,
 			spread,
 			viewportRatio,
-			orientation,
+			// orientation,
 		} = presentation || {};
 
 		const storyContinuous = (continuous === true || continuous === false)
@@ -47093,14 +47188,13 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		}
 
 		return {
-			readingProgression,
+			readingProgression: storyReadingProgression,
 			continuous: storyContinuous,
 			fit: storyFit,
 			overflow: storyOverflow,
 			clipped: storyClipped,
 			spread: storySpread,
 			viewportRatio,
-			orientation,
 			languagesArray,
 		}
 	}
@@ -47111,6 +47205,66 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			new LinkObject(object, parentLinkObject, this._player)
 		));
 		return linkObjectsArray
+	}
+
+}class Task {
+
+	// Used in AsyncTaskQueue
+
+	get id() { return this._id }
+
+	get data() { return this._data }
+
+	get priority() { return this._priority }
+
+	get forcedPriority() { return this._forcedPriority }
+
+	constructor(id, data, doAsync, doOnEnd, doOnKill, forcedPriority) {
+		this._id = id;
+		this.setData(data);
+		this._doAsync = doAsync;
+		this._doOnEnd = doOnEnd;
+		this._doOnKill = doOnKill;
+		this._forcedPriority = (forcedPriority !== undefined) ? forcedPriority : null;
+
+		this._priority = this._forcedPriority;
+		this._isRunning = false;
+	}
+
+	setData(data) {
+		this._data = data;
+	}
+
+	setPriority(priority) {
+		this._priority = priority;
+	}
+
+	run(callback) {
+		this._isRunning = true;
+
+		const fullCallback = () => {
+			if (this._doOnEnd) {
+				this._doOnEnd();
+			}
+			this._isRunning = false;
+			if (callback) {
+				callback();
+			}
+		};
+
+		if (this._doAsync) {
+			this._doAsync()
+				.then(fullCallback);
+		} else {
+			fullCallback();
+		}
+	}
+
+	kill() {
+		if (this._isRunning === true && this._doOnKill) {
+			this._doOnKill();
+		}
+		this._isRunning = false;
 	}
 
 }class TextureResource {
@@ -47288,7 +47442,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		Object.values(this._textures).forEach(({ sliceIdsSet }) => {
 			sliceIdsSet.forEach((sliceId) => {
 				const slice = slices[sliceId];
-				slice._loadStatus = 0; // UGLY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				slice.cancelTextureLoad();
 			});
 		});
 
@@ -47409,10 +47563,10 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	get nbOfTasks() { return this._tasksArray.length }
 
-	constructor(maxPriority, allowsParallel, getPriorityFunction) {
+	constructor(maxPriority, allowsParallel, getPriorityFromTaskData) {
 		this._maxPriority = maxPriority;
 		this._allowsParallel = allowsParallel;
-		this._getPriority = getPriorityFunction || ((task) => (task.priority || 0));
+		this._getPriorityFromTaskData = getPriorityFromTaskData;
 
 		this._tasksArray = [];
 		this.reset();
@@ -47424,11 +47578,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	}
 
 	reset() {
-		this._tasksArray.forEach((task) => {
-			if (task.isRunning === true && task.kill) {
-				task.kill();
-			}
-		});
+		this._tasksArray.forEach((task) => { task.kill(); });
 
 		// Useful in serial mode only
 		this._isRunning = false;
@@ -47436,72 +47586,60 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	updatePriorities() {
 		this._tasksArray.forEach((task, i) => {
-			// Allow the task to have a forced priority, otherwise evaluate the priority
-			const priority = (task.forcedPriority !== undefined)
-				? task.forcedPriority
-				: this._getPriority(task);
+			const priority = this._getPriorityAndUpdateTaskIfRelevant(task, task.data);
 
-			// In serial mode, update task priorities
-			if (this._allowsParallel === false) {
-				this._tasksArray[i].priority = priority;
-
-			// Whereas in parallel mode, remove task if relevant
-			} else if (priority > this._maxPriority) {
-				if (task.isRunning === true && task.kill) {
-					task.kill();
-				}
+			// In parallel mode, remove task if relevant
+			if (this._allowsParallel === true && priority > this._maxPriority) {
+				task.kill();
 				this._tasksArray.splice(i, 1);
 			}
 		});
 	}
 
-	addOrUpdateTask(task) {
-		const fullTask = {
-			...task,
-			isRunning: false,
-		};
-		if (this._allowsParallel === true) {
-			this._tasksArray.push(fullTask);
-			if (this._hasStarted === true) {
-				this._runTask(fullTask);
-			}
-		} else {
-			// If in serial mode, only add the task if not already in queue...
-			const { id } = fullTask;
-			const index = this._tasksArray.findIndex((arrayTask) => (arrayTask.id === id));
-			if (index < 0) {
-				// ...and add it with a priority property
-				fullTask.priority = (task.forcedPriority !== undefined)
-					? task.forcedPriority
-					: this._getPriority(task);
-				this._tasksArray.push(fullTask);
+	_getPriorityAndUpdateTaskIfRelevant(task, data) {
+		const { priority, forcedPriority } = task;
+		if (forcedPriority !== null) {
+			return forcedPriority
+		}
+		const possiblyNewPriority = (this._getPriorityFromTaskData)
+			? this._getPriorityFromTaskData(data)
+			: 0;
+		if (priority === null || possiblyNewPriority <= priority) {
+			task.setData(data);
+			task.setPriority(possiblyNewPriority);
+		}
+		return possiblyNewPriority
+	}
 
-				if (this._hasStarted === true && this._isRunning === false) {
-					this._runNextTaskInQueue();
-				}
-			} else { // Otherwise update the task
-				this._tasksArray[index] = task;
+	addTask(task) {
+		const priority = this._getPriorityAndUpdateTaskIfRelevant(task, task.data);
+		if (this._allowsParallel === false) {
+			this._tasksArray.push(task);
+			if (this._hasStarted === true && this._isRunning === false) {
+				this._runNextTaskInQueue();
+			}
+		} else if (priority <= this._maxPriority) {
+			this._tasksArray.push(task);
+			if (this._hasStarted === true) {
+				this._runTask(task);
 			}
 		}
 	}
 
-	_runTask(task) {
-		const { id, doAsync, doOnEnd } = task;
+	updateTaskWithData(task, data) { // The task cannot be running already at this stage
+		this._getPriorityAndUpdateTaskIfRelevant(task, data);
+	}
 
+	_runTask(task) {
 		if (this._allowsParallel === false) {
 			this._isRunning = true;
 		}
 
-		task.isRunning = true;
-
 		const callback = () => {
 			// Remove task from list
+			const { id } = task;
 			const index = this._tasksArray.findIndex((arrayTask) => (arrayTask.id === id));
 			this._tasksArray.splice(index, 1);
-
-			if (doOnEnd) {
-				doOnEnd();
-			}
 
 			if (this._doAfterEachInitialTask) {
 				this._doAfterEachInitialTask();
@@ -47516,13 +47654,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				this._runNextTaskInQueue();
 			}
 		};
-
-		if (doAsync) {
-			doAsync()
-				.then(callback);
-		} else {
-			callback();
-		}
+		task.run(callback);
 	}
 
 	_runNextTaskInQueue() { // In serial mode only
@@ -47539,7 +47671,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	_getTaskWithHighestPriority() { // Actually the *lowest* possible value for the priority key ;)
 		let nextTask = null;
 		this._tasksArray.forEach((task) => {
-			if (!nextTask || task.priority < nextTask.priority) {
+			const { priority } = task;
+			if (!nextTask || priority < nextTask.priority) {
 				nextTask = task;
 			}
 		});
@@ -47570,17 +47703,13 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	constructor(maxPriority, priorityFactor, allowsParallel) {
 
 		// Task priorities will be evaluated based on page differences
-		const getPriority = (task) => {
-			if (!task.data || task.data.pageIndex === undefined
-				|| this._targetPageIndex === undefined) {
-				return task.priority || 0
+		const getPriorityFromTaskData = (data) => {
+			let priority = 0;
+			if (!data || data.pageIndex === null || this._targetPageIndex === null) {
+				return priority
 			}
-			const taskPageIndex = task.data.pageIndex;
-			let { priority } = task;
-			if (priority === undefined
-				|| Math.abs(taskPageIndex - this._targetPageIndex) < Math.abs(priority)) {
-				priority = taskPageIndex - this._targetPageIndex;
-			}
+			const taskPageIndex = data.pageIndex;
+			priority = taskPageIndex - this._targetPageIndex;
 			if (priority < 0) {
 				if (priorityFactor) {
 					priority *= -priorityFactor;
@@ -47592,7 +47721,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			return priority
 		};
 
-		super(maxPriority, allowsParallel, getPriority);
+		super(maxPriority, allowsParallel, getPriorityFromTaskData);
+
+		this._targetPageIndex = null;
 	}
 
 	updatePriorities(targetPageIndex) {
@@ -47692,7 +47823,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				const { id, hasStartedLoading } = textureResource;
 				if (hasStartedLoading === false) {
 					if (taskId === null) {
-						taskId = id;
+						taskId = String(id);
+					} else {
+						taskId += String(id);
 					}
 					pathsToLoadArray.push(path);
 				}
@@ -47716,37 +47849,35 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			return
 		}
 
-		// If is already loading, still consider if priority order > that of when started loading!!!
+		// If is already loading, still consider if priority order > that of when started loading
+
+		let task = this._taskQueue.getTaskWithId(taskId);
+		const data = { pageIndex };
 
 		// Add resource load task to queue if not already in queue
-		let task = this._taskQueue.getTaskWithId(taskId);
 		if (!task) {
 			const loader = new Loader$2();
-			task = {
-				id: taskId,
-				data: { pageIndex },
-				doAsync: () => this._loadResources(pathsToLoadArray, pageIndex, loader),
-				doOnEnd: callback,
-				kill: () => {
-					// Cancel loading for resources not loaded yet
-					const { slices } = this._player;
-					pathsToLoadArray.forEach((path) => {
-						if (path && this._textureResources[path]) {
-							const textureResource = this._textureResources[path];
-							if (textureResource.hasLoaded === false) {
-								textureResource.cancelLoad(slices);
-							}
+			const doAsync = () => this._loadResources(pathsToLoadArray, pageIndex, loader);
+			const doOnEnd = callback;
+			const doOnKill = () => {
+				// Cancel loading for resources not loaded yet (and thus change their load status)
+				const { slices } = this._player;
+				pathsToLoadArray.forEach((path) => {
+					if (path && this._textureResources[path]) {
+						const textureResource = this._textureResources[path];
+						if (textureResource.hasLoaded === false) {
+							textureResource.cancelLoad(slices);
 						}
-					});
-					loader.reset();
-				},
+					}
+				});
+				loader.reset();
 			};
-			this._taskQueue.addOrUpdateTask(task);
+			task = new Task(taskId, data, doAsync, doOnEnd, doOnKill);
+			this._taskQueue.addTask(task);
 
-		// In serial mode, if task exists, add data to potentially update its priority
+		// In serial mode, if task exists, update data to potentially update its priority
 		} else if (this._allowsParallel === false) {
-			task.data.pageIndex = pageIndex;
-			this._taskQueue.addOrUpdateTask(task);
+			this._taskQueue.updateTaskWithData(data);
 		}
 	}
 
@@ -47797,14 +47928,19 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	_getSrc(path, fallbackPath = null) {
 		let src = fallbackPath || path;
+
 		const { folderPath, data } = this._textureSource;
-		if (folderPath) {
+
+		// If src has a scheme, use the address as is, otherwise add folderPath as prefix
+		if (folderPath && hasAScheme(src) === false) {
 			src = `${folderPath}/${src}`;
+
 		// If the story was opened with data (i.e. not from a folder)
 		// and the resource is a video, use the dataURI as src
 		} else if (data && data.base64DataByHref) {
 			src = data.base64DataByHref[path];
 		}
+
 		return src
 	}
 
@@ -47850,12 +47986,14 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	// Used in Player
 	addStoryOpenTaskAndLoad(doOnLoadEnd, maxPriority) {
 		// Add a last task to trigger doOnLoadEnd
-		const task = {
-			id: -1,
-			doOnEnd: doOnLoadEnd,
-			forcedPriority: maxPriority,
-		};
-		this._taskQueue.addOrUpdateTask(task);
+		const id = -1;
+		const data = null;
+		const doAsync = null;
+		const doOnEnd = doOnLoadEnd;
+		const doOnKill = null;
+		const forcedPriority = maxPriority;
+		const task = new Task(id, data, doAsync, doOnEnd, doOnKill, forcedPriority);
+		this._taskQueue.addTask(task);
 
 		// Start the async queue with a function to handle a change in load percent
 		this._nbOfCompletedTasks = 0;
@@ -47913,6 +48051,239 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		this._textureResources = null;
 	}
 
+}class LayerTransition {
+
+	get controlled() { return this._controlled }
+
+	get slice() { return this._slice }
+
+	get isRunning() { return this._isRunning }
+
+	constructor(handler, layer, isExiting, entryOrExit) {
+		this._handler = handler;
+		this._layer = layer;
+		this._isExiting = isExiting;
+		this._type = "cut";
+		this._controlled = false;
+
+		this._startTime = null;
+		this._isRunning = true;
+
+		const {
+			type, duration, direction, sliceType, slice, controlled,
+		} = entryOrExit || {};
+
+		if (!entryOrExit
+			|| !(type === "show" || type === "hide" || type === "fade-in" || type === "fade-out"
+				|| type === "slide-in" || type === "slide-out" || type === "animation")) {
+			return
+		}
+		this._type = type;
+		this._controlled = controlled;
+
+		let actualDuration = duration;
+		if (type !== "animation" || sliceType !== "video") {
+			actualDuration = (duration !== undefined) ? duration : defaultDuration;
+			// Note that duration can be 0 for a "hide" layer transition
+		}
+		this._duration = actualDuration; // May still be undefined (but only for a video)
+
+		if (type === "slide-in" || type === "slide-out") {
+			this._direction = direction;
+
+		} else if (type === "animation" && slice) {
+			this._sliceType = sliceType;
+			this._slice = slice;
+
+			if (sliceType === "video" && slice && !actualDuration) {
+				this._slice.setDoOnEnd(this.end.bind(this));
+			}
+			this._slice.resize();
+		}
+	}
+
+	start(startTime) {
+		// If the layerTransition is a video or sequence with no duration,
+		// or a sequence with no frames loaded, skip it
+		if (this._sliceType && (!this._slice || this._slice.canPlay === false)) {
+			this.end();
+
+		// Otherwise play the layerTransition
+		} else {
+
+			if (this._slice) {
+				this._slice.finalizeEntry(); // Start playing the transition sequence or video
+
+			} else if (this._type === "slide-in" || this._type === "slide-out") {
+				// Prevent resize from impacting the content's position
+				const { content } = this._layer;
+				if (this._direction === "ltr" || this._direction === "rtl") {
+					content.setIsXPositionUpdating(true);
+				} else if (this._direction === "ttb" || this._direction === "btt") {
+					content.setIsYPositionUpdating(true);
+				}
+			}
+
+			this._startTime = startTime;
+			this._run();
+		}
+	}
+
+	// The function will below shall loop if layerTransitionPercent !== null
+	_run(layerTransitionPercent = null) {
+		if (this._isRunning === false) {
+			return
+		}
+
+		let percent = 1;
+
+		// For an intermediate state (i.e. a controlled transition - not applicable
+		// to videos for now since we do not want to seek a specific point in a video)
+		if (layerTransitionPercent !== null && this._sliceType !== "video") {
+			percent = layerTransitionPercent;
+
+		// For an uncontrolled (i.e. timed) transition
+		// Note: bear in mind that this._duration may still be undefined at this stage for a video
+		} else if (this._duration && this._duration > 0) {
+			percent = (Date.now() - this._startTime) / this._duration;
+
+		// For a video transition (keep playing until percent = 1)
+		} else if (this._sliceType === "video" && this._slice) {
+			percent = 0;
+		}
+
+		const { stateChange } = this._handler;
+
+		// If the user has forced the transition to its end...
+		if (stateChange.shouldForceToEnd === true
+			// ... or the transition is not a video running to its end, and it has actually ended
+			// (except if the percent value is given by layerTransitionPercent, i.e. controlled)
+			|| (this._sliceType !== "video" && percent >= 1 && layerTransitionPercent !== 1)) {
+			this.end();
+
+		} else if (this._type === "animation") {
+
+			// If the transition is a sequence, we can seek a specific point in it
+			if (this._sliceType === "sequence" && this._slice && layerTransitionPercent !== null) {
+				this._slice.pauseAtPercent(percent);
+			} else {
+				// Bear in mind we do not want to seek a specific point in a video,
+				// so keep on playing the transition, waiting until its eventual end
+				requestAnimationFrame(this._run.bind(this, null));
+			}
+
+		// Otherwise just apply the required changes based on time
+		} else {
+			const { viewportRect } = this._handler;
+			const { width, height } = viewportRect;
+			const { content } = this._layer;
+
+			if (this._type === "fade-in") {
+				content.setAlpha(percent);
+			} else if (this._type === "fade-out") {
+				content.setAlpha(1 - percent);
+			} else if (this._type === "slide-in") {
+				switch (this._direction) {
+				case "ltr":
+					content.setXOffset((percent - 1) * width);
+					break
+				case "rtl":
+					content.setXOffset((1 - percent) * width);
+					break
+				case "ttb":
+					content.setYOffset((percent - 1) * height);
+					break
+				case "btt":
+					content.setYOffset((1 - percent) * height);
+					break
+				}
+			} else if (this._type === "slide-out") {
+				switch (this._direction) {
+				case "ltr":
+					content.setXOffset(percent * width);
+					break
+				case "rtl":
+					content.setXOffset(-percent * width);
+					break
+				case "ttb":
+					content.setYOffset(percent * height);
+					break
+				case "btt":
+					content.setYOffset(-percent * height);
+					break
+				}
+			}
+			if (this._type !== "hide") {
+				content.setVisibility(true);
+			}
+
+			if (layerTransitionPercent === null) {
+				requestAnimationFrame(this._run.bind(this, null));
+			}
+		}
+	}
+
+	end() {
+		this._isRunning = false;
+
+		const { content } = this._layer || {};
+		LayerTransition._resetLayerContent(content);
+		LayerTransition._removeTemporarySlice(this._slice);
+
+		if (this._isExiting === true) {
+			this._layer.finalizeExit();
+			content.removeFromParent();
+		} else {
+			this._layer.finalizeEntry();
+		}
+
+		this._handler.notifyTransitionEnd();
+	}
+
+	static _resetLayerContent(content) {
+		if (!content) {
+			return
+		}
+		content.setAlpha(1);
+		content.setVisibility(true);
+		content.setIsXPositionUpdating(false);
+		content.setIsYPositionUpdating(false);
+		content.resetPosition();
+	}
+
+	static _removeTemporarySlice(sequenceOrVideoSlice) {
+		if (!sequenceOrVideoSlice) {
+			return
+		}
+		sequenceOrVideoSlice.finalizeExit();
+		sequenceOrVideoSlice.removeFromParent();
+	}
+
+	goToIntermediateState(percent) {
+		this._run(percent);
+	}
+
+	cancel() {
+		this._isRunning = false;
+
+		const { content } = this._layer || {};
+		LayerTransition._resetLayerContent(content);
+		LayerTransition._removeTemporarySlice(this._slice);
+
+		// Stop and remove an added layer
+		if (this._isExiting === false) {
+			this._layer.finalizeExit();
+			content.removeFromParent();
+		}
+	}
+
+	resize() {
+		if (!this._slice) {
+			return
+		}
+		this._slice.resize();
+	}
+
 }class StateHandler {
 
 	get type() { return this._type }
@@ -47926,10 +48297,19 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			|| this._stateIndex === this._statesArray.length - 1)
 	}
 
-	get isUndergoingChanges() { return (this._currentTransition.status !== "none") }
+	get isUndergoingChanges() { return (this._currentStateChange.status !== "none") }
 
 	// Used in PageNavigator
+
+	get isUndergoingControlledChanges() { return (this._currentStateChange.status === "controlled") }
+
 	get stateIndex() { return this._stateIndex }
+
+	// User in LayerTransition
+
+	get stateChange() { return this._currentStateChange }
+
+	get viewportRect() { return this._player.viewportRect }
 
 	constructor(layerPile, shouldStateLayersCoexistOutsideTransitions = false, player) {
 		this._layerPile = layerPile;
@@ -47947,7 +48327,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		this._statesArray = this._createStatesArray(layersArray);
 
 		this._stateIndex = null;
-		this._reset();
+		this._resetStateChange();
+
+		this._stateDeltaForTransitionControl = null;
 	}
 
 	_createStatesArray(layersArray) {
@@ -47974,45 +48356,107 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		return statesArray
 	}
 
-	_reset() {
-		this._currentTransition = {
+	_resetStateChange() {
+		this._currentStateChange = {
 			status: "none",
 			isGoingForward: true,
 			layerTransitionsArray: [],
-			nbOfRunningLayerTransitions: 0,
 			shouldForceToEnd: false,
 			endCallback: null,
-			shouldForceToStop: false,
+			newStateIndex: null,
 		};
 	}
 
 	// Used here and in PageNavigator
 	forceChangesToEnd(callback, isGoingForward) {
 		// Only run the callback if the movement directions differ
-		if (isGoingForward !== this._currentTransition.isGoingForward) {
-			if (this._currentTransition.status === "none") {
+		if (isGoingForward !== this._currentStateChange.isGoingForward) {
+			if (this._currentStateChange.status === "none") {
 				if (callback) {
 					callback();
 				}
 				return
 			} // else
-			this._currentTransition.endCallback = callback;
+			this._currentStateChange.endCallback = callback;
 		}
-		this._currentTransition.shouldForceToEnd = true;
+		this._currentStateChange.shouldForceToEnd = true;
 	}
 
-	goToState(stateIndex, isGoingForward, shouldCancelTransition = false) {
+	goToState(stateIndex, isGoingForward, shouldSkipTransition = false, isChangeControlled = false) {
 		if (stateIndex < 0 || stateIndex >= this._statesArray.length) {
-			return
+			return false
 		}
 
-		if (shouldCancelTransition === true) {
-			// Ensure layerTransitions will be forced to end
-			this._currentTransition.shouldForceToEnd = true;
+		const {
+			layerIndicesToAdd, layerIndicesToRemove,
+		} = this._createLayerIndicesToAddAndRemove(stateIndex, isGoingForward);
+
+		if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
+			this._resetStateChange(); // To counter the above shouldForceToEnd = true
+			return false
+		}
+
+		const layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd,
+			layerIndicesToRemove, isGoingForward);
+
+		if (isChangeControlled === true) {
+			let hasControlledTransitions = false;
+			layerTransitionsArray.forEach((layerTransition) => {
+				const { controlled } = layerTransition;
+				if (controlled === true) {
+					hasControlledTransitions = true;
+				}
+			});
+
+			if (hasControlledTransitions === false) {
+				return false
+			}
 		}
 
 		const oldStateIndex = this._stateIndex;
+		layerIndicesToAdd.forEach((layerIndex) => {
+			const layer = this._layerPile.getLayerAtIndex(layerIndex);
+			this._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex);
+		});
 
+		layerTransitionsArray.forEach((layerTransition) => {
+			const { slice } = layerTransition;
+			if (slice) {
+				this._layerPile.addChild(slice);
+			}
+		});
+
+		this._currentStateChange.status = "initiated";
+		this._currentStateChange.isGoingForward = isGoingForward;
+		this._currentStateChange.layerTransitionsArray = layerTransitionsArray;
+		this._currentStateChange.newStateIndex = stateIndex;
+
+		// If transitions are to be cancelled, force them to end
+		if (shouldSkipTransition === true) {
+			this._currentStateChange.shouldForceToEnd = true;
+		}
+
+		if (this._layerPile.doOnStateChangeStartOrCancel) {
+			this._layerPile.doOnStateChangeStartOrCancel(stateIndex);
+		}
+
+		if (isChangeControlled === true) {
+			this._currentStateChange.status = "controlled";
+
+		} else {
+			this._currentStateChange.status = "looping";
+
+			// Start all layer transitions
+			const startTime = Date.now();
+			layerTransitionsArray.forEach((layerTransition) => {
+				layerTransition.start(startTime);
+			});
+		}
+
+		return true
+	}
+
+	_createLayerIndicesToAddAndRemove(stateIndex, isGoingForward) {
 		let layerIndicesToRemove = [];
 		let layerIndicesToAdd = [];
 
@@ -48021,7 +48465,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			if (this._stateIndex !== null) { // No this._stateIndex on first goToState
 				layerIndicesToRemove = this._statesArray[this._stateIndex];
 			}
-
 			layerIndicesToAdd = this._statesArray[stateIndex];
 
 		// For layer transitions
@@ -48052,26 +48495,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			}
 		}
 
-		if (layerIndicesToAdd.length === 0 && layerIndicesToRemove === 0) {
-			this._reset(); // To counter the above shouldForceToEnd = true
-			return
-		}
-
-		const layerTransitionsArray = this._createLayerTransitions(layerIndicesToAdd,
-			layerIndicesToRemove, isGoingForward, oldStateIndex);
-		this._currentTransition.status = "started";
-		this._currentTransition.oldStateIndex = oldStateIndex;
-		this._currentTransition.newStateIndex = stateIndex;
-		this._currentTransition.isGoingForward = isGoingForward;
-		this._currentTransition.layerTransitionsArray = layerTransitionsArray;
-		this._currentTransition.nbOfRunningLayerTransitions = layerTransitionsArray.length;
-
-		if (this._layerPile.doOnStateChangeStart) {
-			this._layerPile.doOnStateChangeStart(stateIndex);
-		}
-
-		this._currentTransition.status = "looping";
-		this._startAllLayerTransitions();
+		return { layerIndicesToAdd, layerIndicesToRemove }
 	}
 
 	_addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex) {
@@ -48086,278 +48510,122 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		layer.setupForEntry(isGoingForward);
 	}
 
-	_createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward, oldStateIndex) {
+	_createLayerTransitions(layerIndicesToAdd, layerIndicesToRemove, isGoingForward) {
 		const layerTransitionsArray = [];
 
 		layerIndicesToAdd.forEach((layerIndex) => {
 			const layer = this._layerPile.getLayerAtIndex(layerIndex);
-
-			// Add layer content
-			this._addLayerContent(layer, layerIndex, isGoingForward, oldStateIndex);
-
-			// Now create layerTransitions
-
-			const { content, entryForward, entryBackward } = layer || {};
+			const { entryForward, entryBackward } = layer || {};
 			const entry = (isGoingForward === true) ? entryForward : entryBackward;
-			const {
-				type, duration, direction, sliceType, slice, controlled,
-			} = entry || {};
-
-			let layerTransition = {
-				layer,
-				isExiting: false,
-			};
-
-			if (entry && (type === "fade-in" || type === "fade-out" // No "remove" transition here
-				|| type === "slide-in" || type === "slide-out" || type === "animation")) {
-
-				let actualDuration = duration; // May still be undefined
-				if (sliceType !== "video" || !slice) {
-					actualDuration = (duration !== undefined) ? duration : defaultDuration;
-				}
-				layerTransition = {
-					...layerTransition,
-					type,
-					duration: actualDuration,
-				}; // All start with same zero date as the first one in the list!
-
-				if (type === "slide-in" || type === "slide-out") {
-					layerTransition.direction = direction;
-					// Prevent resize from impacting the content's position
-					if (direction === "ltr" || direction === "rtl") {
-						content.setIsXPositionUpdating(true);
-					} else if (direction === "ttb" || direction === "btt") {
-						content.setIsYPositionUpdating(true);
-					}
-				} else if (type === "animation" && slice) {
-					layerTransition.sliceType = sliceType;
-					layerTransition.slice = slice;
-					if (sliceType === "video" && slice && !actualDuration) {
-						slice.setDoOnEnd(this.forceChangesToEnd.bind(this, null,
-							this._currentTransition.isGoingForward));
-					}
-					slice.resize();
-					this._layerPile.addChild(slice);
-				}
-			}
+			const isExiting = false;
+			const layerTransition = new LayerTransition(this, layer, isExiting, entry);
 			layerTransitionsArray.push(layerTransition);
 		});
 
 		layerIndicesToRemove.forEach((layerIndex) => {
 			const layer = this._layerPile.getLayerAtIndex(layerIndex);
-			const { content, exitForward, exitBackward } = layer || {};
+			const { exitForward, exitBackward } = layer || {};
 			const exit = (isGoingForward === true) ? exitForward : exitBackward;
-			const {
-				type, duration, direction, sliceType, slice, controlled,
-			} = exit || {};
-
-			let layerTransition = {
-				layer,
-				isExiting: true,
-			};
-
-			if (exit && (type === "remove" || type === "fade-in" || type === "fade-out"
-				|| type === "slide-in" || type === "slide-out" || type === "animation")) {
-
-				let actualDuration = duration; // Can be undefined!
-				if (type !== "animation") {
-					actualDuration = (duration !== undefined) ? duration : defaultDuration;
-				}
-				layerTransition = {
-					...layerTransition,
-					type,
-					duration: actualDuration,
-				}; // All start with same zero date as the first one in the list!
-
-				if (type === "slide-in" || type === "slide-out") {
-					layerTransition.direction = direction;
-					// Prevent resize from impacting the content's position
-					if (direction === "ltr" || direction === "rtl") {
-						content.setIsXPositionUpdating(true);
-					} else if (direction === "ttb" || direction === "btt") {
-						content.setIsYPositionUpdating(true);
-					}
-				} else if (type === "animation" && slice) {
-					layerTransition.sliceType = sliceType;
-					layerTransition.slice = slice;
-				}
-			}
+			const isExiting = true;
+			const layerTransition = new LayerTransition(this, layer, isExiting, exit);
 			layerTransitionsArray.push(layerTransition);
 		});
 
 		return layerTransitionsArray
 	}
 
-	_startAllLayerTransitions() {
-		this._startTime = Date.now();
-		this._currentTransition.layerTransitionsArray.forEach((layerTransition) => {
-			const { sliceType, slice } = layerTransition;
-
-			// If the layerTransition is a video or sequence with no duration,
-			// or a sequence with no frames loaded, skip it
-			if (sliceType && (!slice || slice.canPlay === false)) {
-				this._endLayerTransition(layerTransition);
-
-			// Otherwise play the layerTransition
-			} else {
-				if (slice) {
-					slice.finalizeEntry();
-				}
-				this._runLayerTransition(layerTransition, null);
+	notifyTransitionEnd() {
+		const { layerTransitionsArray } = this._currentStateChange;
+		let nbOfRunningLayerTransitions = 0;
+		layerTransitionsArray.forEach((layerTransition) => {
+			if (layerTransition.isRunning === true) {
+				nbOfRunningLayerTransitions += 1;
 			}
 		});
-	}
 
-	// The function will below shall loop if layerTransitionPercent !== null
-	_runLayerTransition(layerTransition, layerTransitionPercent = null) {
-		const {
-			layer,
-			type, // Type is layerTransition type (not layer type)
-			duration, // Can be undefined for a video (or controlled sequence)
-			direction,
-			sliceType,
-			slice,
-		} = layerTransition;
-
-		let percent = 1;
-		if (layerTransitionPercent !== null) {
-			percent = layerTransitionPercent;
-		} else if (duration && duration > 0) {
-			percent = (Date.now() - this._startTime) / duration;
-		} else if (sliceType === "video" && slice) { // Play a video transition until percent = 1
-			percent = 0;
-		}
-
-		// If the user has forced the transition to its end...
-		if (this._currentTransition.shouldForceToEnd === true
-			// ... or it is not a video running to its end, and it has actually ended
-			|| percent >= 1) {
-			this._endLayerTransition(layerTransition);
-
-		// Otherwise just apply the required changes based on time
-		} else if (type === "animation") {
-			// Continue playing the layerTransition, waiting for its eventual end
-			requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-
-		} else {
-			const { viewportRect } = this._player;
-			const { width, height } = viewportRect;
-			const { content } = layer;
-
-			if (type === "fade-in") {
-				content.setAlpha(percent);
-			} else if (type === "fade-out") {
-				content.setAlpha(1 - percent);
-			} else if (type === "slide-in") {
-				switch (direction) {
-				case "ltr":
-					content.setXOffset((percent - 1) * width);
-					break
-				case "rtl":
-					content.setXOffset((1 - percent) * width);
-					break
-				case "ttb":
-					content.setYOffset((percent - 1) * height);
-					break
-				case "btt":
-					content.setYOffset((1 - percent) * height);
-					break
-				}
-			} else if (type === "slide-out") {
-				switch (direction) {
-				case "ltr":
-					content.setXOffset(percent * width);
-					break
-				case "rtl":
-					content.setXOffset(-percent * width);
-					break
-				case "ttb":
-					content.setYOffset(percent * height);
-					break
-				case "btt":
-					content.setYOffset(-percent * height);
-					break
-				}
-			}
-			content.setVisibility(true);
-
-			if (layerTransitionPercent === null) {
-				requestAnimationFrame(this._runLayerTransition.bind(this, layerTransition, null));
-			}
+		if (nbOfRunningLayerTransitions === 0) {
+			this._endStateChange();
 		}
 	}
 
-	_endLayerTransition(layerTransition) {
-		const { layer, isExiting, slice } = layerTransition;
+	_endStateChange() {
+		const { newStateIndex, endCallback } = this._currentStateChange;
 
-		if (slice) {
-			slice.finalizeExit();
-			slice.removeFromParent();
+		this._stateIndex = newStateIndex;
+
+		this._layerPile.finalizeEntry();
+		this._resetStateChange();
+
+		// Run the callback if there was one
+		if (endCallback) {
+			endCallback();
 		}
+	}
 
-		const { content } = layer;
-		content.setAlpha(1);
-		content.setVisibility(true);
-		content.setIsXPositionUpdating(false);
-		content.setIsYPositionUpdating(false);
-		content.resetPosition();
+	_cancelStateChange() {
+		const { layerTransitionsArray } = this._currentStateChange;
+		layerTransitionsArray.forEach((layerTransition) => {
+			layerTransition.cancel();
+		});
 
-		if (isExiting === true) {
-			layer.finalizeExit();
-			content.removeFromParent();
-		} else {
-			layer.finalizeEntry();
-		}
+		this._resetStateChange();
 
-		this._currentTransition.nbOfRunningLayerTransitions -= 1;
-
-		if (this._currentTransition.nbOfRunningLayerTransitions === 0) {
-			const { newStateIndex, endCallback } = this._currentTransition;
-			this._stateIndex = newStateIndex;
-
-			this._layerPile.finalizeEntry();
-			this._reset();
-
-			// Run the callback if there was one
-			if (endCallback) {
-				endCallback();
-			}
+		if (this._layerPile.doOnStateChangeStartOrCancel) {
+			this._layerPile.doOnStateChangeStartOrCancel(this.stateIndex);
 		}
 	}
 
 	// Functions linked to role in LayerPile
 
-	attemptToGoForward(shouldCancelTransition = false, doIfIsUndergoingChanges = null,
-		percent = null) { // Go to next state
+	attemptToGoForward(shouldSkipTransition = false, doIfIsUndergoingChanges = null,
+		percent = null) {
+		// Disable any new change while a controlled state change is under way
+		if (this.isUndergoingControlledChanges === true) {
+			return true
+		}
 		const isGoingForward = true;
-		if (this.isUndergoingChanges === true) { // If has looping layerTransitions
-			this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+		// If a (discontinuous) state change is under way
+		if (this.isUndergoingChanges === true) {
+			// Force it to end if the movement goes the same way
+			if (this._currentStateChange.isGoingForward === true) {
+				this._currentStateChange.shouldForceToEnd = true;
+			// Otherwise cancel it to bring the situation back to the initial state
+			} else {
+				this._cancelStateChange();
+			}
 			return true
 		}
 		if (this._statesArray.length === 0 || this._stateIndex >= this._statesArray.length - 1) {
 			return false
 		}
-		this.goToState(this._stateIndex + 1, isGoingForward, shouldCancelTransition, percent);
+		this.goToState(this._stateIndex + 1, isGoingForward, shouldSkipTransition, percent);
 		return true
 	}
 
-	attemptToGoBackward(shouldCancelTransition = false, doIfIsUndergoingChanges = null,
-		percent = null) { // Go to previous state
+	attemptToGoBackward(shouldSkipTransition = false, doIfIsUndergoingChanges = null,
+		percent = null) {
+		if (this.isUndergoingControlledChanges === true) {
+			return true
+		}
 		const isGoingForward = false;
-		if (this.isUndergoingChanges === true) { // If has looping layerTransitions
-			this.forceChangesToEnd(doIfIsUndergoingChanges, isGoingForward);
+		if (this.isUndergoingChanges === true) {
+			if (this._currentStateChange.isGoingForward === false) {
+				this._currentStateChange.shouldForceToEnd = true;
+			} else {
+				this._cancelStateChange();
+			}
 			return true
 		}
 		if (this._statesArray.length === 0 || this._stateIndex === 0) {
 			return false
 		}
-		this.goToState(this._stateIndex - 1, isGoingForward, shouldCancelTransition, percent);
+		this.goToState(this._stateIndex - 1, isGoingForward, shouldSkipTransition, percent);
 		return true
 	}
 
 	// Go to start or end state depending on whether goes forward or not
 	setupForEntry(isGoingForward) {
-		this._reset();
+		this._resetStateChange();
 
 		if (isGoingForward === true) {
 			this.goToState(0, isGoingForward);
@@ -48374,12 +48642,125 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		if (this.isUndergoingChanges === false) {
 			return
 		}
-		this._currentTransition.layerTransitionsArray.forEach((layerTransition) => {
-			const { slice } = layerTransition;
-			if (slice) {
-				slice.resize();
-			}
+		const { layerTransitionsArray } = this._currentStateChange;
+		layerTransitionsArray.forEach((layerTransition) => {
+			layerTransition.resize();
 		});
+	}
+
+	handleScroll(scrollData, isWheelScroll) {
+		if (this._stateIndex === null) {
+			return true
+		}
+
+		const layersArray = this._statesArray[this._stateIndex];
+		if (layersArray.length === 1) {
+			const layerIndex = layersArray[0];
+			const layer = this._layerPile.getLayerAtIndex(layerIndex);
+			const { content } = layer;
+			if (content.handleScroll
+				&& content.handleScroll(scrollData, isWheelScroll) === true) {
+				return true
+			}
+		}
+
+		if (isWheelScroll === true) {
+			return true
+		}
+
+		const { viewportPercent } = scrollData;
+
+		if (!this._stateDeltaForTransitionControl
+			|| this.isUndergoingControlledChanges === false) {
+			if (viewportPercent > 0) {
+				this._stateDeltaForTransitionControl = 1;
+			} else if (viewportPercent < 0) {
+				this._stateDeltaForTransitionControl = -1;
+			}
+
+		} else if (this.isUndergoingControlledChanges === true) {
+			let newStateDelta = null;
+			if (viewportPercent > 0) {
+				newStateDelta = 1;
+			} else if (viewportPercent < 0) {
+				newStateDelta = -1;
+			}
+			if (newStateDelta !== this._stateDeltaForTransitionControl) {
+				const shouldBeAnimated = false;
+				this.endControlledTransition(0, shouldBeAnimated);
+
+				this._stateDeltaForTransitionControl = newStateDelta;
+				const isGoingForward = (this._stateDeltaForTransitionControl > 0);
+				const shouldSkipTransition = false;
+				const isChangeControlled = true;
+				return (this.goToState(this._stateIndex + this._stateDeltaForTransitionControl,
+					isGoingForward, shouldSkipTransition, isChangeControlled) === true)
+			}
+		}
+
+		if (this._stateDeltaForTransitionControl === 1
+			|| this._stateDeltaForTransitionControl === -1) {
+
+			// Continue controlling changes if controlled changed are under way
+			if (this.isUndergoingControlledChanges === true) {
+				let percent = viewportPercent * this._stateDeltaForTransitionControl;
+				percent = Math.min(Math.max(percent, 0), 1);
+				this.goToIntermediateState(percent);
+				return true
+			}
+
+			// Otherwise attempt to start controlled changes
+			const isGoingForward = (this._stateDeltaForTransitionControl > 0);
+			const shouldSkipTransition = false;
+			const isChangeControlled = true;
+			return (this.goToState(this._stateIndex + this._stateDeltaForTransitionControl,
+				isGoingForward, shouldSkipTransition, isChangeControlled) === true)
+		}
+
+		return false
+	}
+
+	goToIntermediateState(percent) {
+		const { layerTransitionsArray } = this._currentStateChange;
+		layerTransitionsArray.forEach((layerTransition) => {
+			layerTransition.goToIntermediateState(percent);
+		});
+	}
+
+	endControlledTransition(viewportPercent, shouldBeAnimated) {
+		if (this._stateIndex === null) {
+			return true
+		}
+
+		const layersArray = this._statesArray[this._stateIndex];
+		if (layersArray.length === 1) {
+			const layerIndex = layersArray[0];
+			const layer = this._layerPile.getLayerAtIndex(layerIndex);
+			const { content } = layer;
+			if (content.endControlledTransition
+				&& content.endControlledTransition(viewportPercent, shouldBeAnimated) === true) {
+				return true
+			}
+		}
+
+		if (this.isUndergoingControlledChanges === false) {
+			return false
+		}
+
+		const percent = Math.abs(viewportPercent);
+
+		if (percent >= 0.5) {
+			const { layerTransitionsArray } = this._currentStateChange;
+			layerTransitionsArray.forEach((layerTransition) => {
+				layerTransition.end();
+			});
+
+		} else {
+			this._cancelStateChange();
+		}
+
+		this._stateDeltaForTransitionControl = null;
+		return true
 	}
 
 }class Camera {
@@ -48414,12 +48795,12 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		// Useful for viewportRect and updateDisplayForZoomFactor (and options just below)
 		this._player = player;
 
-		const { eventEmitter, options } = player;
-		this._eventEmitter = eventEmitter;
+		const { options } = player;
 		const {
 			allowsPaginatedScroll,
 			isPaginationSticky,
 			isPaginationGridBased,
+			doOnScroll,
 		} = options;
 		this._allowsPaginatedScroll = (allowsPaginatedScroll === true
 			|| allowsPaginatedScroll === false)
@@ -48432,6 +48813,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			|| isPaginationGridBased === false)
 			? isPaginationGridBased
 			: defaultIsPaginationGridBased;
+		this._doOnScroll = doOnScroll;
 
 		this._inScrollDirection = null;
 		this._relativeStart = null;
@@ -48550,14 +48932,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			worksBackward = true;
 			break
 		}
-		/*if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-			referenceDimension = "width"
-			coord = "x"
-		} else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-			referenceDimension = "height"
-			coord = "y"
-		}
-		const worksBackward = (inScrollDirection === "rtl" || inScrollDirection === "btt")*/
+
 		this._virtualPointInfo = {
 			getPercent, referenceDimension, coord, worksBackward,
 		};
@@ -48877,21 +49252,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 				this._moveToClosestSnapPoint(isTheResultOfADragEnd);
 			}
 
-			/*
-			// Other method: keep virtual point fixed
-			if (this._virtualPoint) {
-				const { segmentIndex, x, y } = this._virtualPoint
-				const virtualSnapPoint = {
-					segmentIndex,
-					viewport: "center",
-					x: `${(x || 0) * 100}%`,
-					y: `${(y || 0) * 100}%`,
-				}
-				const progress = this._getProgressForSnapPoint(virtualSnapPoint)
-				console.log(this._progress, progress, virtualSnapPoint, this._minX, this._maxX)
-				this.setProgress(progress, true)
-			}*/
-
 			// Update snap point-related speeds based on inScrollDirection
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
 				this._snapJumpSpeed = width * snapJumpSpeedFactor;
@@ -48951,9 +49311,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	setProgress(p = null, shouldUpdatePosition = true) {
 		this._progress = p;
 		this._virtualPoint = this._getVirtualPoint();
-
-		this._eventEmitter.emit("inpagescroll", this._virtualPoint);
-
+		if (this._doOnScroll) {
+			this._doOnScroll(this._virtualPoint);
+		}
 		if (shouldUpdatePosition === false) {
 			return
 		}
@@ -48990,9 +49350,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		const { viewportRect } = this._player;
 		const { getPercent, referenceDimension, coord } = this._virtualPointInfo;
 
-		/*const percent = (coord === "x")
-			? (this._currentPosition.x - this._minX) / (this._maxX - this._minX)
-			: (this._currentPosition.y - this._minY) / (this._maxY - this._minY)*/
 		const percent = getPercent();
 
 		let i = 0;
@@ -49018,7 +49375,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 					href: segmentLayer.getFirstHref(),
 					[coord]: (worksBackward === true) ? (1 - percentInSegment) : percentInSegment,
 					percent,
-					//direction: this._inScrollDirection,
 				};
 			}
 			i += 1;
@@ -49037,7 +49393,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			break
 		case "rtl":
 			this._setPosition({
-				//x: this._minX + percent * (this._maxX - this._minX),
 				x: this._maxX - percent * (this._maxX - this._minX),
 				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
 			});
@@ -49051,7 +49406,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		case "btt":
 			this._setPosition({
 				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				//y: this._minY + percent * (this._maxY - this._minY),
 				y: this._maxY - percent * (this._maxY - this._minY),
 			});
 			break
@@ -49397,7 +49751,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		if (this._hasSpaceToMove === false
 			|| (this.isZoomed === false && (this._overflow === "paginated"
 				&& (this._isPaginationSticky === false || isWheelScroll === true)))) {
-			return
+			return false
 		}
 		const { deltaX, deltaY } = scrollData;
 		this._setPosition({
@@ -49407,6 +49761,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		const shouldStoreLastNonTemporaryProgress = (this._overflow === "paginated"
 			&& this._isPaginationSticky === true);
 		this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress);
+		return true
 	}
 
 	moveToSegmentIndex(segmentIndex, isGoingForward) {
@@ -49541,15 +49896,22 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	// Functions to deal with continuous gestures and zoom
 
-	attemptStickyStep() {
-		return (this.isUndergoingChanges === false && this._camera.attemptStickyStep())
+	handleScroll(scrollData, isWheelScroll) {
+		if (this.activeLayersArray.length === 1) {
+			const layer = this.activeLayersArray[0]; // Check only the first Segment in a Page
+			const { content } = layer;
+			if (content.handleScroll(scrollData, isWheelScroll) === true) {
+				return true
+			}
+		}
+		if (this.isUndergoingChanges === true) {
+			return true
+		}
+		return this._camera.handleScroll(scrollData, isWheelScroll)
 	}
 
-	handleScroll(scrollData, isWheelScroll) {
-		if (this.isUndergoingChanges === true) {
-			return
-		}
-		this._camera.handleScroll(scrollData, isWheelScroll);
+	attemptStickyStep() {
+		return (this.isUndergoingChanges === false && this._camera.attemptStickyStep())
 	}
 
 	zoom(zoomData) {
@@ -49652,39 +50014,14 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		return this._layersArray[0].resourcePath
 	}
 
-	get size() {
-		// Size of a page (in a divina)
-		if (this._handler && this._handler.type === "overflowHandler") {
-			const { inScrollDirection } = this._handler;
-			let width = 0;
-			let height = 0;
-			// The size is derived from the sizes of all segments
-			this._layersArray.forEach((layer) => {
-				const { size } = layer;
-				if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-					width += size.width;
-					if (height === 0) {
-						height = size.height;
-					}
-				} else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-					height += size.height;
-					if (width === 0) {
-						width = size.width;
-					}
-				}
-			});
-			return { width, height }
-		}
+	get size() { // Note that Page overrides this function
 
-		// Size of a segment (in a divina)
-
-		// If multiple layers (a Segment with multiple layers should have a parentSlice)
+		// If a Segment with multiple layers
 		if (this._parentSlice) {
 			return this._parentSlice.size
 		}
 
-		// If a unique layer
-		if (this._layersArray.length === 1 && this._layersArray[0]) {
+		if (this._layersArray.length > 0) {
 			return this._layersArray[0].size
 		}
 
@@ -49757,41 +50094,74 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	// Following a discontinuous gesture
 
-	attemptToGoForward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+	attemptToGoForward(shouldSkipTransition = false, doIfIsUndergoingChanges = null) {
 		// If a change is under way, end it
 		if (this._handler && this.isUndergoingChanges === true) {
-			return (this._handler.attemptToGoForward(shouldCancelTransition,
+			return (this._handler.attemptToGoForward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
 		}
 		// If not, try to go forward in the first layer (child)
 		if (this.activeLayersArray.length > 0) {
 			const layer = this.activeLayersArray[0];
-			if (layer.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+			if (layer.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
 				return true
 			}
 		}
 		// Otherwise try go forward via the handler if there is one
 		return (this._handler
-			&& this._handler.attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) === true)
+			&& this._handler.attemptToGoForward(shouldSkipTransition, doIfIsUndergoingChanges) === true)
 	}
 
-	attemptToGoBackward(shouldCancelTransition = false, doIfIsUndergoingChanges = null) {
+	attemptToGoBackward(shouldSkipTransition = false, doIfIsUndergoingChanges = null) {
 		// If a change is under way, end it then go backward
 		if (this._handler && this.isUndergoingChanges === true) {
-			return (this._handler.attemptToGoBackward(shouldCancelTransition,
+			return (this._handler.attemptToGoBackward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
 		}
 		// If not, try to go backward in the last layer (child)
 		if (this.activeLayersArray.length > 0) {
 			const layer = this.activeLayersArray[this.activeLayersArray.length - 1];
-			if (layer.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges) === true) {
+			if (layer.attemptToGoBackward(shouldSkipTransition, doIfIsUndergoingChanges) === true) {
 				return true
 			}
 		}
 		// Otherwise try go backward via the handler if there is one
 		return (this._handler
-			&& this._handler.attemptToGoBackward(shouldCancelTransition,
+			&& this._handler.attemptToGoBackward(shouldSkipTransition,
 				doIfIsUndergoingChanges) === true)
+	}
+
+	// Following a continuous gesture
+
+	handleScroll(scrollData, isWheelScroll) {
+		if (!this._handler) {
+			return false
+		}
+		if (this._handler.type === "overflowHandler"
+			&& this._handler.handleScroll(scrollData, isWheelScroll) === true) {
+			return true
+		}
+		return (this._handler.type === "stateHandler"
+			&& this._handler.handleScroll(scrollData, isWheelScroll) === true)
+	}
+
+	endControlledTransition(viewportPercent, shouldBeAnimated = true) {
+		if (!this._handler) {
+			return false
+		}
+
+		if (this._handler.type === "overflowHandler") {
+			if (this._layersArray.length === 1) {
+				const layer = this._layersArray[0]; // Check only the first Segment in a Page
+				const { content } = layer;
+				if (content.endControlledTransition(viewportPercent, shouldBeAnimated) === true) {
+					return true
+				}
+			}
+		}
+
+		return (this._handler.type === "stateHandler"
+			&& this._handler.endControlledTransition(viewportPercent, shouldBeAnimated) === true)
 	}
 
 	resize() {
@@ -49914,7 +50284,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 }class PageNavigator extends LayerPile {
 
 	// Used in StateHandler
-	get doOnStateChangeStart() { return this.updateLoadTasks }
+	get doOnStateChangeStartOrCancel() { return this.updateLoadTasks }
 
 	// Used in Player and ResourceManager
 	get type() { return this._type }
@@ -49974,6 +50344,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		};
 
 		this._tags = null;
+
+		this._pageDeltaForTransitionControl = null;
 	}
 
 	setLoadingProperties(maxNbOfPagesBefore, maxNbOfPagesAfter) {
@@ -50129,14 +50501,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		return this._currentPage.attemptStickyStep()
 	}
 
-	handleScroll(scrollData, isWheelScroll) {
-		// If the page is being changed, do nothing
-		if (!this._currentPage || this.isUndergoingChanges === true) {
-			return
-		}
-		this._currentPage.handleScroll(scrollData, isWheelScroll);
-	}
-
 	zoom(zoomData) {
 		if (!this._currentPage || this.isUndergoingChanges === true) {
 			return
@@ -50146,8 +50510,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	// Player functions
 
-	goToPageWithIndex(pageIndex, segmentIndex = null, shouldCancelTransition = false) {
-		const isGoingForward = true;
+	goToPageWithIndex(pageIndex, segmentIndex = null, shouldSkipTransition = false,
+		isChangeControlled = false) {
+		let isGoingForward = true;
 		this._targetSegmentIndex = segmentIndex;
 
 		if (!this._handler || this._handler.type !== "stateHandler") {
@@ -50157,11 +50522,15 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		const callback = () => {
 			// If changing pages
 			if (pageIndex !== this.pageIndex) {
-				this._handler.goToState(pageIndex, isGoingForward, shouldCancelTransition);
+				if (this.pageIndex !== null) {
+					isGoingForward = (pageIndex - this.pageIndex > 0);
+				}
+				this._handler.goToState(pageIndex, isGoingForward, shouldSkipTransition, isChangeControlled);
 				// And then the finalizeEntry above will ensure we go to segmentIndex directly
 
 			// Or if staying on the same page but changing segments
 			} else if (this._targetSegmentIndex !== null) {
+				// Leave isGoingForward at true
 				this._currentPage.goToSegmentIndex(this._targetSegmentIndex, isGoingForward);
 				this._targetSegmentIndex = null;
 			}
@@ -50243,11 +50612,11 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 					: 0;
 			}
 			if (targetPageIndex !== null) {
-				const shouldCancelTransition = true;
+				const shouldSkipTransition = true;
 				if (targetPageIndex !== this.pageIndex) {
-					this.goToPageWithIndex(targetPageIndex, null, shouldCancelTransition);
+					this.goToPageWithIndex(targetPageIndex, null, shouldSkipTransition);
 				} else {
-					this.goToPageWithIndex(targetPageIndex, 0, shouldCancelTransition);
+					this.goToPageWithIndex(targetPageIndex, 0, shouldSkipTransition);
 				}
 			}
 		} else {
@@ -50269,13 +50638,13 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	}
 
 	goForward() {
-		const doIfIsUndergoingChanges = () => { this.attemptToGoForward(true); };
-		this.attemptToGoForward(false, doIfIsUndergoingChanges);
+		const shouldSkipTransition = false;
+		this.attemptToGoForward(shouldSkipTransition);
 	}
 
 	goBackward() {
-		const doIfIsUndergoingChanges = () => { this.attemptToGoBackward(true); };
-		this.attemptToGoBackward(false, doIfIsUndergoingChanges);
+		const shouldSkipTransition = false;
+		this.attemptToGoBackward(shouldSkipTransition);
 	}
 
 }class Layer {
@@ -50497,11 +50866,35 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 
 	get inScrollDirection() { return this._inScrollDirection }
 
-	constructor(pageIndex, overflow, player) {
+	get size() {
+		let width = 0;
+		let height = 0;
+		// The size is derived from the sizes of all segments
+		this.segmentsArray.forEach((segment) => {
+			const { size } = segment;
+			const { viewportRect } = this._player;
+			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+				width += size.width;
+				if (this._isADoublePage === true) {
+					height = Math.max(height, size.height);
+				} else {
+					height = viewportRect.height;
+				}
+			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+				height += size.height;
+				width = viewportRect.width;
+			}
+		});
+		return { width, height }
+	}
+
+	constructor(pageIndex, isADoublePage, overflow, player) {
 		const name = `page${pageIndex}`;
 		super(name);
 
 		this._pageIndex = pageIndex;
+		this._isADoublePage = isADoublePage;
+		this._player = player;
 
 		this._hitZoneToPrevious = null;
 		this._hitZoneToNext = null;
@@ -50583,13 +50976,6 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			return false
 		}
 		return this._handler.attemptStickyStep()
-	}
-
-	handleScroll(scrollData, isWheelScroll) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
-			return
-		}
-		this._handler.handleScroll(scrollData, isWheelScroll);
 	}
 
 	zoom(zoomData) {
@@ -50851,6 +51237,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		let currentSegmentIndex = 0;
 		let currentPage = null;
 
+		const isADoublePage = (type === "double");
+
 		linkObjectsArray.forEach((linkObject) => {
 			const { slice, children, snapPoints } = linkObject;
 			const { pageNavInfo } = slice;
@@ -50865,7 +51253,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 					currentPageIndex += 1;
 					currentSegmentIndex = 0;
 
-					currentPage = new Page(currentPageIndex, overflow, player);
+					currentPage = new Page(currentPageIndex, isADoublePage, overflow, player);
 				}
 
 				const sliceLayersArray = [new Layer("slice", slice)];
@@ -51190,24 +51578,25 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			|| (this._spread === "landscape" && this._viewportRect.width >= this._viewportRect.height))
 	}
 
-	// For loading the divina data from a folder path
-	openDivinaFromPath(folderPath, href = null, options = null) {
-		const textureSource = { folderPath };
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(folderPath); };
+	// For loading the divina data from a manifest path
+	openDivinaFromManifestPath(path, href = null, options = null) {
+		const textureSource = { folderPath: getFolderPathFromManifestPath(path) };
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(path, "manifest"); };
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
 	}
 
-	// For loading the divina data from a json and its file URLs (via folder path)
-	openDivinaFromJsonAndPath(json, folderPath, href = null, options = null) {
-		const textureSource = { folderPath };
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromJsonAndPath(json); };
+	// For loading the divina data from a folder path
+	openDivinaFromFolderPath(path, href = null, options = null) {
+		const textureSource = { folderPath: path };
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(path, "folder"); };
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
 	}
 
 	// For loading the divina data from data = { json, base64DataByHref }
 	openDivinaFromData(data, href = null, options = null) {
 		const textureSource = { data };
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromData(data); };
+		const json = (data && data.json) ? data.json : null;
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromJson(json); };
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData);
 	}
 
@@ -51221,10 +51610,16 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		// Set allowed story interactions based on options
 		this._interactionManager.setStoryInteractions(options);
 
-		// Create resource manager (now that options and possibly data exist)
-		this._createResourceManager(textureSource);
+		const updatedTextureSource = textureSource;
 
-		const doWithParsedDivinaData = (parsedDivinaData) => {
+		const doWithParsedDivinaData = (parsedDivinaData, updatedFolderPath) => {
+
+			// Create resource manager (now that options and possibly data exist)
+			if (updatedFolderPath) {
+				updatedTextureSource.folderPath = updatedFolderPath;
+			}
+			this._createResourceManager(updatedTextureSource);
+
 			const { metadata } = parsedDivinaData || {};
 			const { readingProgression, orientation } = metadata || {};
 			const customData = { readingProgression, orientation };
@@ -51243,7 +51638,7 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			: defaultMaxNbOfPagesAfter;
 		this._maxNbOfPagesAfter = Math.ceil(nbOfPages);
 		this._maxNbOfPagesBefore = Math.ceil(this._maxNbOfPagesAfter * maxShareOfPagesBefore);
-		this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore;
+		this._priorityFactor = (this._maxNbOfPagesAfter / this._maxNbOfPagesBefore) || 1;
 	}
 
 	_createResourceManager(textureSource) {
@@ -51533,7 +51928,9 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 		// If the story navigator change occurred before the first resources were loaded
 		if (this._haveFirstResourcesLoaded === false) {
 
-			// Add a last task to trigger to start async queue (if not already running)
+			// Add a last task to trigger doAfterInitialLoad and start async queue
+			// (if not already running)
+
 			const doAfterLoadingFirstPagesOrSegments = () => {
 				this._haveFirstResourcesLoaded = true;
 
@@ -51605,8 +52002,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 	_goToTargetPageAndSegmentIndices(target) {
 		const { pageIndex, segmentIndex } = target;
 
-		const shouldCancelTransition = true;
-		this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldCancelTransition);
+		const shouldSkipTransition = true;
+		this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldSkipTransition);
 	}
 
 	setReadingMode(readingMode) { // Called externally
@@ -51670,8 +52067,8 @@ if (typeof undefined$1 === 'function' && undefined$1.amd) {
 			return
 		}
 		const segmentIndex = null;
-		const shouldCancelTransition = true;
-		this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldCancelTransition);
+		const shouldSkipTransition = true;
+		this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldSkipTransition);
 	}
 
 	goRight() {
