@@ -204,6 +204,8 @@ export default class StoryBuilder {
 		let currentSegmentIndex = 0
 		let currentPage = null
 
+		const isADoublePage = (type === "double")
+
 		linkObjectsArray.forEach((linkObject) => {
 			const { slice, children, snapPoints } = linkObject
 			const { pageNavInfo } = slice
@@ -218,7 +220,7 @@ export default class StoryBuilder {
 					currentPageIndex += 1
 					currentSegmentIndex = 0
 
-					currentPage = new Page(currentPageIndex, overflow, player)
+					currentPage = new Page(currentPageIndex, isADoublePage, overflow, player)
 				}
 
 				const sliceLayersArray = [new Layer("slice", slice)]

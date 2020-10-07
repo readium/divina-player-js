@@ -33,12 +33,12 @@ export default class Camera {
 		// Useful for viewportRect and updateDisplayForZoomFactor (and options just below)
 		this._player = player
 
-		const { eventEmitter, options } = player
-		this._eventEmitter = eventEmitter
+		const { options } = player
 		const {
 			allowsPaginatedScroll,
 			isPaginationSticky,
 			isPaginationGridBased,
+			doOnScroll,
 		} = options
 		this._allowsPaginatedScroll = (allowsPaginatedScroll === true
 			|| allowsPaginatedScroll === false)
@@ -51,6 +51,7 @@ export default class Camera {
 			|| isPaginationGridBased === false)
 			? isPaginationGridBased
 			: constants.defaultIsPaginationGridBased
+		this._doOnScroll = doOnScroll
 
 		this._inScrollDirection = null
 		this._relativeStart = null
@@ -173,14 +174,7 @@ export default class Camera {
 		default:
 			break
 		}
-		/*if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
-			referenceDimension = "width"
-			coord = "x"
-		} else if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
-			referenceDimension = "height"
-			coord = "y"
-		}
-		const worksBackward = (inScrollDirection === "rtl" || inScrollDirection === "btt")*/
+
 		this._virtualPointInfo = {
 			getPercent, referenceDimension, coord, worksBackward,
 		}
@@ -502,21 +496,6 @@ export default class Camera {
 				this._moveToClosestSnapPoint(isTheResultOfADragEnd)
 			}
 
-			/*
-			// Other method: keep virtual point fixed
-			if (this._virtualPoint) {
-				const { segmentIndex, x, y } = this._virtualPoint
-				const virtualSnapPoint = {
-					segmentIndex,
-					viewport: "center",
-					x: `${(x || 0) * 100}%`,
-					y: `${(y || 0) * 100}%`,
-				}
-				const progress = this._getProgressForSnapPoint(virtualSnapPoint)
-				console.log(this._progress, progress, virtualSnapPoint, this._minX, this._maxX)
-				this.setProgress(progress, true)
-			}*/
-
 			// Update snap point-related speeds based on inScrollDirection
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
 				this._snapJumpSpeed = width * constants.snapJumpSpeedFactor
@@ -576,9 +555,9 @@ export default class Camera {
 	setProgress(p = null, shouldUpdatePosition = true) {
 		this._progress = p
 		this._virtualPoint = this._getVirtualPoint()
-
-		this._eventEmitter.emit("inpagescroll", this._virtualPoint)
-
+		if (this._doOnScroll) {
+			this._doOnScroll(this._virtualPoint)
+		}
 		if (shouldUpdatePosition === false) {
 			return
 		}
@@ -615,9 +594,6 @@ export default class Camera {
 		const { viewportRect } = this._player
 		const { getPercent, referenceDimension, coord } = this._virtualPointInfo
 
-		/*const percent = (coord === "x")
-			? (this._currentPosition.x - this._minX) / (this._maxX - this._minX)
-			: (this._currentPosition.y - this._minY) / (this._maxY - this._minY)*/
 		const percent = getPercent()
 
 		let i = 0
@@ -643,7 +619,6 @@ export default class Camera {
 					href: segmentLayer.getFirstHref(),
 					[coord]: (worksBackward === true) ? (1 - percentInSegment) : percentInSegment,
 					percent,
-					//direction: this._inScrollDirection,
 				}
 			}
 			i += 1
@@ -662,7 +637,6 @@ export default class Camera {
 			break
 		case "rtl":
 			this._setPosition({
-				//x: this._minX + percent * (this._maxX - this._minX),
 				x: this._maxX - percent * (this._maxX - this._minX),
 				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
 			})
@@ -676,7 +650,6 @@ export default class Camera {
 		case "btt":
 			this._setPosition({
 				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				//y: this._minY + percent * (this._maxY - this._minY),
 				y: this._maxY - percent * (this._maxY - this._minY),
 			})
 			break
@@ -1024,7 +997,7 @@ export default class Camera {
 		if (this._hasSpaceToMove === false
 			|| (this.isZoomed === false && (this._overflow === "paginated"
 				&& (this._isPaginationSticky === false || isWheelScroll === true)))) {
-			return
+			return false
 		}
 		const { deltaX, deltaY } = scrollData
 		this._setPosition({
@@ -1034,6 +1007,7 @@ export default class Camera {
 		const shouldStoreLastNonTemporaryProgress = (this._overflow === "paginated"
 			&& this._isPaginationSticky === true)
 		this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress)
+		return true
 	}
 
 	moveToSegmentIndex(segmentIndex, isGoingForward) {

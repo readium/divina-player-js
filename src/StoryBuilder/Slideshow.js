@@ -36,11 +36,11 @@ export default class Slideshow extends PageNavigator {
 					: 0
 			}
 			if (targetPageIndex !== null) {
-				const shouldCancelTransition = true
+				const shouldSkipTransition = true
 				if (targetPageIndex !== this.pageIndex) {
-					this.goToPageWithIndex(targetPageIndex, null, shouldCancelTransition)
+					this.goToPageWithIndex(targetPageIndex, null, shouldSkipTransition)
 				} else {
-					this.goToPageWithIndex(targetPageIndex, 0, shouldCancelTransition)
+					this.goToPageWithIndex(targetPageIndex, 0, shouldSkipTransition)
 				}
 			}
 		} else {
@@ -64,13 +64,13 @@ export default class Slideshow extends PageNavigator {
 	}
 
 	goForward() {
-		const doIfIsUndergoingChanges = () => { this.attemptToGoForward(true) }
-		this.attemptToGoForward(false, doIfIsUndergoingChanges)
+		const shouldSkipTransition = false
+		this.attemptToGoForward(shouldSkipTransition)
 	}
 
 	goBackward() {
-		const doIfIsUndergoingChanges = () => { this.attemptToGoBackward(true) }
-		this.attemptToGoBackward(false, doIfIsUndergoingChanges)
+		const shouldSkipTransition = false
+		this.attemptToGoBackward(shouldSkipTransition)
 	}
 
 }

@@ -85,15 +85,22 @@ export default class OverflowHandler {
 
 	// Functions to deal with continuous gestures and zoom
 
-	attemptStickyStep() {
-		return (this.isUndergoingChanges === false && this._camera.attemptStickyStep())
+	handleScroll(scrollData, isWheelScroll) {
+		if (this.activeLayersArray.length === 1) {
+			const layer = this.activeLayersArray[0] // Check only the first Segment in a Page
+			const { content } = layer
+			if (content.handleScroll(scrollData, isWheelScroll) === true) {
+				return true
+			}
+		}
+		if (this.isUndergoingChanges === true) {
+			return true
+		}
+		return this._camera.handleScroll(scrollData, isWheelScroll)
 	}
 
-	handleScroll(scrollData, isWheelScroll) {
-		if (this.isUndergoingChanges === true) {
-			return
-		}
-		this._camera.handleScroll(scrollData, isWheelScroll)
+	attemptStickyStep() {
+		return (this.isUndergoingChanges === false && this._camera.attemptStickyStep())
 	}
 
 	zoom(zoomData) {

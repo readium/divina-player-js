@@ -17,7 +17,7 @@ export const wordWrapWidth = 275 // Maximum line width
 
 // Loading parameters
 export const defaultAllowsDestroy = true
-export const defaultAllowsParallel = true
+export const defaultAllowsParallel = false
 // Nb of pages after the current one for which slice textures should be stored in memory
 export const defaultMaxNbOfPagesAfter = 1
 // Nb of pages before the current one for which slice textures should be stored in memory,
@@ -27,6 +27,7 @@ export const maxShareOfPagesBefore = 1 / 3
 export const defaultVideoLoadTimeout = 2000
 
 // Story
+export const defaultReadingProgression = "ltr" // If no value is specified or if the value is invalid
 export const defaultContinuous = true // If no value is specified or if the value is invalid
 export const defaultFit = "contain" // If no value is specified or if the value is invalid
 export const defaultOverflow = "scrolled" // If no value is specified or if the value is invalid or "auto"

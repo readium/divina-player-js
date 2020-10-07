@@ -276,21 +276,52 @@ export default class InteractionManager {
 				if (this._wasLastEventPanend === true) {
 					return
 				}
-				this._resetScroll()
-				this._wasLastEventPanend = true
 
-				// Attempt a sticky page change if possible, and should it fail,
-				// then only trigger a drag end (via _releaseScroll)
-				if (this._isPaginationSticky === false
-					|| this._pageNavigator.attemptStickyStep() === false) {
+				// Attempt to end a controlled transition; if it fails (because none was currently
+				// under way), attempt a sticky page change if possible; if it fails as well (if
+				// viewportPercent was not enough), then only trigger a drag end (via _releaseScroll)
+				let viewportPercent = this._percentFunction(e.deltaX, e.deltaY)
+				viewportPercent = Math.min(Math.max(viewportPercent, -1), 1)
+
+				if (this._pageNavigator.endControlledTransition(viewportPercent) === false
+					&& (this._isPaginationSticky === false
+					|| this._pageNavigator.attemptStickyStep() === false)) {
 					this._releaseScroll(e)
 				}
 
+				this._resetScroll()
+				this._wasLastEventPanend = true
+
 			// For normal non-wheel scroll
 			} else {
+				const { currentPage } = this._pageNavigator
+				const { inScrollDirection } = currentPage
+
+				const { viewportRect } = this._player
+				const { width, height } = viewportRect
+				const { viewportDimensionPercent } = constants
+
+				switch (inScrollDirection) {
+				case "ltr":
+					this._percentFunction = (dx) => (-dx / (width * viewportDimensionPercent))
+					break
+				case "rtl":
+					this._percentFunction = (dx) => (dx / (width * viewportDimensionPercent))
+					break
+				case "ttb":
+					this._percentFunction = (_, dy) => (-dy / (height * viewportDimensionPercent))
+					break
+				case "btt":
+					this._percentFunction = (_, dy) => (dy / (height * viewportDimensionPercent))
+					break
+				default:
+					break
+				}
+
 				const scrollEvent = {
 					deltaX: deltaX - this._lastScrollEvent.deltaX,
 					deltaY: deltaY - this._lastScrollEvent.deltaY,
+					viewportPercent: Math.min(Math.max(this._percentFunction(deltaX, deltaY), -1), 1),
 				}
 				const isWheelScroll = false
 				this._scroll(scrollEvent, isWheelScroll)
@@ -304,6 +335,7 @@ export default class InteractionManager {
 		this._lastScrollEvent = {
 			deltaX: 0,
 			deltaY: 0,
+			viewportPercent: 0,
 		}
 	}
 
@@ -314,7 +346,7 @@ export default class InteractionManager {
 			y: -e.velocityY * constants.velocityFactor,
 		}
 		const releaseDate = Date.now()
-		this._autoScroll(velocity, releaseDate)
+		this._autoScroll(velocity, releaseDate, e)
 	}
 
 	// Apply kinetic scrolling formula after drag end (i.e. on scroll release)
@@ -332,6 +364,7 @@ export default class InteractionManager {
 			deltaY = Math.round(deltaY)
 		}
 		if (Math.abs(deltaX) >= 0.5 || Math.abs(deltaY) >= 0.5) {
+			// On a drag end, viewportPercent information is useless
 			this._scroll({ deltaX, deltaY })
 			requestAnimationFrame(this._autoScroll.bind(this, velocity, releaseDate))
 		}
@@ -342,8 +375,8 @@ export default class InteractionManager {
 		if (!this._pageNavigator) {
 			return
 		}
-		const { deltaX, deltaY } = e
-		this._pageNavigator.handleScroll({ deltaX, deltaY }, isWheelScroll)
+		const { deltaX, deltaY, viewportPercent } = e
+		this._pageNavigator.handleScroll({ deltaX, deltaY, viewportPercent }, isWheelScroll)
 	}
 
 	// For mouse and trackpad scroll events
@@ -361,6 +394,8 @@ export default class InteractionManager {
 				}
 				this._pageNavigator.zoom(zoomData)
 			} else {
+				// There is no end to a wheel event, so no viewportPercent information
+				// can be constructed to attempt a sticky page change
 				const isWheelScroll = true
 				this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll)
 			}
