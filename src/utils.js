@@ -1,5 +1,18 @@
 import * as constants from "./constants"
 
+const hasAScheme = (url) => {
+	const regExp = new RegExp("^(?:[a-z]+:)?//", "i")
+	return (regExp.test(url) === true)
+}
+
+const getFolderPathFromManifestPath = (manifestPath) => {
+	if (!manifestPath || manifestPath.split("/").length === 1) {
+		return ""
+	}
+	const folderPath = manifestPath.split(`/${constants.defaultManifestFilename}`)[0]
+	return folderPath
+}
+
 // For type checking (used below)
 
 const isAString = (value) => ( // Used below
@@ -191,6 +204,8 @@ const getDistance = (point1, point2) => (
 )
 
 export {
+	hasAScheme,
+	getFolderPathFromManifestPath,
 	isANumber,
 	isAVideo,
 	parseAspectRatio,

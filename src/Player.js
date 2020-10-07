@@ -204,24 +204,25 @@ export default class Player {
 			|| (this._spread === "landscape" && this._viewportRect.width >= this._viewportRect.height))
 	}
 
-	// For loading the divina data from a folder path
-	openDivinaFromPath(folderPath, href = null, options = null) {
-		const textureSource = { folderPath }
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(folderPath) }
+	// For loading the divina data from a manifest path
+	openDivinaFromManifestPath(path, href = null, options = null) {
+		const textureSource = { folderPath: Utils.getFolderPathFromManifestPath(path) }
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(path, "manifest") }
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData)
 	}
 
-	// For loading the divina data from a json and its file URLs (via folder path)
-	openDivinaFromJsonAndPath(json, folderPath, href = null, options = null) {
-		const textureSource = { folderPath }
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromJsonAndPath(json) }
+	// For loading the divina data from a folder path
+	openDivinaFromFolderPath(path, href = null, options = null) {
+		const textureSource = { folderPath: path }
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromPath(path, "folder") }
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData)
 	}
 
 	// For loading the divina data from data = { json, base64DataByHref }
 	openDivinaFromData(data, href = null, options = null) {
 		const textureSource = { data }
-		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromData(data) }
+		const json = (data && data.json) ? data.json : null
+		const parseAndHandleDivinaData = (divinaParser) => { divinaParser.loadFromJson(json) }
 		this._parseDivina(href, textureSource, options, parseAndHandleDivinaData)
 	}
 
@@ -235,10 +236,16 @@ export default class Player {
 		// Set allowed story interactions based on options
 		this._interactionManager.setStoryInteractions(options)
 
-		// Create resource manager (now that options and possibly data exist)
-		this._createResourceManager(textureSource)
+		const updatedTextureSource = textureSource
 
-		const doWithParsedDivinaData = (parsedDivinaData) => {
+		const doWithParsedDivinaData = (parsedDivinaData, updatedFolderPath) => {
+
+			// Create resource manager (now that options and possibly data exist)
+			if (updatedFolderPath) {
+				updatedTextureSource.folderPath = updatedFolderPath
+			}
+			this._createResourceManager(updatedTextureSource)
+
 			const { metadata } = parsedDivinaData || {}
 			const { readingProgression, orientation } = metadata || {}
 			const customData = { readingProgression, orientation }
@@ -257,7 +264,7 @@ export default class Player {
 			: constants.defaultMaxNbOfPagesAfter
 		this._maxNbOfPagesAfter = Math.ceil(nbOfPages)
 		this._maxNbOfPagesBefore = Math.ceil(this._maxNbOfPagesAfter * constants.maxShareOfPagesBefore)
-		this._priorityFactor = this._maxNbOfPagesAfter / this._maxNbOfPagesBefore
+		this._priorityFactor = (this._maxNbOfPagesAfter / this._maxNbOfPagesBefore) || 1
 	}
 
 	_createResourceManager(textureSource) {
@@ -547,7 +554,9 @@ export default class Player {
 		// If the story navigator change occurred before the first resources were loaded
 		if (this._haveFirstResourcesLoaded === false) {
 
-			// Add a last task to trigger to start async queue (if not already running)
+			// Add a last task to trigger doAfterInitialLoad and start async queue
+			// (if not already running)
+
 			const doAfterLoadingFirstPagesOrSegments = () => {
 				this._haveFirstResourcesLoaded = true
 
@@ -619,8 +628,8 @@ export default class Player {
 	_goToTargetPageAndSegmentIndices(target) {
 		const { pageIndex, segmentIndex } = target
 
-		const shouldCancelTransition = true
-		this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldCancelTransition)
+		const shouldSkipTransition = true
+		this._pageNavigator.goToPageWithIndex(pageIndex || 0, segmentIndex, shouldSkipTransition)
 	}
 
 	setReadingMode(readingMode) { // Called externally
@@ -684,8 +693,8 @@ export default class Player {
 			return
 		}
 		const segmentIndex = null
-		const shouldCancelTransition = true
-		this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldCancelTransition)
+		const shouldSkipTransition = true
+		this._pageNavigator.goToPageWithIndex(pageIndex, segmentIndex, shouldSkipTransition)
 	}
 
 	goRight() {

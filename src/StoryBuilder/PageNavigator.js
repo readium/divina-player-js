@@ -5,7 +5,7 @@ import * as constants from "../constants"
 export default class PageNavigator extends LayerPile {
 
 	// Used in StateHandler
-	get doOnStateChangeStart() { return this.updateLoadTasks }
+	get doOnStateChangeStartOrCancel() { return this.updateLoadTasks }
 
 	// Used in Player and ResourceManager
 	get type() { return this._type }
@@ -65,6 +65,8 @@ export default class PageNavigator extends LayerPile {
 		}
 
 		this._tags = null
+
+		this._pageDeltaForTransitionControl = null
 	}
 
 	setLoadingProperties(maxNbOfPagesBefore, maxNbOfPagesAfter) {
@@ -220,14 +222,6 @@ export default class PageNavigator extends LayerPile {
 		return this._currentPage.attemptStickyStep()
 	}
 
-	handleScroll(scrollData, isWheelScroll) {
-		// If the page is being changed, do nothing
-		if (!this._currentPage || this.isUndergoingChanges === true) {
-			return
-		}
-		this._currentPage.handleScroll(scrollData, isWheelScroll)
-	}
-
 	zoom(zoomData) {
 		if (!this._currentPage || this.isUndergoingChanges === true) {
 			return
@@ -237,8 +231,9 @@ export default class PageNavigator extends LayerPile {
 
 	// Player functions
 
-	goToPageWithIndex(pageIndex, segmentIndex = null, shouldCancelTransition = false) {
-		const isGoingForward = true
+	goToPageWithIndex(pageIndex, segmentIndex = null, shouldSkipTransition = false,
+		isChangeControlled = false) {
+		let isGoingForward = true
 		this._targetSegmentIndex = segmentIndex
 
 		if (!this._handler || this._handler.type !== "stateHandler") {
@@ -248,11 +243,15 @@ export default class PageNavigator extends LayerPile {
 		const callback = () => {
 			// If changing pages
 			if (pageIndex !== this.pageIndex) {
-				this._handler.goToState(pageIndex, isGoingForward, shouldCancelTransition)
+				if (this.pageIndex !== null) {
+					isGoingForward = (pageIndex - this.pageIndex > 0)
+				}
+				this._handler.goToState(pageIndex, isGoingForward, shouldSkipTransition, isChangeControlled)
 				// And then the finalizeEntry above will ensure we go to segmentIndex directly
 
 			// Or if staying on the same page but changing segments
 			} else if (this._targetSegmentIndex !== null) {
+				// Leave isGoingForward at true
 				this._currentPage.goToSegmentIndex(this._targetSegmentIndex, isGoingForward)
 				this._targetSegmentIndex = null
 			}

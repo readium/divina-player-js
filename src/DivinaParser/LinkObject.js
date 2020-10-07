@@ -70,10 +70,14 @@ export default class LinkObject {
 		this._slice = new Slice(sliceResource, player, parentInfo)
 
 		if (!parentInfo && layers) { // No need to consider layers for a child link object
+
 			this._children = layers.map((layerObject, i) => {
 				const layerProperties = layerObject.properties || {}
+				let {
+					entryForward, exitBackward,
+				} = layerProperties
 				const {
-					entryForward, exitForward, entryBackward, exitBackward,
+					exitForward, entryBackward,
 				} = layerProperties
 				// Create a new link object, using this link object's slice as the parent slice
 				const parentInformation = {
@@ -81,6 +85,21 @@ export default class LinkObject {
 					layerIndex: i,
 				}
 				const linkObject = new LinkObject(layerObject, parentInformation, player)
+
+				// Transitions shall take precedence over entry and exits
+				if (layerProperties.transitionForward) {
+					const transition = new Transition(layerProperties.transitionForward, player)
+					const isForward = true
+					const { entry } = transition.getEntryAndExitTransitions(isForward)
+					entryForward = entry
+				}
+				if (layerProperties.transitionBackward) {
+					const transition = new Transition(layerProperties.transitionBackward, player)
+					const isForward = false
+					const { exit } = transition.getEntryAndExitTransitions(isForward)
+					exitBackward = exit
+				}
+
 				return {
 					linkObject, entryForward, exitForward, entryBackward, exitBackward,
 				}

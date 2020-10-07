@@ -5,17 +5,13 @@ export default class ResourceLoadTaskQueue extends AsyncTaskQueue {
 	constructor(maxPriority, priorityFactor, allowsParallel) {
 
 		// Task priorities will be evaluated based on page differences
-		const getPriority = (task) => {
-			if (!task.data || task.data.pageIndex === undefined
-				|| this._targetPageIndex === undefined) {
-				return task.priority || 0
+		const getPriorityFromTaskData = (data) => {
+			let priority = 0
+			if (!data || data.pageIndex === null || this._targetPageIndex === null) {
+				return priority
 			}
-			const taskPageIndex = task.data.pageIndex
-			let { priority } = task
-			if (priority === undefined
-				|| Math.abs(taskPageIndex - this._targetPageIndex) < Math.abs(priority)) {
-				priority = taskPageIndex - this._targetPageIndex
-			}
+			const taskPageIndex = data.pageIndex
+			priority = taskPageIndex - this._targetPageIndex
 			if (priority < 0) {
 				if (priorityFactor) {
 					priority *= -priorityFactor
@@ -27,7 +23,9 @@ export default class ResourceLoadTaskQueue extends AsyncTaskQueue {
 			return priority
 		}
 
-		super(maxPriority, allowsParallel, getPriority)
+		super(maxPriority, allowsParallel, getPriorityFromTaskData)
+
+		this._targetPageIndex = null
 	}
 
 	updatePriorities(targetPageIndex) {

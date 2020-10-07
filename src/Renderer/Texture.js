@@ -2,7 +2,7 @@ import { Texture as PIXITexture, Rectangle as PIXIRectangle } from "pixi.js-lega
 
 import * as Utils from "../utils"
 
-// A texture stored in the loader will need to have the following properties:
+// A texture stored in the Loader will need to have the following properties:
 // - If it corresponds to an image: .frame.width and .frame.height
 // - If it corresponds to a video: .video (the video itself will need to be a videoElement,
 //   i.e. it should include videoWidth, videoHeight and duration properties)

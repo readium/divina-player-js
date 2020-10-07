@@ -2,10 +2,10 @@ export default class AsyncTaskQueue {
 
 	get nbOfTasks() { return this._tasksArray.length }
 
-	constructor(maxPriority, allowsParallel, getPriorityFunction) {
+	constructor(maxPriority, allowsParallel, getPriorityFromTaskData) {
 		this._maxPriority = maxPriority
 		this._allowsParallel = allowsParallel
-		this._getPriority = getPriorityFunction || ((task) => (task.priority || 0))
+		this._getPriorityFromTaskData = getPriorityFromTaskData
 
 		this._tasksArray = []
 		this.reset()
@@ -17,11 +17,7 @@ export default class AsyncTaskQueue {
 	}
 
 	reset() {
-		this._tasksArray.forEach((task) => {
-			if (task.isRunning === true && task.kill) {
-				task.kill()
-			}
-		})
+		this._tasksArray.forEach((task) => { task.kill() })
 
 		// Useful in serial mode only
 		this._isRunning = false
@@ -29,72 +25,60 @@ export default class AsyncTaskQueue {
 
 	updatePriorities() {
 		this._tasksArray.forEach((task, i) => {
-			// Allow the task to have a forced priority, otherwise evaluate the priority
-			const priority = (task.forcedPriority !== undefined)
-				? task.forcedPriority
-				: this._getPriority(task)
+			const priority = this._getPriorityAndUpdateTaskIfRelevant(task, task.data)
 
-			// In serial mode, update task priorities
-			if (this._allowsParallel === false) {
-				this._tasksArray[i].priority = priority
-
-			// Whereas in parallel mode, remove task if relevant
-			} else if (priority > this._maxPriority) {
-				if (task.isRunning === true && task.kill) {
-					task.kill()
-				}
+			// In parallel mode, remove task if relevant
+			if (this._allowsParallel === true && priority > this._maxPriority) {
+				task.kill()
 				this._tasksArray.splice(i, 1)
 			}
 		})
 	}
 
-	addOrUpdateTask(task) {
-		const fullTask = {
-			...task,
-			isRunning: false,
+	_getPriorityAndUpdateTaskIfRelevant(task, data) {
+		const { priority, forcedPriority } = task
+		if (forcedPriority !== null) {
+			return forcedPriority
 		}
-		if (this._allowsParallel === true) {
-			this._tasksArray.push(fullTask)
-			if (this._hasStarted === true) {
-				this._runTask(fullTask)
-			}
-		} else {
-			// If in serial mode, only add the task if not already in queue...
-			const { id } = fullTask
-			const index = this._tasksArray.findIndex((arrayTask) => (arrayTask.id === id))
-			if (index < 0) {
-				// ...and add it with a priority property
-				fullTask.priority = (task.forcedPriority !== undefined)
-					? task.forcedPriority
-					: this._getPriority(task)
-				this._tasksArray.push(fullTask)
+		const possiblyNewPriority = (this._getPriorityFromTaskData)
+			? this._getPriorityFromTaskData(data)
+			: 0
+		if (priority === null || possiblyNewPriority <= priority) {
+			task.setData(data)
+			task.setPriority(possiblyNewPriority)
+		}
+		return possiblyNewPriority
+	}
 
-				if (this._hasStarted === true && this._isRunning === false) {
-					this._runNextTaskInQueue()
-				}
-			} else { // Otherwise update the task
-				this._tasksArray[index] = task
+	addTask(task) {
+		const priority = this._getPriorityAndUpdateTaskIfRelevant(task, task.data)
+		if (this._allowsParallel === false) {
+			this._tasksArray.push(task)
+			if (this._hasStarted === true && this._isRunning === false) {
+				this._runNextTaskInQueue()
+			}
+		} else if (priority <= this._maxPriority) {
+			this._tasksArray.push(task)
+			if (this._hasStarted === true) {
+				this._runTask(task)
 			}
 		}
 	}
 
-	_runTask(task) {
-		const { id, doAsync, doOnEnd } = task
+	updateTaskWithData(task, data) { // The task cannot be running already at this stage
+		this._getPriorityAndUpdateTaskIfRelevant(task, data)
+	}
 
+	_runTask(task) {
 		if (this._allowsParallel === false) {
 			this._isRunning = true
 		}
 
-		task.isRunning = true
-
 		const callback = () => {
 			// Remove task from list
+			const { id } = task
 			const index = this._tasksArray.findIndex((arrayTask) => (arrayTask.id === id))
 			this._tasksArray.splice(index, 1)
-
-			if (doOnEnd) {
-				doOnEnd()
-			}
 
 			if (this._doAfterEachInitialTask) {
 				this._doAfterEachInitialTask()
@@ -109,13 +93,7 @@ export default class AsyncTaskQueue {
 				this._runNextTaskInQueue()
 			}
 		}
-
-		if (doAsync) {
-			doAsync()
-				.then(callback)
-		} else {
-			callback()
-		}
+		task.run(callback)
 	}
 
 	_runNextTaskInQueue() { // In serial mode only
@@ -132,7 +110,8 @@ export default class AsyncTaskQueue {
 	_getTaskWithHighestPriority() { // Actually the *lowest* possible value for the priority key ;)
 		let nextTask = null
 		this._tasksArray.forEach((task) => {
-			if (!nextTask || task.priority < nextTask.priority) {
+			const { priority } = task
+			if (!nextTask || priority < nextTask.priority) {
 				nextTask = task
 			}
 		})

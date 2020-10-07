@@ -8,6 +8,8 @@ export default class Transition {
 
 	get type() { return this._type }
 
+	get controlled() { return this._controlled }
+
 	get duration() { return this._duration }
 
 	get direction() { return this._direction }
@@ -18,10 +20,11 @@ export default class Transition {
 
 	constructor(transition, player) {
 		const {
-			type, duration, direction, file, sequence,
+			type, controlled, duration, direction, file, sequence,
 		} = transition || {}
 
 		this._type = type
+		this._controlled = controlled
 		this._duration = duration
 
 		this._direction = direction
@@ -79,11 +82,15 @@ export default class Transition {
 	getEntryAndExitTransitions(isForward) {
 		let entry = {
 			type: this._type,
+			controlled: this._controlled,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		}
 		let exit = {
 			type: this._type,
+			controlled: this._controlled,
 			duration: this._duration, // Duration may remain undefined
+			isDiscontinuous: true,
 		}
 
 		switch (this._type) {
@@ -94,18 +101,18 @@ export default class Transition {
 		case "dissolve":
 			if (isForward === true) {
 				entry.type = "fade-in"
-				exit.type = "remove" // Will occur after duration
+				exit.type = "show"
 			} else {
 				exit.type = "fade-out"
-				entry = null
+				entry.type = "show"
 			}
 			break
 		case "slide-in":
 			entry.direction = this._direction
-			exit.type = "remove" // Will occur after duration
+			exit.type = "show"
 			break
 		case "slide-out":
-			entry.type = "remove" // Will occur after duration
+			entry.type = "show"
 			exit.direction = this._direction
 			break
 		case "push":
@@ -117,7 +124,8 @@ export default class Transition {
 		case "animation":
 			entry.sliceType = this._sliceType
 			entry.slice = this._slice
-			exit = null
+			exit.type = "hide"
+			exit.duration = 0
 			break
 		default:
 			break

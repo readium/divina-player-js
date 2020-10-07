@@ -1,0 +1,29 @@
+{
+    "env": {
+        "browser": true,
+        "es6": true
+    },
+    "extends": [
+        "airbnb-base"
+    ],
+    "globals": {
+        "Atomics": "readonly",
+        "SharedArrayBuffer": "readonly",
+        "PIXI": true,
+        "Hammer": true,
+        "window": true
+    },
+    "parserOptions": {
+        "ecmaVersion": 2018,
+        "sourceType": "module"
+    },
+    "rules": {
+        "eol-last": ["error", "never"],
+        "indent": ["error", "tab"],
+        "no-tabs": ["error", { "allowIndentationTabs": true }],
+        "no-underscore-dangle": ["off"],
+        "padded-blocks": ["error", { "classes": "always" }],
+        "quotes": ["error", "double"],
+        "semi": ["error", "never"]
+    }
+}
