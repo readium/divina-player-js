@@ -326,6 +326,8 @@ export default class Player {
 		// Now build (and set) the page navigator to start with
 		if (this._pageNavigatorsInfo.single) {
 			this._setPageNavigator("single")
+		} else if (this._pageNavigatorsInfo.guided) {
+			this._setPageNavigator("guided")
 		} else if (this._pageNavigatorsInfo.scroll) {
 			this._setPageNavigator("scroll")
 		}
