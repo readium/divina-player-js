@@ -4,9 +4,10 @@ import OverflowHandler from "./OverflowHandler"
 
 export default class LayerPile extends Container {
 
-	// Used below
-
+	// Used in PageNavigator and below
 	get layersArray() { return this._layersArray }
+
+	// Used below
 
 	get activeLayersArray() {
 		return this._layersArray.filter((layer) => (layer.isActive === true))
@@ -45,15 +46,15 @@ export default class LayerPile extends Container {
 	// Used in Layer
 	get loadStatus() { return this._loadStatus }
 
-	constructor(name, parent = null, layersArray = [], isFirstSliceAParentSlice = false) {
-		super(name, parent)
+	constructor(type, name, parent = null, layersArray = [], isFirstSliceAParentSlice = false) {
+		super(type, name, parent)
 
 		this._name = name
 		this._parent = parent
 
 		// Build layers
 		this._layersArray = []
-		// Note that the fallback slice is added too, although its texture will be hidden (in Slice.js)
+		// Note that the parent slice is added too, although its texture will be hidden
 		if (layersArray) {
 			layersArray.forEach((layer) => {
 				this._addLayer(layer)
@@ -66,21 +67,13 @@ export default class LayerPile extends Container {
 			: null
 		this._parentSlice = (parentSliceLayer) ? parentSliceLayer.content : null
 
-		this._loadStatus = null
+		this._loadStatus = 0
 
 		this._handler = null
 	}
 
-	_addLayer(layer, shouldAddLayerAtStart = false) {
-		if (shouldAddLayerAtStart === true) { // For an empty segment
-			this._layersArray.unshift(layer)
-			const slice = layer.content
-			this.addChildAtIndex(slice, 0)
-		} else {
-			this._layersArray.push(layer)
-		}
-		// Note that we do not add containerObjects right away,
-		// since the PageNavigator's stateHandler will deal with that
+	_addLayer(layer) {
+		this._layersArray.push(layer)
 	}
 
 	getDepthOfNewLayer() {
@@ -92,8 +85,8 @@ export default class LayerPile extends Container {
 			player)
 	}
 
-	_addOverflowHandler(overflow, player) {
-		this._handler = new OverflowHandler(this, overflow, player)
+	_addOverflowHandler(overflow, hAlign, vAlign, player) {
+		this._handler = new OverflowHandler(this, overflow, hAlign, vAlign, player)
 	}
 
 	getLayerAtIndex(layerIndex) {
@@ -144,6 +137,20 @@ export default class LayerPile extends Container {
 				doIfIsUndergoingChanges) === true)
 	}
 
+	attemptToGoSideways(way) {
+		if (this.isUndergoingChanges === true) {
+			return true
+		}
+		if (this.activeLayersArray.length > 0) {
+			const layer = this.activeLayersArray[this.activeLayersArray.length - 1]
+			if (layer.attemptToGoSideways(way) === true) {
+				return true
+			}
+		}
+		return (this._handler && this._handler.attemptToGoSideways
+			&& this._handler.attemptToGoSideways(way) === true)
+	}
+
 	// Following a continuous gesture
 
 	handleScroll(scrollData, isWheelScroll) {
@@ -154,8 +161,11 @@ export default class LayerPile extends Container {
 			&& this._handler.handleScroll(scrollData, isWheelScroll) === true) {
 			return true
 		}
-		return (this._handler.type === "stateHandler"
-			&& this._handler.handleScroll(scrollData, isWheelScroll) === true)
+		if (this._handler.type === "stateHandler"
+			&& this._handler.handleScroll(scrollData, isWheelScroll) === true) {
+			return true
+		}
+		return false
 	}
 
 	endControlledTransition(viewportPercent, shouldBeAnimated = true) {
@@ -194,7 +204,7 @@ export default class LayerPile extends Container {
 
 	setupForEntry(isGoingForward = true) {
 		this._layersArray.forEach((layer) => {
-			// If the LayerPile is a Segment with a unique Slice (or eventually a basic LayerPile)
+			// If the LayerPile is a Segment with a unique Slice (or a basic LayerPile)
 			if (!this._handler) {
 				const slice = layer.content
 				this.addChild(slice)
@@ -224,24 +234,25 @@ export default class LayerPile extends Container {
 		}
 	}
 
-	getPathsToLoad() {
-		const fullPathsArray = []
+	getResourceIdsToLoad(recursive, force) {
+		const resourceIdsArray = []
 		this._layersArray.forEach((layer) => {
-			const pathsArray = layer.getPathsToLoad()
-			fullPathsArray.push(...pathsArray)
+			const idsArray = layer.getResourceIdsToLoad(recursive, force)
+			resourceIdsArray.push(...idsArray)
 		})
-		return fullPathsArray
+		return resourceIdsArray
 	}
 
-	destroyTexturesIfPossible() {
-		this._layersArray.forEach((layer) => { layer.destroyTexturesIfPossible() })
+	destroyResourcesIfPossible() {
+		this._layersArray.forEach((layer) => { layer.destroyResourcesIfPossible() })
 	}
 
-	getFirstHref() {
-		if (this._layersArray.length === 0) {
+	// Used in Layer (in a Segment, the first layer only will be considered)
+	getHref() {
+		if (this._layersArray.length < 1 || !this._layersArray[0].getHref) {
 			return null
 		}
-		return this._layersArray[0].getFirstHref()
+		return this._layersArray[0].getHref()
 	}
 
 	// Slice functions

@@ -10,7 +10,6 @@ export default class AsyncTaskQueue {
 		this._tasksArray = []
 		this.reset()
 
-		this._nbOfInitialTasks = 0
 		this._doAfterEachInitialTask = null
 
 		this._hasStarted = false
@@ -74,18 +73,15 @@ export default class AsyncTaskQueue {
 			this._isRunning = true
 		}
 
-		const callback = () => {
+		const doAtTheVeryEnd = () => {
 			// Remove task from list
 			const { id } = task
 			const index = this._tasksArray.findIndex((arrayTask) => (arrayTask.id === id))
 			this._tasksArray.splice(index, 1)
 
+			// If was an initial task, check whether all initial tasks have been run
 			if (this._doAfterEachInitialTask) {
 				this._doAfterEachInitialTask()
-				this._nbOfInitialTasks -= 1
-				if (this._nbOfInitialTasks === 0) {
-					this._doAfterEachInitialTask = null
-				}
 			}
 
 			if (this._allowsParallel === false) {
@@ -93,11 +89,12 @@ export default class AsyncTaskQueue {
 				this._runNextTaskInQueue()
 			}
 		}
-		task.run(callback)
+
+		task.run(doAtTheVeryEnd)
 	}
 
 	_runNextTaskInQueue() { // In serial mode only
-		if (this._tasksArray.length === 0 || this._isRunning === true) {
+		if (this.nbOfTasks === 0 || this._isRunning === true) {
 			return
 		}
 		const nextTask = this._getTaskWithHighestPriority()
@@ -118,10 +115,11 @@ export default class AsyncTaskQueue {
 		return nextTask
 	}
 
-	start(doAfterEachInitialTask) {
+	setDoAfterEachInitialTask(doAfterEachInitialTask) {
 		this._doAfterEachInitialTask = doAfterEachInitialTask
+	}
 
-		this._nbOfInitialTasks = this._tasksArray.length
+	start() {
 		this._hasStarted = true
 		if (this._allowsParallel === true) {
 			this._tasksArray.forEach((task) => {

@@ -30,7 +30,7 @@ export default class StateHandler {
 	constructor(layerPile, shouldStateLayersCoexistOutsideTransitions = false, player) {
 		this._layerPile = layerPile
 		this._shouldStateLayersCoexistOutsideTransitions = shouldStateLayersCoexistOutsideTransitions
-		this._player = player // Useful only for viewportRect
+		this._player = player
 
 		this._type = "stateHandler"
 
@@ -153,7 +153,7 @@ export default class StateHandler {
 		}
 
 		if (this._layerPile.doOnStateChangeStartOrCancel) {
-			this._layerPile.doOnStateChangeStartOrCancel(stateIndex)
+			this._layerPile.doOnStateChangeStartOrCancel(stateIndex, isGoingForward)
 		}
 
 		if (isChangeControlled === true) {
@@ -464,7 +464,6 @@ export default class StateHandler {
 		}
 
 		const percent = Math.abs(viewportPercent)
-
 		if (percent >= 0.5) {
 			const { layerTransitionsArray } = this._currentStateChange
 			layerTransitionsArray.forEach((layerTransition) => {

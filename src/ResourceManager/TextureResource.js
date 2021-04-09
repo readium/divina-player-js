@@ -1,230 +1,99 @@
+import CoreResource from "./CoreResource"
 import { Texture } from "../Renderer"
 
-export default class TextureResource {
+export default class TextureResource extends CoreResource {
 
-	get id() { return this._id }
+	constructor(coreResourceData, player) {
+		super(coreResourceData, player)
 
-	get type() { return this._type }
-
-	get fallback() { return this._fallback }
-
-	get href() { return this._href }
-
-	get hasStartedLoading() { return (this._loadStatus !== 0) }
-
-	get hasLoaded() { return (this._loadStatus === -1 || this._loadStatus === 2) }
-
-	static get counter() {
-		TextureResource._counter = (TextureResource._counter === undefined)
-			? 0
-			: (TextureResource._counter + 1)
-		return TextureResource._counter
-	}
-
-	constructor(textureInfo, sliceId) {
-		this._id = TextureResource.counter
-
-		const {
-			type, path, href, fallback,
-		} = textureInfo
-
-		this._type = type
-		this._path = path
-		this._href = href
-		this._fallback = fallback
-
-		this._video = null
-		this._timeout = null
-		this._doOnLoadSuccess = null
-		this._doOnLoadFail = null
-
-		this._loadStatus = 0
 		this._baseTexture = null
-		this._textures = {}
+		this._textures = {} // Textures represent cropped versions of baseTexture, by fragment
 
-		this._addOrUpdateMediaFragment("full")
-		this.addTextureInfo(textureInfo, sliceId)
+		this.addOrUpdateFragment("full")
 	}
 
-	_addOrUpdateMediaFragment(mediaFragment, sliceId) {
-		if (!this._textures[mediaFragment]) {
-			this._textures[mediaFragment] = {
+	// Used above (in which case sliceId is undefined) and in ResourceManager
+	addOrUpdateFragment(fragment = "full", sliceId) {
+		if (!this._textures[fragment]) {
+			this._textures[fragment] = {
 				texture: null,
 				sliceIdsSet: new Set(),
 			}
 		}
-		// On a readingMode change, the baseTexture may already be present,
-		// so adding new media fragments imply that the corresponding textures be created
-		if (this._baseTexture && this._textures.full && this._textures.full.texture) {
-			const fullTexture = this._textures.full.texture
-			const croppedTexture = Texture.cropToFragment(fullTexture, mediaFragment)
-			this._textures[mediaFragment].texture = croppedTexture
-		}
-		if (sliceId !== undefined) {
-			this._textures[mediaFragment].sliceIdsSet.add(sliceId)
-		}
-	}
 
-	// Also used in ResourceManager
-	addTextureInfo(textureInfo, sliceId) {
-		const { mediaFragment } = textureInfo
-		if (mediaFragment) {
-			this._addOrUpdateMediaFragment(mediaFragment, sliceId)
-		} else {
-			this._addOrUpdateMediaFragment("full", sliceId)
+		// On a readingMode change, the baseTexture may already be present,
+		// so adding new fragments implies that the corresponding textures be created
+		if (this._baseTexture && this._textures.full && this._textures.full.texture
+			&& !this._textures[fragment].texture) {
+			const fullTexture = this._textures.full.texture
+			const croppedTexture = Texture.cropToFragment(fullTexture, fragment)
+			this._textures[fragment].texture = croppedTexture
+		}
+
+		if (sliceId !== undefined) {
+			this._textures[fragment].sliceIdsSet.add(sliceId)
 		}
 	}
 
 	resetSliceIdsSets() {
-		Object.keys(this._textures).forEach((mediaFragment) => {
-			this._textures[mediaFragment].sliceIdsSet = new Set()
+		Object.keys(this._textures).forEach((fragment) => {
+			this._textures[fragment].sliceIdsSet = new Set()
 		})
 	}
 
-	attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail, videoLoadTimeout,
-		allowsParallel, resolve) {
-
-		// Create video element
-		const video = document.createElement("video")
-		video.preload = "auto"
-		video.loop = true // All videos will loop by default
-		video.autoplay = false // Prevent autoplay at start
-		video.muted = true // Only a muted video can autoplay
-		video.setAttribute("playsinline", "") // Required to play in iOS
-		video.crossOrigin = "anonymous"
-		video.src = src
-		this._video = video
-
-		const doOnLoadFail = () => {
-			clearTimeout(this._timeout)
-			this._removeTracesOfVideoLoad()
-			this._video = null
-
-			if (this._fallback && doOnVideoLoadFail) {
-				this._loadStatus = -1
-				// Let's create the baseTexture from the fallback image
-				// (we don't care that the type will thus not be the right one anymore)
-				doOnVideoLoadFail(this._path, this._fallback.path)
-			} else {
-				this._loadStatus = 0
-				resolve()
-			}
-		}
-		this._doOnLoadFail = doOnLoadFail
-		video.addEventListener("error", doOnLoadFail)
-
-		// Event to track should be loadedmetadata, but duration change proved more reliable
-		const doOnLoadSuccess = () => {
-			this._doOnDurationChange(doOnVideoLoadSuccess)
-		}
-		this._doOnLoadSuccess = doOnLoadSuccess
-		video.addEventListener("durationchange", doOnLoadSuccess)
-
-		// If resources are loaded serially, a failing video load should not block loading
-		if (allowsParallel === false) {
-			this._timeout = setTimeout(doOnLoadFail, videoLoadTimeout)
-		}
-	}
-
-	_removeTracesOfVideoLoad() {
-		if (!this._video) {
-			return
-		}
-		if (this._doOnLoadFail) {
-			this._video.removeEventListener("error", this._doOnLoadFail)
-			this._doOnLoadFail = null
-		}
-		if (this._doOnLoadSuccess) {
-			this._video.removeEventListener("durationchange", this._doOnLoadSuccess)
-			this._doOnLoadSuccess = null
-		}
-	}
-
-	// Once a video's duration is different from zero, get useful information
-	_doOnDurationChange(doOnVideoLoadSuccess) {
-		clearTimeout(this._timeout)
-
-		const { duration } = this._video
-
-		if (duration && doOnVideoLoadSuccess) {
-			const texture = Texture.createVideoTexture(this._video)
-
-			this._removeTracesOfVideoLoad()
-
-			const textureData = {
-				name: this._path,
-				baseTexture: texture.baseTexture,
-				texture,
-			}
-			doOnVideoLoadSuccess(textureData)
-
-		// If the video failed loading
-		} else if (this._doOnLoadFail) {
-			this._doOnLoadFail() // Which involves removing the event listener too
-		}
-	}
-
-	notifyLoadStart() {
-		if (this._loadStatus === 0) {
-			this._loadStatus = 1 // Means that loader has started loading the resource
-		}
-	}
-
 	cancelLoad(slices) {
-		this._loadStatus = 0
 		Object.values(this._textures).forEach(({ sliceIdsSet }) => {
 			sliceIdsSet.forEach((sliceId) => {
 				const slice = slices[sliceId]
 				slice.cancelTextureLoad()
 			})
 		})
-
-		this.clearVideoTraces()
+		super.cancelLoad()
 	}
 
-	clearVideoTraces() {
-		if (this._video) {
-			if (this._doOnLoadFail) {
-				this._video.removeEventListener("error", this._doOnLoadFail)
-				this._doOnLoadFail = null
-			}
-			if (this._doOnLoadSuccess) {
-				this._video.removeEventListener("durationchange", this._doOnLoadSuccess)
-				this._doOnLoadSuccess = null
-			}
-			this._video = null
-		}
-	}
-
-	setBaseTexture(baseTexture, fullTexture) {
-		if (this._baseTexture || !baseTexture || !fullTexture) {
+	setActualTexture(textureData) { // textureData = { name, texture }
+		if (this._loadStatus === 0 // If loading was cancelled
+			|| !textureData || !textureData.texture
+			|| !textureData.texture.base || !textureData.texture.full) {
 			return
 		}
-		this._baseTexture = baseTexture
+		const { texture } = textureData
+		const { base, full } = texture
+		this._baseTexture = base
 
-		// For the texture, store the (clipped) media fragment texture directly if it is a fallback
-		if (this._loadStatus === -1 && this._fallback && this._fallback.mediaFragment) {
-			const croppedTexture = Texture.cropToFragment(fullTexture, this._fallback.mediaFragment)
+		// If loading has failed...
+		if (this._loadStatus === -1) {
 
-			this._textures.full.texture = croppedTexture
+			// ...then if a fallback was defined, and it is to be cropped,
+			// store the cropped (fragment) texture directly everywhere
+			if (this._fallbackFragment) {
+				const croppedTexture = Texture.cropToFragment(full, this._fallbackFragment)
+				Object.keys(this._textures).forEach((fragment) => {
+					this._textures[fragment].texture = croppedTexture
+				})
 
-		// Otherwise just store the texture as the full texture
-		// (reminder: this._loadStatus = 1 or -1 - if no fallback - at this stage)...
-		} else {
-			this._textures.full.texture = fullTexture
-			// ...and create other fragments as needed
-			this._createFragmentsIfNeeded(fullTexture)
-			if (this._loadStatus !== -1) {
-				this._loadStatus = 2
+			// ...otherwise do with the full texture
+			} else {
+				this._setFullTextureAndCreateFragmentsIfNeeded(full)
 			}
+
+		// ...otherwise loadStatus = 1 and loading has succeeded, so proceed with the full texture
+		} else {
+			this._setFullTextureAndCreateFragmentsIfNeeded(full)
+			this._loadStatus = 2
 		}
+	}
+
+	_setFullTextureAndCreateFragmentsIfNeeded(fullTexture) {
+		this._textures.full.texture = fullTexture
+		this._createFragmentsIfNeeded(fullTexture)
 	}
 
 	_createFragmentsIfNeeded(fullTexture) {
-		Object.keys(this._textures).forEach((mediaFragment) => {
-			if (mediaFragment !== "full") {
-				const croppedTexture = Texture.cropToFragment(fullTexture, mediaFragment)
-				this._textures[mediaFragment].texture = croppedTexture
+		Object.keys(this._textures).forEach((fragment) => {
+			if (fragment !== "full") {
+				const croppedTexture = Texture.cropToFragment(fullTexture, fragment)
+				this._textures[fragment].texture = croppedTexture
 			}
 		})
 	}
@@ -244,52 +113,70 @@ export default class TextureResource {
 	}
 
 	// Used for a SequenceSlice only
-	getTextureForMediaFragment(mediaFragment = null) {
-		const fragment = (this._loadStatus === -1)
-			? "full" // The full texture for a fallback is already sized correctly
-			: (mediaFragment || "full")
-		if (!this._textures[fragment]) {
+	getTextureForFragment(fragment = null) {
+		const actualFragment = (this._loadStatus !== -1 && fragment) ? fragment : "full"
+		const { texture } = this._textures[actualFragment] || {}
+		if (!texture) {
 			return null
 		}
-		const { texture } = this._textures[fragment]
 		return texture
 	}
 
-	destroyTexturesIfPossible(slices) {
-		let shouldBeKept = false
-		Object.values(this._textures).forEach((mediaFragmentData) => {
-			const { sliceIdsSet } = mediaFragmentData
+	destroyIfPossible(forceDestroy = false, slices) {
+		if (this._loadStatus === 0) {
+			return
+		}
+		const canBeDestroyed = (forceDestroy === true)
+			|| (this._checkIfCanBeDestroyed(slices) === true)
+		if (canBeDestroyed === true) {
+			this._forceDestroy(slices) // A different function for video and basic texture resources
+		}
+	}
+
+	_checkIfCanBeDestroyed(slices) {
+		let canBeDestroyed = true
+		Object.values(this._textures).forEach((fragmentData) => {
+			const { sliceIdsSet } = fragmentData
 			sliceIdsSet.forEach((sliceId) => {
 				const slice = slices[sliceId]
 				if (slice) {
-					const { loadStatus } = slice
-					if (loadStatus === -1 || loadStatus === 1 || loadStatus === 2) {
-						shouldBeKept = true
+					const { isActive } = slice
+					if (isActive === true) {
+						canBeDestroyed = false
 					}
 				}
 			})
 		})
-		if (shouldBeKept === false) {
-			this.forceDestroyTextures()
-		}
+		return canBeDestroyed
 	}
 
-	forceDestroyTextures() {
-		if (this._loadStatus === 0) {
-			return
-		}
+	_forceDestroy(slices) {
+		this._forceDestroyTextures(slices)
+	}
 
-		Object.keys(this._textures).forEach((mediaFragment) => {
-			this._textures[mediaFragment].texture = null
+	// Used above and in VideoTextureResource
+	_forceDestroyTextures(slices) {
+		Object.entries(this._textures).forEach(([fragment, fragmentData]) => {
+			const { texture, sliceIdsSet } = fragmentData
+			if (texture) {
+				sliceIdsSet.forEach((sliceId) => {
+					const slice = slices[sliceId]
+					if (slice) {
+						slice.removeTexture()
+					}
+				})
+				if (texture.destroy) {
+					texture.destroy()
+				}
+				this._textures[fragment].texture = null
+			}
 		})
-		if (this._baseTexture) {
+		if (this._baseTexture && this._baseTexture.destroy) {
 			this._baseTexture.destroy()
 		}
 		this._baseTexture = null
 
-		this.clearVideoTraces()
-
-		this._loadStatus = 0
+		super.forceDestroy()
 	}
 
 }
