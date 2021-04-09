@@ -1,10 +1,10 @@
 /*! divinaPlayer
  *
- * Copyright (c) 2019 Florian Dupas (Kwalia);
+ * Copyright (c) 2021 Florian Dupas (Kwalia);
  * Licensed under the MIT license */
 
 /*!
- * divinaPlayer - v1.0.0
+ * divinaPlayer - v0.3.0
  * Compiled Thu, 3 oct 2019 16:04:36 UTC
  *
  * divinaPlayer is licensed under the MIT License.

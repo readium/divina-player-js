@@ -2,18 +2,50 @@ import PageNavigator from "./PageNavigator"
 
 export default class Slideshow extends PageNavigator {
 
-	constructor(type, metadata, pageLayersArray, player) {
-		super(type, metadata, pageLayersArray, player)
+	constructor(pageNavType, metadata, pageLayersArray, player) {
+		super(pageNavType, metadata, pageLayersArray, player)
 
 		const { direction } = metadata || {}
+		if (direction) {
+			this._setDirection(direction)
+		}
+	}
+
+	_setDirection(direction) {
 		this._direction = direction
 
-		this._pagesArray.forEach((page) => {
-			page.setDirection(direction)
+		this._layersArray.forEach((layer) => {
+			const page = layer.content
+			page.setInScrollDirection(direction)
+
+			switch (direction) {
+			case "ltr":
+				page.setHitZoneToPrevious("left")
+				page.setHitZoneToNext("right")
+				page.setSecondaryAxis("y")
+				break
+			case "rtl":
+				page.setHitZoneToPrevious("right")
+				page.setHitZoneToNext("left")
+				page.setSecondaryAxis("y")
+				break
+			case "ttb":
+				page.setHitZoneToPrevious("top")
+				page.setHitZoneToNext("bottom")
+				page.setSecondaryAxis("x")
+				break
+			case "btt":
+				page.setHitZoneToPrevious("bottom")
+				page.setHitZoneToNext("top")
+				page.setSecondaryAxis("x")
+				break
+			default:
+				break
+			}
 		})
 	}
 
-	go(way, shouldGoToTheMax) {
+	go(way, shouldGoToMax) {
 		if (!this._direction
 			|| ((way === "right" || way === "left")
 				&& (this._direction === "ttb" || this._direction === "btt"))
@@ -22,27 +54,25 @@ export default class Slideshow extends PageNavigator {
 			return
 		}
 
-		if (shouldGoToTheMax === true) {
-			let targetPageIndex = null
-			if (way === "right" || way === "down") {
-				targetPageIndex = (this._direction === "ltr"
-					|| this._direction === "ttb")
-					? this._pagesArray.length - 1
-					: 0
-			} else if (way === "left" || way === "up") {
-				targetPageIndex = (this._direction === "rtl"
-					|| this._direction === "btt")
-					? this._pagesArray.length - 1
-					: 0
+		if (shouldGoToMax === true) {
+			let targetPageIndex = 0
+			let targetPageSegmentIndex = 0
+			if (((way === "right" || way === "down")
+				&& (this._direction === "ltr" || this._direction === "ttb"))
+				|| ((way === "left" || way === "up")
+					&& (this._direction === "rtl" || this._direction === "btt"))) {
+				targetPageIndex = this.nbOfPages - 1
+				targetPageSegmentIndex = this.getLastPageSegmentIndexForPage(targetPageIndex)
 			}
 			if (targetPageIndex !== null) {
+				let targetSegmentIndex = this.getIndexOfFirstSegmentInPage(targetPageIndex)
+				targetSegmentIndex += targetPageSegmentIndex
+				this.updateLoadTasks(targetSegmentIndex)
+
 				const shouldSkipTransition = true
-				if (targetPageIndex !== this.pageIndex) {
-					this.goToPageWithIndex(targetPageIndex, null, shouldSkipTransition)
-				} else {
-					this.goToPageWithIndex(targetPageIndex, 0, shouldSkipTransition)
-				}
+				this.goToPageWithIndex(targetPageIndex, targetPageSegmentIndex, shouldSkipTransition)
 			}
+
 		} else {
 			switch (way) {
 			case "right":
@@ -71,6 +101,10 @@ export default class Slideshow extends PageNavigator {
 	goBackward() {
 		const shouldSkipTransition = false
 		this.attemptToGoBackward(shouldSkipTransition)
+	}
+
+	goSidewaysIfPossible(way) {
+		return this.attemptToGoSideways(way) // A return is needed here (see InteractionManager)
 	}
 
 }

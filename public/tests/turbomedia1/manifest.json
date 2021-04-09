@@ -1,0 +1,162 @@
+{
+    "@context": "http://readium.org/webpub-manifest/context.jsonld",
+    "@type": "https://schema.org/VisualArtwork",
+    "metadata": {
+        "identifier": "turbomedia1",
+        "title": "Turbomedia 1",
+        "readingProgression": "btt",
+        "presentation": {
+            "continuous": false,
+            "fit": "cover",
+            "overflow": "auto",
+            "clipped": true,
+            "spread": "auto",
+            "viewportRatio": {
+                "constraint": "exact",
+                "aspectRatio": "16:9"
+            }
+        }
+    },
+    "links": [
+        {
+            "rel": "self",
+            "href": "manifest.json",
+            "type": "application/divina+json"
+        }
+    ],
+    "readingOrder": [
+        {
+            "href": "resource-00.png"
+        },
+        {
+            "href": "resource-01.png"
+        },
+        {
+            "href": "video.mp4"
+        },
+        {
+            "href": "resource-03.png",
+            "properties": {
+                "clipped": false
+            }
+        },
+        {
+            "href": "resource-04.png"
+        },
+        {
+            "href": "resource-05.png"
+        },
+        {
+            "href": "resource-06.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "dissolve"
+                },
+                "transitionBackward": {
+                    "type": "dissolve"
+                }
+            }
+        },
+        {
+            "href": "resource-07.png"
+        },
+        {
+            "href": "resource-08.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "push",
+                    "direction": "ttb",
+                    "duration": 4000
+                }
+            }
+        },
+        {
+            "href": "resource-09.png"
+        },
+        {
+            "href": "resource-10.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "slide-in",
+                    "direction": "ltr"
+                },
+                "transitionBackward": {
+                    "type": "slide-out",
+                    "direction": "rtl"
+                }
+            }
+        },
+        {
+            "href": "resource-11.png"
+        },
+        {
+            "href": "resource-12.png"
+        },
+        {
+            "href": "resource-13.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "animation",
+                    "sequence": [
+                        {
+                            "href": "sequence-parts.png#xywh=percent:0,0,50,50"
+                        },
+                        {
+                            "href": "sequence-parts.png#xywh=percent:50,0,50,50"
+                        },
+                        {
+                            "href": "sequence-parts.png#xywh=percent:0,50,100,50"
+                        },
+                        {
+                            "href": "sequence-parts.png#xywh=percent:0,0,50,50"
+                        },
+                        {
+                            "href": "sequence-parts.png#xywh=percent:50,0,50,50"
+                        },
+                        {
+                            "href": "sequence-parts.png#xywh=percent:0,50,100,50"
+                        }
+                    ],
+                    "duration": 1000
+                }
+            }
+        },
+        {
+            "href": "resource-14.png"
+        },
+        {
+            "href": "resource-15.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "animation",
+                    "file": {
+                        "href": "I-DO-NOT-EXIST.mp4"
+                    }
+                }
+            }
+        },
+        {
+            "href": "resource-16.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "animation",
+                    "file": {
+                        "href": "video.mp4"
+                    }
+                }
+            }
+        },
+        {
+            "href": "resource-17.png",
+            "properties": {
+                "transitionForward": {
+                    "type": "animation",
+                    "file": {
+                        "href": "video.mp4"
+                    },
+                    "duration": 4000
+                }
+            }
+        }
+    ]
+}

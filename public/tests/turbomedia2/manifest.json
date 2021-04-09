@@ -1,0 +1,134 @@
+{
+    "@context": "http://readium.org/webpub-manifest/context.jsonld",
+    "@type": "https://schema.org/VisualArtwork",
+    "metadata": {
+        "identifier": "turbomedia2",
+        "title": "Turbomedia 2",
+        "readingProgression": "ltr",
+        "presentation": {
+            "continuous": false,
+            "fit": "height",
+            "overflow": "paginated",
+            "clipped": false,
+            "spread": "landscape",
+            "viewportRatio": {
+                "constraint": "min",
+                "aspectRatio": "9:10"
+            }
+        },
+        "language": "en"
+    },
+    "links": [
+        {
+            "rel": "self",
+            "href": "manifest.json",
+            "type": "application/divina+json"
+        }
+    ],
+    "readingOrder": [
+        {
+            "href": "resource-00.png",
+            "properties": {
+                "page": "right"
+            }
+        },
+        {
+            "href": "resource-01.png",
+            "properties": {
+                "page": "right",
+                "transitionForward": {
+                    "type": "dissolve",
+                    "_duration": 1000,
+                    "controlled": true
+                },
+                "transitionBackward": {
+                    "type": "dissolve",
+                    "_duration": 1000,
+                    "controlled": true
+                }
+            }
+        },
+        {
+            "href": "resource-02.png",
+            "properties": {
+                "page": "left",
+                "transitionForward": {
+                    "type": "dissolve",
+                    "_duration": 1000,
+                    "controlled": true
+                }
+            }
+        },
+        {
+            "href": "resource-03.png",
+            "properties": {
+                "page": "left"
+            }
+        },
+        {
+            "href": "resource-04.png",
+            "properties": {
+                "page": "center"
+            },
+            "alternate": [
+                {
+                    "language": "fr",
+                    "href": "french-center.png"
+                }
+            ]
+        },
+        {
+            "href": "resource-05.png",
+            "properties": {
+                "page": "left"
+            },
+            "alternate": [
+                {
+                    "language": "fr",
+                    "href": "french-left.png"
+                }
+            ]
+        },
+        {
+            "href": "resource-06.png",
+            "properties": {
+                "page": "right"
+            },
+            "alternate": [
+                {
+                    "language": "fr",
+                    "href": "french-right.png"
+                }
+            ]
+        },
+        {
+            "href": "resource-07.png",
+            "alternate": [
+                {
+                    "language": "fr",
+                    "href": "french-switch.png"
+                }
+            ]
+        },
+        {
+            "href": "resource-08.png"
+        },
+        {
+            "href": "resource-09.png"
+        }
+    ],
+    "guided": [
+        {
+            "href": "resource-09.png#xywh=percent:0,0,50,50"
+        },
+        {
+            "href": "resource-09.png#xywh=percent:50,0,50,50"
+        },
+        {
+            "href": "resource-09.png#xywh=pixel:0,540,1920,540"
+        },
+        {
+            "href": "resource-09.png#xywh=pixel:0,540,1920,mistake!"
+        }
+    ]
+}

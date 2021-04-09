@@ -1,24 +1,22 @@
 import Slice from "./Slice"
 
-import * as Utils from "../utils"
-
 export default class SequenceSlice extends Slice {
 
-	// Used below and in Player
-	get resourcesArray() {
-		const { resourcesArray } = this._resourcesInfo || {}
-		return resourcesArray || []
+	// Used in TagManager
+	get arrayOfResourceInfoArray() {
+		return this._arrayOfResourceInfoArray
 	}
 
-	// Used in StateHandler
+	// Used in LayerTransition
 	get canPlay() { return (this._duration > 0 && this._texturesArray.length > 0) }
 
-	constructor(resourcesInfo, player) {
-		super(resourcesInfo, player)
+	constructor(arrayOfResourceInfoArray, properties, player, parentInfo = null) {
+		const resourceInfoArray = null
+		super(resourceInfoArray, properties, player, parentInfo)
 
-		this._resourcesInfo = resourcesInfo
-		const { duration } = resourcesInfo
-		this._duration = (Utils.isANumber(duration) === true && duration > 0) ? duration : 0
+		this._arrayOfResourceInfoArray = arrayOfResourceInfoArray
+		const { duration } = properties
+		this._duration = duration || 0
 
 		this._type = "sequenceSlice"
 
@@ -28,22 +26,23 @@ export default class SequenceSlice extends Slice {
 		this._nbOfLoadedFrameTextures = 0
 	}
 
-	getPathsToLoad() {
-		if (this._loadStatus === 1 || this._loadStatus === 2) {
+	getResourceIdsToLoad(force = false) {
+		if (force === false && (this._loadStatus === 1 || this._loadStatus === 2)) {
 			return []
 		}
 
-		const pathsArray = []
-		this.resourcesArray.forEach((resource) => {
-			const { path } = this._getRelevantPathAndMediaFragment(resource)
-			if (path) {
-				pathsArray.push(path)
+		const resourceDataArray = []
+		this._arrayOfResourceInfoArray.forEach((resourceInfoArray) => {
+			const { id, fragment } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+			if (id !== null) {
+				resourceDataArray.push({ sliceId: this._id, resourceId: id, fragment })
 			}
 		})
 
 		this._loadStatus = 1
-
-		return [{ pathsArray, sliceId: this._id }]
+		this._updateParentLoadStatus()
+		this._addAndStartLoadingAnimation()
+		return [resourceDataArray]
 	}
 
 	updateTextures() {
@@ -57,28 +56,29 @@ export default class SequenceSlice extends Slice {
 			return
 		}
 
-		if (this._texturesArray.length < this.resourcesArray.length) {
-			this._loadStatus = -1
-		}
+		this._loadStatus = (this._texturesArray.length < this._arrayOfResourceInfoArray.length) ? -1 : 2
 
-		this._loadStatus = 2
+		this._stopAndRemoveLoadingAnimation()
+
 		this.setTexturesArray(this._texturesArray)
 	}
 
 	_createTexturesArray() {
 		let texturesArray = []
 
-		if (this.resourcesArray.length > 0) {
+		if (this._arrayOfResourceInfoArray.length > 0) {
 
 			// Build texturesList
 			const texturesList = []
-			this.resourcesArray.forEach((resource) => {
-				const texture = this._getLoadedTexture(resource)
+			this._arrayOfResourceInfoArray.forEach((resourceInfoArray) => {
+				const texture = this._getLoadedTexture(resourceInfoArray)
 
 				if (texture) {
 					// Get natural dimensions from the first valid texture in the list
 					if (this._hasLoadedOnce === false) {
-						this._setSizeFromActualTexture(texture.frame.width, texture.frame.height)
+						const { size } = texture
+						const { width, height } = size
+						this._setSizeFromActualTexture(width, height)
 						this._hasLoadedOnce = true
 					}
 					texturesList.push(texture)
@@ -101,12 +101,10 @@ export default class SequenceSlice extends Slice {
 	}
 
 	// The associated texture can either come from an image or fallback image
-	_getLoadedTexture(resource) {
-		if (!resource || !this.resourceManager) {
-			return null
-		}
-		const { path, mediaFragment } = this._getRelevantPathAndMediaFragment(resource)
-		const texture = this.resourceManager.getTextureWithPath(path, mediaFragment)
+	_getLoadedTexture(resourceInfoArray) {
+		const { resourceManager } = this._player
+		const { id, fragment } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+		const texture = resourceManager.getTextureWithId(id, fragment)
 		return texture
 	}
 
@@ -134,40 +132,27 @@ export default class SequenceSlice extends Slice {
 
 	resize() {
 		const { pageNavigator } = this._player
-		const fit = pageNavigator.metadata.forcedFit || this._resourcesInfo.fit
+		const fit = pageNavigator.metadata.forcedFit || this._properties.fit
 			|| pageNavigator.metadata.fit
 		super.resize(fit)
 	}
 
-	destroyTexturesIfPossible() {
-		const pathsArray = this.unlinkTexturesAndGetPaths()
-		this.setTexturesArray(null)
-
-		if (this._parent && this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus()
-		}
-
-		pathsArray.forEach((path) => {
-			this.resourceManager.notifyTextureRemovalFromSlice(path)
-		})
-	}
-
-	// Used above and in Player
-	unlinkTexturesAndGetPaths() {
-		if (this._loadStatus === 0) {
-			return []
-		}
-
-		this._loadStatus = 0
-
-		const pathsArray = []
-		this.resourcesArray.forEach((resource) => {
-			const { path } = this._getRelevantPathAndMediaFragment(resource)
-			if (path) {
-				pathsArray.push(path)
+	// Used in Slice
+	_getLoadedIds() {
+		const idsArray = []
+		this._arrayOfResourceInfoArray.forEach((resourceInfoArray) => {
+			const { id } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+			if (id !== null) {
+				idsArray.push(id)
 			}
 		})
-		return pathsArray
+		return idsArray
+	}
+
+	// Used in TextureResource
+	removeTexture() {
+		this.setTexturesArray(null)
+		this._setAsUnloaded()
 	}
 
 }

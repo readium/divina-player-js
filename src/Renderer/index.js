@@ -1,9 +1,15 @@
-import Renderer from "./Renderer"
-import Container from "./Container"
-import TextElement from "./TextElement"
-import TextureElement from "./TextureElement"
-import Loader from "./Loader"
-import Texture from "./Texture"
+import * as PixiRenderer from "./PixiRenderer"
+
+const chosenRenderer = PixiRenderer
+
+const {
+	Renderer,
+	Container,
+	TextElement,
+	TextureElement,
+	Loader,
+	Texture,
+} = chosenRenderer
 
 export {
 	Renderer,

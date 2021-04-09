@@ -9,17 +9,45 @@ const getFolderPathFromManifestPath = (manifestPath) => {
 	if (!manifestPath || manifestPath.split("/").length === 1) {
 		return ""
 	}
-	const folderPath = manifestPath.split(`/${constants.defaultManifestFilename}`)[0]
+	const folderPath = manifestPath.split(`/${constants.DEFAULT_MANIFEST_FILENAME}`)[0]
 	return folderPath
 }
 
-// For type checking (used below)
+// For type checking
 
-const isAString = (value) => ( // Used below
+const isAString = (value) => (
 	(typeof value === "string" || value instanceof String)
 )
 
-const isANumber = (value) => (Number.isFinite(value)) // Used below
+const isANumber = (value) => (Number.isFinite(value) === true)
+
+const isAnObject = (value) => ( // Excluding the array case
+	(value !== null && typeof value === "object" && Array.isArray(value) === false)
+)
+
+// For checking data values
+const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
+	const { type, allowed, defaultValue } = constants.ACCEPTED_VALUES[valueType] || {}
+	if (valueType === "positive") {
+		if (value !== undefined && isANumber(value) === true && value > 0) {
+			return value
+		}
+		return null
+	}
+	if (type === "boolean") {
+		if (value !== undefined && typeof value === "boolean") {
+			return value
+		}
+		return (shouldReturnDefaultValue === true) ? defaultValue : null
+	}
+	if (type === "string") {
+		if (isAString(value) === true && allowed.includes(value) === true) {
+			return value
+		}
+		return (shouldReturnDefaultValue === true) ? defaultValue : null
+	}
+	return null
+}
 
 // For handling resources
 
@@ -47,16 +75,33 @@ const isOfType = (path, acceptableGeneralType, acceptableExtensions) => {
 }
 
 const isAVideo = (path) => (
-	isOfType(path, "video", constants.acceptableVideoExtensions)
+	isOfType(path, "video", constants.ACCEPTED_VIDEO_EXTENSIONS)
 )
 
 /*const isAnImage = (path) => (
-	isOfType(path, "image", constants.acceptableImageExtensions)
+	isOfType(path, "image", constants.ACCEPTED_IMAGE_EXTENSIONS)
 )*/
+
+const getResourceType = (path, type = null) => {
+	let resourceType = null
+	// To assign a general resourceType, first check the specified value for type
+	if (type) {
+		const generalType = type.split("/")[0]
+		if (generalType === "image" || generalType === "video") {
+			resourceType = generalType
+		}
+	}
+	// If the specified value did not provide a relevant resourceType, check the path's extension
+	if (!resourceType) {
+		resourceType = (isAVideo(path) === true) ? "video" : "image"
+	}
+	// Note that the "image" resourceType is thus favored by default
+	return resourceType
+}
 
 // For parsing the aspect ratio value written as a string in the divina's viewportRatio property
 const parseAspectRatio = (ratio) => {
-	if (!ratio) {
+	if (!ratio || typeof ratio !== "string") {
 		return null
 	}
 	const parts = ratio.split(":")
@@ -73,9 +118,15 @@ const parseAspectRatio = (ratio) => {
 
 // For splitting an href into path and mediaFragment
 const getPathAndMediaFragment = (href) => {
-	const hrefParts = (href && href.split) ? href.split("#") : []
+	if (!href || isAString(href) === false) {
+		return { path: "" }
+	}
+	const hrefParts = href.split("#")
 	const path = hrefParts[0]
-	const mediaFragment = (hrefParts.length > 1) ? hrefParts[1] : null
+	if (hrefParts.length === 1 || hrefParts.length > 2) {
+		return { path }
+	}
+	const mediaFragment = hrefParts[1]
 	return { path, mediaFragment }
 }
 
@@ -85,7 +136,7 @@ const parseMediaFragment = (mediaFragment) => {
 		return null
 	}
 	const mediaFragmentParts = mediaFragment.split("=")
-	if (mediaFragmentParts.length !== 2) {
+	if (mediaFragmentParts.length !== 2 || mediaFragmentParts[0] !== "xywh") {
 		return null
 	}
 
@@ -174,44 +225,37 @@ const getShortenedHref = (href) => {
 	return href.split("#")[0]
 }
 
-// For parsing and computing the coordinate of a relative resource point
-const parseCoordinate = (value, dimensionLength) => {
-	if (!value) {
-		return null
-	}
-	if (isAString(value) === false) {
-		return null
-	}
-	let valueParts = value.split("%")
-	let relValue = valueParts[0]
-	if (valueParts.length !== 2) {
-		return null
-	}
-	if (Number.isNaN(Number(relValue)) === false) {
-		return (Number(relValue) * dimensionLength) / 100
-	}
-	valueParts = relValue.split("px")
-	relValue = Number(valueParts[0])
-	if (valueParts.length === 2 && Number.isNaN(Number(relValue)) === false) {
-		return Number(relValue)
-	}
-	return null
-}
-
-// For measuring a distance between 2 points (used for snap points and pinch)
+// For measuring a distance between 2 points (used for pinch)
 const getDistance = (point1, point2) => (
 	Math.sqrt((point2.x - point1.x) ** 2 + (point2.y - point1.y) ** 2)
 )
 
+// For converting colors
+const convertColorStringToNumber = (hex) => {
+	let result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+	if (result) {
+		const r = parseInt(result[1], 16)
+		const g = parseInt(result[2], 16)
+		const b = parseInt(result[3], 16)
+		result = r * (256 ** 2) + g * 256 + b
+		return result
+	}
+	return null
+}
+
 export {
 	hasAScheme,
 	getFolderPathFromManifestPath,
+	isAString,
 	isANumber,
+	isAnObject,
+	returnValidValue,
+	getResourceType,
 	isAVideo,
 	parseAspectRatio,
 	getPathAndMediaFragment,
 	getRectForMediaFragmentAndSize,
 	getShortenedHref,
-	parseCoordinate,
 	getDistance,
+	convertColorStringToNumber,
 }

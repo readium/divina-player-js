@@ -2,16 +2,16 @@ import AsyncTaskQueue from "./AsyncTaskQueue"
 
 export default class ResourceLoadTaskQueue extends AsyncTaskQueue {
 
-	constructor(maxPriority, priorityFactor, allowsParallel) {
+	constructor(maxPriority, allowsParallel, priorityFactor) {
 
-		// Task priorities will be evaluated based on page differences
+		// Task priorities will be evaluated based on segment differences (absolute segmentIndex)
 		const getPriorityFromTaskData = (data) => {
 			let priority = 0
-			if (!data || data.pageIndex === null || this._targetPageIndex === null) {
+			if (!data || data.segmentIndex === null || this._targetSegmentIndex === null) {
 				return priority
 			}
-			const taskPageIndex = data.pageIndex
-			priority = taskPageIndex - this._targetPageIndex
+			const taskSegmentIndex = data.segmentIndex
+			priority = taskSegmentIndex - this._targetSegmentIndex
 			if (priority < 0) {
 				if (priorityFactor) {
 					priority *= -priorityFactor
@@ -25,11 +25,11 @@ export default class ResourceLoadTaskQueue extends AsyncTaskQueue {
 
 		super(maxPriority, allowsParallel, getPriorityFromTaskData)
 
-		this._targetPageIndex = null
+		this._targetSegmentIndex = null
 	}
 
-	updatePriorities(targetPageIndex) {
-		this._targetPageIndex = targetPageIndex
+	updatePriorities(targetSegmentIndex) {
+		this._targetSegmentIndex = targetSegmentIndex
 		super.updatePriorities()
 	}
 

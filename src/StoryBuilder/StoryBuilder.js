@@ -6,327 +6,223 @@ import Layer from "./Layer"
 
 export default class StoryBuilder {
 
-	static createPageNavigatorsInfo(storyData) {
-		const { metadata, mainLinkObjectsArray, guidedLinkObjectsArray } = storyData || {}
-		const {
-			readingProgression, continuous, fit, overflow, clipped, spread,
-		} = metadata || {}
+	static createPageNavigator(pageNavType, pageNavData, sharedMetadata, slices, player) {
+		const { metadata, globalSoundsArray } = pageNavData // Note that this metadata is specific
+		const fullMetadata = { ...sharedMetadata, ...metadata }
 
-		const cleanMetadata = {
-			direction: readingProgression,
-			fit,
-			overflow,
-			clipped,
+		const pageLayersArray = StoryBuilder.buildPageLayersArray(pageNavType, pageNavData,
+			fullMetadata, slices, player)
+		const pageNavigator = new Slideshow(pageNavType, fullMetadata, pageLayersArray, player)
+
+		if (globalSoundsArray) { // Global sounds are necessarily time animations
+			globalSoundsArray.forEach(({ resourceId }) => {
+				pageNavigator.addSoundData({ resourceId }) // No segment indices will mean all pages!
+			})
+
+			// Add to TimeAnimationsManager
+			const pageIndex = null
+			player.timeAnimationManager.addSoundAnimations(globalSoundsArray, pageIndex)
 		}
 
-		const pageNavigatorsInfo = { metadata: cleanMetadata }
-
-		if (continuous === true) {
-			pageNavigatorsInfo.scroll = StoryBuilder.createPageNavigatorInfo("scroll",
-				mainLinkObjectsArray)
-		} else {
-			pageNavigatorsInfo.single = StoryBuilder.createPageNavigatorInfo("single",
-				mainLinkObjectsArray)
-
-			// If the double page reading mode is a possibility
-			if (spread !== "none") {
-				const direction = (readingProgression === "rtl") ? "rtl" : "ltr"
-				pageNavigatorsInfo.double = StoryBuilder.createPageNavigatorInfo("double",
-					mainLinkObjectsArray, direction)
-			}
-		}
-
-		if (guidedLinkObjectsArray) {
-			pageNavigatorsInfo.guided = StoryBuilder.createPageNavigatorInfo("guided",
-				guidedLinkObjectsArray)
-		}
-
-		return pageNavigatorsInfo
-	}
-
-	static createPageNavigatorInfo(type, linkObjectsArray, direction) {
-		let metadata = {}
-		let grouping = null
-
-		switch (type) {
-		case "single":
-			grouping = "single"
-			break
-		case "double": // Transitions will be discarded
-			metadata = {
-				direction, // Force direction to be ltr or rtl
-				forcedFit: "contain",
-				forcedTransitionType: "cut",
-			}
-			grouping = "double"
-			break
-		case "scroll":
-			grouping = "stitched"
-			break
-		case "guided":
-			metadata = {
-				forcedFit: "contain",
-			}
-			grouping = "single"
-			break
-		default:
-			break
-		}
-
-		const pageNavInfo = { metadata }
-
-		let pageIndex = -1
+		// Scan all sound animations, storing sound data on the one hand (see just below),
+		// and adding time animations to the time animation manager on the other
 		let segmentIndex = 0
-
-		if (grouping === "single" || grouping === "stitched") {
-			const transitionsArray = []
-
-			linkObjectsArray.forEach((linkObject) => {
-				const {
-					slice, transitionForward, transitionBackward, children,
-				} = linkObject
-
-				// It is time to create a new page...
-				if (pageIndex === -1 // ... if we are at the beginning of the story
-					|| grouping === "single" // ... or with each new resource in a discontinuous story
-					|| transitionForward) { // ... or with each new "chapter" in a "chaptered webtoon"
-					pageIndex += 1
-					segmentIndex = 0
-				}
-
-				slice.setPageNavInfo(type, { pageIndex, segmentIndex })
-
-				// Only consider transitions on the first segment of a page
-				if (transitionForward && segmentIndex === 0) {
-					transitionsArray.push({
-						transition: transitionForward, isForward: true, pageIndex,
-					})
-					if (transitionForward.slice) {
-						transitionForward.slice.setPageNavInfo(type, { pageIndex, segmentIndex })
-					}
-				}
-				if (transitionBackward && segmentIndex === 0) {
-					transitionsArray.push({
-						transition: transitionBackward, isForward: false, pageIndex,
-					})
-					if (transitionBackward.slice) {
-						transitionBackward.slice.setPageNavInfo(type, { pageIndex, segmentIndex })
-					}
-				}
-
-				// For layer slices
-				if (children) {
-					children.forEach((child) => {
-						if (child.linkObject && child.linkObject.slice) {
-							const childSlice = child.linkObject.slice
-							childSlice.setPageNavInfo(type, { pageIndex, segmentIndex })
+		const soundDataByResourceId = {}
+		const { pagesDataArray } = pageNavData
+		pagesDataArray.forEach((pageData, i) => {
+			const { segmentsDataArray } = pageData
+			segmentsDataArray.forEach((segmentData) => {
+				const { soundAnimationsArray } = segmentData
+				if (soundAnimationsArray) {
+					soundAnimationsArray.forEach((animation) => {
+						const { type, resourceId } = animation
+						if (!soundDataByResourceId[resourceId]) {
+							soundDataByResourceId[resourceId] = []
 						}
+						const { length } = soundDataByResourceId[resourceId]
+						if (length === 0
+							|| soundDataByResourceId[resourceId][length - 1] !== i) {
+							soundDataByResourceId[resourceId].push(segmentIndex)
+						}
+						if (type === "time") {
+							player.timeAnimationManager.addSoundAnimations([animation], i)
+						} // Progress and point animations are dealt with below
 					})
 				}
-
 				segmentIndex += 1
 			})
+		})
 
-			pageNavInfo.transitionsArray = transitionsArray
+		// Store all sound data in the page navigator to allow for related load tasks
+		Object.entries(soundDataByResourceId).forEach(([resourceId, segmentIndicesArray]) => {
+			pageNavigator.addSoundData({ resourceId, segmentIndicesArray })
+		})
 
-		} else if (grouping === "double") { // Transitions are discarded in double page reading mode
-
-			let lastPageSide = null
-			let isLonely = false
-
-			linkObjectsArray.forEach((linkObject, i) => {
-				const { slice } = linkObject
-				const { resource } = slice || {}
-				const { pageSide } = resource || {}
-
-				if (!lastPageSide
-					|| lastPageSide === "center" || lastPageSide === null
-					|| pageSide === "center" || pageSide === null
-					|| (direction === "ltr" && (lastPageSide === "right" || pageSide === "left"))
-					|| (direction === "rtl" && (lastPageSide === "left" || pageSide === "right"))) {
-
-					pageIndex += 1
-
-					const nextLinkObject = (i < linkObjectsArray.length - 1)
-						? linkObjectsArray[i + 1]
-						: null
-					const nextPageSide = (nextLinkObject && nextLinkObject.slice
-						&& nextLinkObject.slice.resource)
-						? nextLinkObject.slice.resource.pageSide
-						: null
-					if (direction === "ltr") {
-						segmentIndex = (pageSide === "right") ? 1 : 0
-						if (pageSide === "left" && nextPageSide !== "right") {
-							isLonely = true
-						}
-					} else { // direction === "rtl"
-						segmentIndex = (pageSide === "left") ? 1 : 0
-						if (pageSide === "right" && nextPageSide !== "left") {
-							isLonely = true
-						}
-					}
-				}
-				slice.setPageNavInfo(type, { pageIndex, segmentIndex, isLonely })
-
-				isLonely = false
-				lastPageSide = pageSide
-
-				segmentIndex += 1
-			})
-		}
-
-		// Do not forget to add the last created page to the list
-		pageIndex += 1
-
-		pageNavInfo.nbOfPages = pageIndex
-
-		return pageNavInfo
-	}
-
-	static createPageNavigator(type, linkObjectsArray, pageNavigatorInfo, defaultMetadata, player) {
-		const { metadata, transitionsArray } = pageNavigatorInfo
-		const fullMetadata = {
-			...defaultMetadata,
-			...metadata,
-		}
-		const pageLayersArray = StoryBuilder.buildPageLayersArray(type, fullMetadata, linkObjectsArray,
-			transitionsArray, player)
-		const pageNavigator = new Slideshow(type, fullMetadata, pageLayersArray, player)
 		return pageNavigator
 	}
 
-	static buildPageLayersArray(type, metadata, linkObjectsArray, transitionsArray, player) {
-		const { overflow } = metadata
+	static buildPageLayersArray(pageNavType, pageNavData, metadata, slices, player) {
+		const { pagesDataArray } = pageNavData
+		const { overflow, hAlign, vAlign } = metadata
+
+		const isADoublePage = (pageNavType === "double")
 
 		const pagesArray = []
+		let segmentIndex = 0
 
-		let currentPageIndex = -1
-		let currentSegmentIndex = 0
-		let currentPage = null
+		// For double pages
+		let emptySlice = null
+		let lastSlice = null
 
-		const isADoublePage = (type === "double")
+		pagesDataArray.forEach((pageData, i) => {
 
-		linkObjectsArray.forEach((linkObject) => {
-			const { slice, children, snapPoints } = linkObject
-			const { pageNavInfo } = slice
-			const info = pageNavInfo[type]
-			if (info) {
-				const { pageIndex, segmentIndex, isLonely } = info
+			const actualHAlign = pageData.hAlign || hAlign
+			const actualVAlign = pageData.vAlign || vAlign
 
-				if (pageIndex > currentPageIndex) {
-					if (currentPage) {
-						pagesArray.push(currentPage)
+			const page = new Page(i, isADoublePage, overflow, actualHAlign, actualVAlign, player)
+
+			const { segmentsDataArray } = pageData
+			segmentsDataArray.forEach((segmentData, j) => {
+				const {
+					sliceId, childrenArray, snapPointsArray, soundAnimationsArray,
+				} = segmentData
+				const sliceLayersArray = []
+
+				// If an empty slice (in a double page)
+				if (sliceId === undefined) {
+					emptySlice = Slice.createEmptySlice(player)
+					const emptySliceLayersArray = [new Layer("slice", emptySlice)]
+					const emptySegment = new Segment(j, segmentIndex, page, emptySliceLayersArray,
+						player)
+					page.addSegment(emptySegment)
+
+					if (j === 1) {
+						emptySlice._neighbor = lastSlice
+						emptySlice = null
+						lastSlice = null
 					}
-					currentPageIndex += 1
-					currentSegmentIndex = 0
 
-					currentPage = new Page(currentPageIndex, isADoublePage, overflow, player)
-				}
-
-				const sliceLayersArray = [new Layer("slice", slice)]
-
-				if (children) {
-					children.forEach((child) => {
-						const {
-							entryForward, exitForward, entryBackward, exitBackward,
-						} = child
-						const layerSlice = child.linkObject.slice
-						const sliceLayer = new Layer("slice", layerSlice)
-						if (entryForward) {
-							sliceLayer.setEntryForward(entryForward)
-						}
-						if (exitForward) {
-							sliceLayer.setExitForward(exitForward)
-						}
-						if (entryBackward) {
-							sliceLayer.setEntryBackward(entryBackward)
-						}
-						if (exitBackward) {
-							sliceLayer.setExitBackward(exitBackward)
-						}
-						sliceLayersArray.push(sliceLayer)
-					})
-				}
-
-				// Now create a segment for the slice and add it to the page
-				// (do note that, for a divina, a page can only have several segments if continuous=true)
-
-				let segment = null
-
-				if (type === "double" && currentSegmentIndex === 0 && segmentIndex === 1) {
-					currentSegmentIndex = 1
-					segment = new Segment(currentSegmentIndex, currentPage, sliceLayersArray, player)
-
-					const neighbor = segment
-					StoryBuilder.addEmptySegmentToPage(currentPage, 0, neighbor, player)
-
+				// Otherwise, for a normal page
 				} else {
-					segment = new Segment(currentSegmentIndex, currentPage, sliceLayersArray, player)
+					const slice = slices[sliceId]
+					const sliceLayer = new Layer("slice", slice)
+					sliceLayersArray.push(sliceLayer)
+
+					// For double pages
+					if (emptySlice) { // If emptySlice was in the first position in the page
+						emptySlice._neighbor = slice
+						emptySlice = null
+					}
+					lastSlice = slice
+
+					// If there are child layers, add them (the parent one is used to define a reference size)
+					if (childrenArray && childrenArray.length > 0) {
+						childrenArray.forEach((child) => {
+							const childSlice = slices[child.sliceId]
+							const childSliceLayer = new Layer("slice", childSlice)
+
+							// Add layer transitions, except for a continuous = true story
+							if (pageNavType !== "scroll") {
+								const {
+									entryForward, exitForward, entryBackward, exitBackward,
+								} = child
+								if (entryForward) {
+									StoryBuilder._setHalfTransition("entryForward", entryForward,
+										childSliceLayer)
+								}
+								if (exitForward) {
+									StoryBuilder._setHalfTransition("exitForward", exitForward,
+										childSliceLayer)
+								}
+								if (entryBackward) {
+									StoryBuilder._setHalfTransition("entryBackward", entryBackward,
+										childSliceLayer)
+								}
+								if (exitBackward) {
+									StoryBuilder._setHalfTransition("exitBackward", exitBackward,
+										childSliceLayer)
+								}
+							}
+
+							sliceLayersArray.push(childSliceLayer)
+
+							if (child.visualAnimationsArray) {
+								child.visualAnimationsArray.forEach((animation) => {
+									const { type } = animation
+									if (type === "progress" || type === "point") {
+										page.addSliceAnimation(j, childSlice, animation)
+									} else { // type === "time"
+										player.timeAnimationManager.addSliceAnimation(childSlice,
+											animation, i)
+									}
+								})
+							}
+						})
+					}
+
+					const segment = new Segment(0, segmentIndex, page, sliceLayersArray, player)
+					page.addSegment(segment)
+
+					if (soundAnimationsArray) { // Non-global sounds are linked to a page
+						soundAnimationsArray.forEach((animation) => {
+							const { type } = animation
+							// However time animations will be directly handled by timeAnimationManager
+							if (type === "progress" || type === "point") {
+								page.addSoundAnimation(j, animation)
+							}
+						})
+					}
+
+					lastSlice = slice
 				}
 
-				currentPage.addSegment(segment)
-
-				// If the linkObject has snapPoints, add them to the page too
-				if (snapPoints) {
-					currentPage.addSnapPointsForLastSegment(snapPoints)
+				if (snapPointsArray) {
+					page.addSnapPoints(j, snapPointsArray)
 				}
 
-				if (type === "double" && segmentIndex === 0 && isLonely === true) {
-					const neighbor = segment
-					StoryBuilder.addEmptySegmentToPage(currentPage, 1, neighbor, player)
-				}
+				segmentIndex += 1
+			})
 
-				currentSegmentIndex += 1
-			}
+			pagesArray.push(page)
 		})
 
-		// Do not forget to add the last created page to the list
-		if (currentPage) {
-			pagesArray.push(currentPage)
-		}
-
-		// Create pageLayerDataArray
+		// Create pageLayersArray
 		const pageLayersArray = pagesArray.map((page) => (new Layer("page", page)))
 
-		// Now assign entry and exit (half-)transitions
-		// If forcedTransitionType === "cut", don't add a transition at all!
+		// Now assign entry and exit half transitions
+		// (if forcedTransitionType="cut", don't add transitions at all)
 		const { forcedTransitionType } = metadata
-
-		if (!forcedTransitionType && transitionsArray) {
-			transitionsArray.forEach(({ transition, isForward, pageIndex }) => {
-				const { slice } = transition
-				if (slice) {
-					// Set the second page in the readingOrder as parent for a transition slice
-					slice.setParent(pagesArray[pageIndex])
+		if (!forcedTransitionType || forcedTransitionType !== "cut") {
+			pagesDataArray.forEach((pageData, i) => {
+				const {
+					entryForward, exitForward, entryBackward, exitBackward,
+				} = pageData
+				const pageLayer = pageLayersArray[i]
+				if (entryForward) {
+					StoryBuilder._setHalfTransition("entryForward", entryForward, pageLayer)
 				}
-
-				const { entry, exit } = transition.getEntryAndExitTransitions(isForward)
-
-				if (isForward === true) {
-					if (pageIndex > 0) {
-						pageLayersArray[pageIndex - 1].setExitForward(exit)
-					}
-					pageLayersArray[pageIndex].setEntryForward(entry)
-
-				} else {
-					if (pageIndex > 0) {
-						pageLayersArray[pageIndex - 1].setEntryBackward(entry)
-					}
-					pageLayersArray[pageIndex].setExitBackward(exit)
+				if (exitForward) {
+					StoryBuilder._setHalfTransition("exitForward", exitForward, pageLayer)
 				}
-
+				if (entryBackward) {
+					StoryBuilder._setHalfTransition("entryBackward", entryBackward, pageLayer)
+				}
+				if (exitBackward) {
+					StoryBuilder._setHalfTransition("exitBackward", exitBackward, pageLayer)
+				}
 			})
 		}
 
 		return pageLayersArray
 	}
 
-	static addEmptySegmentToPage(page, segmentIndex, neighbor, player) {
-		const emptySlice = Slice.createEmptySlice(player, neighbor)
-		const emptySliceLayersArray = [new Layer("slice", emptySlice)]
-		const emptySegment = new Segment(segmentIndex, page, emptySliceLayersArray, player)
-		const shouldAddSegmentAtStart = (segmentIndex === 0)
-		page.addSegment(emptySegment, shouldAddSegmentAtStart)
+	static _setHalfTransition(type, value, pageLayer) {
+		const { slice } = value
+		if (slice) {
+			const page = pageLayer.content
+			slice.setParent(page)
+		}
+		pageLayer.setHalfTransition(type, value)
 	}
 
 }

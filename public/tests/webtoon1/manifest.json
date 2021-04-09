@@ -1,0 +1,128 @@
+{
+    "@context": "http://readium.org/webpub-manifest/context.jsonld",
+    "@type": "https://schema.org/VisualArtwork",
+    "metadata": {
+        "identifier": "webtoon",
+        "title": "Webtoon",
+        "readingProgression": "ltr",
+        "INVALID_presentation": {
+            "default_continuous": true,
+            "default_fit": "contain",
+            "default_overflow": "scrolled",
+            "default_clipped": false
+        }
+    },
+    "links": [
+        {
+            "rel": "self",
+            "href": "manifest.json",
+            "type": "application/divina+json"
+        }
+    ],
+    "readingOrder": [
+        {
+            "href": "resource-00.png",
+            "type": "image/png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-01.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-02.png",
+            "type": "image/svg",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-03.svg",
+            "type": "image/svg",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-04.png",
+            "type": "image/png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-05.png",
+            "type": "video/mp4",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "href": "resource-06.png",
+            "height": 1080
+        },
+        {
+            "href": "resource-07.png",
+            "width": 1920,
+            "height": -540
+        },
+        {
+            "href": "resource-08.png"
+        },
+        {
+            "href": "resource-09.png",
+            "width": 240,
+            "height": 240
+        },
+        {
+            "href": "resource-10.png"
+        },
+        {
+            "href": "video.mp4"
+        },
+        {
+            "href": "resource-12.png"
+        },
+        {
+            "href": "resource-13.mp4",
+            "width": 240,
+            "height": 240,
+            "alternate": [
+                { "href": "fallback.png" }
+            ]
+        },
+        {
+            "href": "resource-14.png"
+        },
+        {
+            "href": "resource-15.mp4",
+            "width": 240,
+            "height": 240,
+            "alternate": [
+                { "href": "I-DO-NOT-EXIST.png" }
+            ]
+        },
+        {
+            "href": "resource-16.png"
+        },
+        {
+            "href": "resource-17.png",
+            "width": 240,
+            "height": 240
+        },
+        {
+            "href": "resource-18.png",
+            "properties": {
+                "fit": "width"
+            }
+        },
+        {
+            "href": "resource-19.png",
+            "properties": {
+                "fit": "cover",
+                "clipped": true
+            }
+        },
+        {
+            "href": "resource-20.png"
+        }
+    ]
+}

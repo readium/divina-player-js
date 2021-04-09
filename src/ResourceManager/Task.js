@@ -30,24 +30,27 @@ export default class Task {
 		this._priority = priority
 	}
 
-	run(callback) {
+	run(doAtTheVeryEnd) {
 		this._isRunning = true
 
-		const fullCallback = () => {
+		const callback = () => {
+			this._isRunning = false
 			if (this._doOnEnd) {
 				this._doOnEnd()
 			}
-			this._isRunning = false
-			if (callback) {
-				callback()
+			if (doAtTheVeryEnd) {
+				doAtTheVeryEnd()
 			}
 		}
 
 		if (this._doAsync) {
 			this._doAsync()
-				.then(fullCallback)
+				.then(callback)
+				.catch(() => {
+					callback()
+				})
 		} else {
-			fullCallback()
+			callback()
 		}
 	}
 

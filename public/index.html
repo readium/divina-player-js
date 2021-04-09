@@ -8,7 +8,7 @@
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
-			background-color: black;
+			background-color: #444444;
 		}
 		#stage {
 			position: fixed;
@@ -17,78 +17,298 @@
 			top: 0;
 			bottom: 0;
 		}
+		.fullscreen {
+			position: fixed;
+			left: 0;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			pointer-events: none;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
 	</style>
+	
+	<!-- Mandatory for playing a Divina -->
 	<script type="text/javascript" src="./divinaPlayer.js"></script>
+	
+	<!-- Then the different UI parts below can just be removed as needed (no need to change anything else!) -->
+	
+	<!-- For adding a top bar with story choice, language, reading mode and fullscreen functions -->
+	<script type="text/javascript" src="./ui/topBar/topBar.js"></script>
+	
+	<!-- For adding a bottom bar with navigation functions within a Divina -->
+	<script type="text/javascript" src="./ui/bottomBar/bottomBar.js"></script>
 </head>
 <body>
 	<script type="text/javascript">
 
-		// List of divina folder URLs (relative to index.html's parent folder)
-		let divinaFoldersArray = ["./webtoon"]
+
+		// Configurable input
+
+
+		// List of story folder URLs (relative to index.html's parent folder)
+		let storyFoldersArray = ["tests/webtoon1", "tests/webtoon2", "tests/turbomedia1", "tests/turbomedia2"];
 		
-		// URL of the specific page/resource to access directly (i.e. start reading from) in a divina
-		let targetUrl = null
+		// Length of time during which the menu is open (i.e. before it closes automatically)
+		// after the first resources of a Divina have been fully downloaded by the player
+		// (value should be null or <= 0 to prevent the menu from opening automatically)
+		let durationOfOpeningAtStart = 1500;
 		
-		// Options for the player
+		// URL of the specific page/resource to access directly (i.e. start reading from) within a Divina
+		let targetUrl = null;	
+		
+		// Options for the Divina Player
 		let options = {
-			// Variables
-			allowsDestroy: true,
-			allowsParallel: false,
-			maxNbOfPagesAfter: 6,
-			videoLoadTimeout: 2000,
-			allowsZoom: true,
+			maxNbOfUnitsToLoadAfter: null,
+			initialNbOfResourcesToLoad: null,
+			allowsDestroy: false,
+			allowsParallel: true,
+			//allowsZoom: true,
 			allowsSwipe: true,
 			allowsWheelScroll: true,
 			allowsPaginatedScroll: true,
 			isPaginationSticky: true,
 			isPaginationGridBased: true,
-			language: "en",
-		}
+			videoLoadTimeout: 2000,
+		};
+
+
+
+		// Function for dispatching events
+		let signal = function (eventName, eventData = null) {
+			const event = document.createEvent("Event");
+			event.initEvent(eventName, true, true);
+			if (eventData) {
+				event.customData = eventData;
+			}
+			document.dispatchEvent(event);
+		};
+
+		// Function for loading a CSS stylesheet in the additional JS scrips
+		let loadCSS = function (url) {
+			let head = document.getElementsByTagName("HEAD")[0];
+			let link = document.createElement("link");
+			link.rel = "stylesheet";
+			link.type = "text/css";
+			link.href = url;
+			head.appendChild(link);
+		};
+
+		// Function for creating a div, adding it to a parent DOM element and setting a few props
+		let createAndAddDivElement = function (parentElement, props) {
+			let element = document.createElement("div");
+			if (props) {
+				Object.entries(props).forEach(function ([key, value]) {
+					if (key === "id" || key === "class") {
+						element.setAttribute(key, value);
+					} else if (key === "style") {
+						Object.entries(value).forEach(function ([subkey, subvalue]) {
+							element.style[subkey] = subvalue;
+						});
+					} else {
+						element[key] = value;
+					}
+				});
+			}
+			if (parentElement) {
+				parentElement.appendChild(element);
+			}
+			return element;
+		};
 
 		window.onload = function () {
-			let Player = window.divinaPlayer
+			let Player = window.divinaPlayer;
 			if (!Player) {
-				return
+				return;
 			}
 
-			// Get the root element
-			let stage = window.document.getElementById("stage")
+			var toggleTopBarFunc = null;
+			var toggleLoadViewer = null; 
+			var toggleBottomBarFunc = null;
 
-			// Create the player
-			let player = new Player(stage)
-console.log(player)
-			// Load the divina from its folder path
-			player.openDivinaFromFolderPath(divinaFoldersArray[0], targetUrl, options)
+			// Create the rootElement for the Divina Player programmatically 
+			let stage = createAndAddDivElement(window.document.body, { id: "stage" });
+			var menu = null;
 
-			// Handle events emitted by the player
-			let eventEmitter = player.eventEmitter
-			eventEmitter.on("jsonload", (data) => {
-				console.log("JSON load", data)
-			})
-			eventEmitter.on("pagenavigatorscreation", (data) => {
-				console.log("Page navigators creation", data)
-			})
-			eventEmitter.on("initialload", (data) => {
-				console.log("Initial load", data)
-			})
-			eventEmitter.on("languagechange", (data) => {
-				console.log("Language change", data)
-			})
-			eventEmitter.on("readingmodechange", (data) => {
-				console.log("Reading mode change", data)
-			})
-			eventEmitter.on("readingmodesupdate", (data) => {
-				console.log("Reading modes update", data)
-			})
-			eventEmitter.on("pagechange", (data) => {
-				console.log("Page change", data)
-			})
-			/*eventEmitter.on("inpagescroll", (data) => {
-				console.log("In-page scroll", data)
-			})*/
-		}
+			// If at least one part of the menu needs to be created, create and add the menu
+			if (typeof createTopBar !== "undefined"
+				|| typeof createLoadViewer !== "undefined"
+				|| typeof createBottomBar !== "undefined") {
+				menu = createAndAddDivElement(window.document.body, { class: "fullscreen" });
+				menu.style.visibility = "hidden";
+			}
 
+			let menuAndPlayerObject = { menu, player: null };
+
+			// Function that will be called to run a Divina (with a folder name)
+			let playFunc = function (props) {
+				if (!props || !props.name) {
+					return;
+				}
+
+				let storyFolderName = props.name;
+
+				// Destroy the current DivinaPlayer instance if there is one, and create a new one
+				if (menuAndPlayerObject.player) {
+					menuAndPlayerObject.player.destroy();
+					menuAndPlayerObject.player = null;
+				}
+				menuAndPlayerObject.player = new Player(stage, "transparent");
+
+				options.doOnCenterTap = function () {
+					if (toggleTopBarFunc) {
+						toggleTopBarFunc();
+					}
+					if (toggleBottomBarFunc) {
+						toggleBottomBarFunc();
+					}
+				};
+
+				if (storyFolderName) {
+					menuAndPlayerObject.player.openDivinaFromFolderPath(storyFolderName, targetUrl, options);
+				}
+
+				// Handle events emitted by the player
+				let eventsArray = [
+					"dataparsing",
+					"initialload",
+					"languagechange",
+					"readingmodechange",
+					"readingmodesupdate",
+					"pageloadstatusupdate",
+					"pagechange",
+					"inpagescroll",
+				];
+				let eventEmitter = menuAndPlayerObject.player.eventEmitter;
+				let dispatchCustomEvent = function (event, data) {
+					//console.log(event, data);
+					var event = new CustomEvent(event, { detail: data });
+					window.document.dispatchEvent(event);
+				}
+				eventsArray.forEach(function (event) {
+					eventEmitter.on(event, function (data) {
+						dispatchCustomEvent(event, data);
+					});
+				});
+			};
+
+			// If the topBar script is loaded, create and add a top bar
+			if (typeof createTopBar !== "undefined") {
+				toggleTopBarFunc = createTopBar(menuAndPlayerObject, playFunc, storyFoldersArray).toggleTopBar;
+			}
+
+			// If the bottomBar script is loaded, create and add a bottom bar
+			if (typeof createBottomBar !== "undefined") {
+				toggleBottomBarFunc = createBottomBar(menuAndPlayerObject).toggleBottomBar;
+			}
+
+			let playFirstStory = function () {
+				if (menuAndPlayerObject.menu) {
+					menuAndPlayerObject.menu.style.visibility = "visible";
+				}
+				if (storyFoldersArray.length > 0) {
+					playFunc({ name: storyFoldersArray[0] });
+				}		
+			};
+
+			// Now play the first story
+			playFirstStory();
+
+			var hasOpenedMenuBeforeAutoClose = false;
+			window.document.body.onpointerup = function () {
+				hasOpenedMenuBeforeAutoClose = true;
+			}
+			var hasInteractedWithMenu = false;
+			menu.onpointerup = function () {
+				hasInteractedWithMenu = true;
+			};
+
+			window.document.addEventListener("initialload", function () {
+				// Automatically open menu after first resources have loaded (if no interaction)
+				if (durationOfOpeningAtStart > 0 && hasOpenedMenuBeforeAutoClose === false) {
+					toggleTopBarFunc();
+					toggleBottomBarFunc();
+
+					// Close topBar automatically after first open (if no interaction)
+					setTimeout(function () {
+						if (hasOpenedMenuBeforeAutoClose === false
+							&& hasInteractedWithMenu === false) {
+							toggleTopBarFunc();
+							toggleBottomBarFunc();
+						}
+					}, durationOfOpeningAtStart);
+				}
+			});
+
+			// Mute/unmute button
+
+			window.document.addEventListener("readingmodechange", function (e) {
+
+				if (e.detail.hasSounds === true) {
+
+					var soundsButton = null;
+					var soundsIcon = null;
+					var isMuted = null;
+
+					var doOnSoundsOn = function () {
+						soundsButton.style.backgroundColor = "white";
+						soundsIcon.style.filter = "invert(0%)";
+						soundsIcon.src = "./ui/sounds/sounds-on.svg";
+					};
+					var doOnSoundsOff = function () {
+						soundsButton.style.backgroundColor = "black";
+						soundsIcon.style.filter = "invert(100%)";
+						soundsIcon.src = "./ui/sounds/sounds-off.svg";
+					};
+					var updateSoundsButton = function (isMuted) {
+						if (menuAndPlayerObject.player) {
+							if (isMuted === true) {
+								menuAndPlayerObject.player.mute();
+								doOnSoundsOff();
+							} else {
+								menuAndPlayerObject.player.unmute();
+								doOnSoundsOn();
+							}
+						}
+					};
+
+					// Create UI for sounds
+					if (!soundsButton) {
+						let margin = "55px";
+						let radius = "40px";
+						soundsButton = createAndAddDivElement(window.document.body, {
+							id: "sounds-button",
+							style: {
+								position: "absolute",
+								right: margin,
+								bottom: margin,
+								width: radius,
+								height: radius,
+								borderRadius: radius, 
+								display: "flex",
+								justifyContent: "center",
+								alignItems: "center",
+								cursor: "pointer",
+							}
+						});
+
+						soundsIcon = document.createElement("img");
+						soundsIcon.style.transform = "scale(6%)";
+						soundsButton.appendChild(soundsIcon);
+
+						soundsButton.onclick = function () {
+							isMuted = !isMuted;
+							updateSoundsButton(isMuted);
+						};
+					}
+
+					isMuted = e.detail.isMuted;
+					updateSoundsButton(isMuted);
+				}
+			});
+		};
 	</script>
-	<div id="stage"></div>>
 </body>
 </html> 
