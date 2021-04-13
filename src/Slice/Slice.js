@@ -1,12 +1,17 @@
 import { TextureElement } from "../Renderer"
 
+// Note that size is obtained from underlying TextureElement
+
 export default class Slice extends TextureElement {
 
-	// Used in Segment
-	get resource() { return this._resource }
+	// Used in Player (for tags)
+	get resourceInfoArray() { return this._resourceInfoArray }
+
+	// Used in StoryBuilder and Player
+	get pageNavInfo() { return this._pageNavInfo }
 
 	// Used in StoryBuilder
-	get pageNavInfo() { return this._pageNavInfo }
+	get pageSide() { return (this._properties) ? this._properties.pageSide : null }
 
 	// Used in StateHandler
 	get canPlay() { return (this._duration > 0) }
@@ -14,13 +19,26 @@ export default class Slice extends TextureElement {
 	// Used in Layer and ResourceManager
 	get loadStatus() { return this._loadStatus }
 
-	// Used in Segment (and below)
+	// Used in TextureResource
+	get isActive() {
+		if (!this._parent) {
+			return true
+		}
+		const { pageNavigator } = this._player
+		const { segmentRange } = pageNavigator
+		const { startIndex, endIndex } = segmentRange
+		const { segmentIndex } = this._parent
+		return (segmentIndex >= startIndex && segmentIndex <= endIndex)
+	}
+
+	// Used in Segment
 	get href() { return (this._resource) ? this._resource.href : null }
 
 	// Used in Player
 	get id() { return this._id }
 
 	// Used below
+
 	static get counter() {
 		Slice._counter = (Slice._counter === undefined)
 			? 0
@@ -28,20 +46,44 @@ export default class Slice extends TextureElement {
 		return Slice._counter
 	}
 
-	// Note that resource is really a SliceResource, not a (Texture)Resource
-	constructor(resource = null, player, parentInfo = null, neighbor = null) {
-		super(resource, player, parentInfo, neighbor)
+	get _video() { return (this._videoTexture) ? this._videoTexture.video : null }
+
+	get _resourceManager() { return this._player.resourceManager }
+
+	constructor(resourceInfoArray, properties, player, parentInfo = null) {
+		const { role } = properties
+		super(role, player, parentInfo)
 
 		this._id = Slice.counter
 
-		this._resource = resource
+		this._resourceInfoArray = resourceInfoArray
+		this._properties = properties
 
-		this._type = `${(resource) ? resource.type : "untyped"}Slice`
+		this._player.addSlice(this._id, this)
+
+		const main = (resourceInfoArray && Array.isArray(resourceInfoArray) === true
+			&& resourceInfoArray.length > 0)
+			? resourceInfoArray[0]
+			: null
+		const { id } = main || {}
+		const { resourceManager } = player
+		const mainResource = resourceManager.getResourceWithId(id) || {}
+		const {
+			type = "empty",
+			width = properties.width,
+			height = properties.height,
+		} = mainResource
+
+		this._type = `${type || "empty"}Slice`
+
+		// Set a (surely temporary) size
+		const { viewportRect } = player
+		const firstSize = (width && height) ? { width, height } : viewportRect
+		this._setSize(firstSize)
 
 		// Add a dummy texture to begin with
 		this._hasLoadedOnce = false
-		if (this.role === "empty") {
-			this._assignEmptyTexture()
+		if (role === "empty") {
 			this._loadStatus = 2
 		} else {
 			this._assignDummyTexture()
@@ -49,6 +91,9 @@ export default class Slice extends TextureElement {
 		}
 
 		this._pageNavInfo = {}
+
+		this._videoTexture = null
+		this._doOnEnd = null
 	}
 
 	// Used in StoryBuilder
@@ -61,44 +106,59 @@ export default class Slice extends TextureElement {
 		super.setParent(parent)
 	}
 
-	// Used in Layer
-	getPathsToLoad() {
-		if (this._loadStatus !== 0) {
+	// Used in Layer (for PageNavigator)
+	getResourceIdsToLoad(force = false) { // force = true on changing tags or reading modes
+		const { role } = this._properties
+		if (role === "empty"
+			|| (force === false && (this._loadStatus === 1 || this._loadStatus === 2))) {
 			return []
 		}
 
-		const { path } = this._getRelevantPathAndMediaFragment(this._resource)
+		const { id, fragment } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
 
-		this._loadStatus = (!path) ? 0 : 1
-		this._updateParentLoadStatus()
-
-		return (path) ? [{ pathsArray: [path], sliceId: this._id }] : []
-	}
-
-	_getRelevantPathAndMediaFragment(resource) {
-		let path = (resource) ? resource.path : null
-		let mediaFragment = (resource) ? resource.mediaFragment : null
-
-		const { tags = {} } = this._player // Note that this._player actually comes from TextureElement
-		if (resource && resource.alternate) {
-			const { alternate } = resource
-			Object.entries(tags).forEach(([tagName, tagData]) => {
-				const { array, index } = tagData
-				if (array && index < array.length) {
-					const tagValue = array[index]
-					if (alternate[tagName] && alternate[tagName][tagValue]) {
-						path = alternate[tagName][tagValue].path
-						mediaFragment = alternate[tagName][tagValue].mediaFragment
-					}
-				}
-			})
+		if (id === null) {
+			this._loadStatus = 0
+			this._updateParentLoadStatus()
+			return []
 		}
 
-		return { path, mediaFragment }
+		this._loadStatus = 1
+		this._updateParentLoadStatus()
+		this._addAndStartLoadingAnimation()
+		return [[{ sliceId: this._id, resourceId: id, fragment }]]
+	}
+
+	_getRelevantResourceIdAndFragment(resourceInfoArray) {
+		let { id, fragment } = resourceInfoArray[0] || {}
+
+		if (resourceInfoArray.length < 2) {
+			return { id, fragment }
+		}
+
+		// Check which alternate is most appropriate
+		const reworkedArray = resourceInfoArray.map((resourceInfo) => {
+			const resource = this._resourceManager.getResourceWithId(resourceInfo.id)
+			const { path, tags } = resource || {}
+			return {
+				...tags, id: resourceInfo.id, path, fragment: resourceInfo.fragment,
+			}
+		})
+
+		const result = this._player.getBestMatchForCurrentTags(reworkedArray)
+		id = result.id
+		fragment = result.fragment
+
+		return { id, fragment }
 	}
 
 	_updateParentLoadStatus() {
-		if (!this._parent || !this._parent.updateLoadStatus) {
+		const { pageNavigator } = this._player
+		if (!pageNavigator) { // On Player destroy, pageNavigator is already null
+			return
+		}
+		const { pageNavType } = pageNavigator
+		if (!this._pageNavInfo[pageNavType] // If Slice is not in current pageNavigator anymore...
+			|| !this._parent || !this._parent.updateLoadStatus) {
 			return
 		}
 		this._parent.updateLoadStatus()
@@ -106,61 +166,61 @@ export default class Slice extends TextureElement {
 
 	// Once the associated texture has been created, it can be applied to the slice
 	updateTextures(texture, isAFallback) {
-
 		if (!texture) {
 			this._loadStatus = 0
 			this._assignDummyTexture()
 
-		} else if (texture !== this.texture) {
+		} else {
 			this._loadStatus = (isAFallback === true) ? -1 : 2
 
-			const { video } = texture
+			if (texture !== this._texture) { // this._texture is to be found in TextureElement
+				const { video, size } = texture
+				const { width, height } = size
 
-			// If the texture is a video
-			if (video && video.duration) {
-				this._video = video
+				// If the texture is a normal image or fallback image
+				if (!video) {
+					this._setTexture(texture)
+					if (this._hasLoadedOnce === false) {
+						// The dimensions are now correct and can be kept
+						this._setSizeFromActualTexture(width, height)
+						this._hasLoadedOnce = true
+					}
 
-				this._setVideoTexture(texture)
+				// Otherwise, if the texture is a video
+				} else if (video.duration) {
+					this._videoTexture = texture
 
-				if (this._hasLoadedOnce === false) {
-					this._duration = video.duration
+					if (this._hasLoadedOnce === false) {
+						this._duration = video.duration
 
-					// The dimensions are now correct and can be kept
-					this._setSizeFromActualTexture(texture.frame.width, texture.frame.height)
-					this._hasLoadedOnce = true
-				}
+						// The dimensions are now correct and can be kept
+						this._setSizeFromActualTexture(width, height)
 
-				this._doOnEnd = null
+						this._hasLoadedOnce = true
+					}
 
-				if (this._shouldPlay === true) {
-					this.play()
-				}
+					this._doOnEnd = null
 
-			// Otherwise the texture is a normal image or fallback image
-			} else {
-				this._setTexture(texture)
-				if (this._hasLoadedOnce === false) {
-					// The dimensions are now correct and can be kept
-					this._setSizeFromActualTexture(texture.frame.width, texture.frame.height)
-					this._hasLoadedOnce = true
+					if (this._shouldPlay === true) {
+						this.play()
+					}
 				}
 			}
-		} else { // texture === this.texture
-			this._loadStatus = (isAFallback === true) ? -1 : 2
 		}
 
 		this._updateParentLoadStatus()
+		this._stopAndRemoveLoadingAnimation()
 	}
 
 	// On the first successful loading of the resource's texture
 	_setSizeFromActualTexture(width, height) {
-		if (width === this.size.width && height === this.size.height) {
+		if (width === this._width && height === this._height) {
 			return
 		}
 		this._setSize({ width, height })
 
-		// Now only resize the page where this slice appears (if that page is indeed active)
-		if (this._parent) {
+		// Now only resize the page where this slice appears
+		if (this._parent && this.isActive === true) {
 			this._parent.resizePage()
 		}
 	}
@@ -168,20 +228,21 @@ export default class Slice extends TextureElement {
 	cancelTextureLoad() {
 		this._loadStatus = 0
 		this._updateParentLoadStatus()
+		this._stopAndRemoveLoadingAnimation()
 	}
 
 	play() {
 		this._shouldPlay = true
-		if (this._video) {
-			const playPromise = this._video.play()
-			if (playPromise !== undefined) {
-				playPromise
-					.then(() => {
-						// Play
-					}, () => {
-						// Caught error prevents play
-					})
-			}
+		if (!this._video) {
+			return
+		}
+		const playPromise = this._video.play()
+		if (playPromise !== undefined) {
+			playPromise.then(() => {
+				this._setVideoTexture(this._videoTexture)
+			}).catch(() => {
+				// Caught error prevents play (keep the catch to avoid issues with video pause)
+			})
 		}
 	}
 
@@ -210,23 +271,26 @@ export default class Slice extends TextureElement {
 		this._video.addEventListener("ended", this._doOnEnd)
 	}
 
-	resize(sequenceFit) {
+	resize(sequenceFit = null) {
 		if (sequenceFit) {
-			const sequenceClipped = true
+			const sequenceClipped = false
 			super.resize(sequenceFit, sequenceClipped)
 			return
 		}
 
 		const { pageNavigator } = this._player
 
-		const fit = pageNavigator.metadata.forcedFit || this._resource.fit || pageNavigator.metadata.fit
+		const fit = pageNavigator.metadata.forcedFit || this._properties.fit
+			|| pageNavigator.metadata.fit
 
 		let clipped = false
-		if (pageNavigator.metadata.forcedClipped === true
-			|| pageNavigator.metadata.forcedClipped === false) {
+		if (pageNavigator.metadata.forcedClipped !== undefined
+			&& (pageNavigator.metadata.forcedClipped === true
+				|| pageNavigator.metadata.forcedClipped === false)) {
 			clipped = pageNavigator.metadata.forcedClipped
-		} else if (this._resource.clipped === true || this._resource.clipped === false) {
-			clipped = this._resource.clipped
+		} else if (this._properties !== undefined
+			&& (this._properties.clipped === true || this._properties.clipped === false)) {
+			clipped = this._properties.clipped
 		} else {
 			clipped = pageNavigator.metadata.clipped
 		}
@@ -248,58 +312,126 @@ export default class Slice extends TextureElement {
 		this.stop()
 	}
 
-	destroyTexturesIfPossible() {
-		const pathsArray = this.unlinkTexturesAndGetPaths()
+	// Used in Layer
+	destroyResourcesIfPossible() {
+		this._stopAndRemoveLoadingAnimation()
 
-		this._updateParentLoadStatus()
-
-		if (!pathsArray) {
+		const { role } = this._properties
+		if (this._loadStatus !== 2 || role === "empty") {
 			return
 		}
-		pathsArray.forEach((path) => {
-			this.resourceManager.notifyTextureRemovalFromSlice(path)
+
+		const idsArray = this._getLoadedIds() // A different function for Slice and SequenceSlice
+		idsArray.forEach((id) => {
+			this._resourceManager.destroyResourceForSliceIfPossible(id)
 		})
 	}
 
-	// Used above and in Player
-	unlinkTexturesAndGetPaths() {
-		if (this._loadStatus === 0 || this.role === "empty") {
-			return []
-		}
-
-		this._loadStatus = 0
-		// Note that we don't add this._setTexture(null): we're actually keeping the texture
-
-		const { path } = this._getRelevantPathAndMediaFragment(this._resource)
-		return (path) ? [path] : []
+	_getLoadedIds() {
+		const { id } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
+		return (id !== null) ? [id] : []
 	}
 
-	// Used in Layer, ultimately linked to PageNavigator's getFirstHrefInCurrentPage
-	getFirstHref() {
-		return this.href
+	// Used in TextureResource
+	removeTexture() {
+		if (this._video) {
+			this._unsetVideoTexture()
+			this._videoTexture = null
+		} else {
+			this._setTexture(null)
+		}
+		this._setAsUnloaded()
+	}
+
+	// Used above and in SequenceSlice
+	_setAsUnloaded() {
+		this._loadStatus = 0
+		this._updateParentLoadStatus()
+		this._stopAndRemoveLoadingAnimation()
+	}
+
+	// Used in Segment (ultimately for Camera's virtual point)
+	getHref() {
+		const { href } = this.getHrefAndPath()
+		return href
+	}
+
+	// Used above and in Player for target hrefs
+	getHrefAndPath() {
+		if (!this._resourceInfoArray || this._resourceInfoArray.length < 1) {
+			return { href: null, path: null }
+		}
+		const { id, fragment } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
+		const resource = this._resourceManager.getResourceWithId(id)
+		const { path } = resource
+		let href = path
+		if (href && fragment) {
+			href += `#${fragment}`
+		}
+		return { href, path }
 	}
 
 	// Called by Player on final destroy
 	destroy() {
 		// Clear textures
 		super.destroy()
+		this._videoTexture = null
 
 		// Remove event listeners
-		if (this._video) {
-			if (this._doOnEnd) {
-				this._video.removeEventListener("ended", this._doOnEnd)
-				this._doOnEnd = null
-			}
-			this._video = null
+		if (this._video && this._doOnEnd) {
+			this._video.removeEventListener("ended", this._doOnEnd)
+			this._doOnEnd = null
 		}
 	}
 
 	// Used in StoryBuilder
-	static createEmptySlice(player, neighbor) {
-		const resource = { role: "empty" }
+	static createEmptySlice(player) {
+		const resourceInfoArray = []
+		const properties = { role: "empty" }
 		const parentInfo = null
-		const slice = new Slice(resource, player, parentInfo, neighbor)
+		const slice = new Slice(resourceInfoArray, properties, player, parentInfo)
 		return slice
+	}
+
+	// Used where?
+	setVariable(variable, value) {
+		switch (variable) {
+		case "alpha":
+			this.setAlpha(value)
+			break
+		case "x":
+			this.setX(value)
+			break
+		case "y":
+			this.setY(value)
+			break
+		case "scale":
+			this.setScaleFactor(value)
+			break
+		case "rotation":
+			this.setRotation(value)
+			break
+		default:
+			break
+		}
+	}
+
+	// Used where?
+	getVariable(variable) {
+		switch (variable) {
+		case "alpha":
+			return this.getAlpha()
+		case "x":
+			return this.getX()
+		case "y":
+			return this.getY()
+		case "scale":
+			return this.getScale()
+		case "rotation":
+			return this.getRotation()
+		default:
+			return null
+		}
 	}
 
 }

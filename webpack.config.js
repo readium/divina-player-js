@@ -1,5 +1,4 @@
 const path = require("path")
-const { BannerPlugin } = require("webpack")
 
 const outputFolderName = "public"
 const outputPath = path.resolve(__dirname, outputFolderName)
@@ -34,12 +33,8 @@ module.exports = {
 		libraryTarget: "window",
 		libraryExport: "default",
 	},
-	plugins: [
-		new BannerPlugin({
-			banner: "/* eslint-disable */",
-			raw: true,
-			entryOnly: true,
-		}),
-	],
+	optimization: {
+		minimize: true,
+	},
 	devtool: "source-map",
 }

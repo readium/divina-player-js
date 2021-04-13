@@ -18,11 +18,11 @@ export default class OverflowHandler {
 
 	// Constructor
 
-	constructor(layerPile, overflow, player) {
+	constructor(layerPile, overflow, hAlign, vAlign, player) {
 		this._layerPile = layerPile
 
 		// An overflowHandler necessarily has a camera
-		this._camera = new Camera(layerPile, overflow, player)
+		this._camera = new Camera(layerPile, overflow, hAlign, vAlign, player)
 
 		this._type = "overflowHandler"
 
@@ -32,23 +32,31 @@ export default class OverflowHandler {
 	setInScrollDirection(inScrollDirection) {
 		this._inScrollDirection = inScrollDirection
 		this._camera.setInScrollDirection(inScrollDirection)
-		this.resize() // Will reposition segments
+	}
+
+	// Snap points
+	addSnapPoints(indexInLayerPile, snapPointsArray) {
+		const segmentsArray = this._layerPile.layersArray.map((layer) => (layer.content))
+		if (indexInLayerPile >= segmentsArray.length) {
+			return
+		}
+		this._camera.addSnapPoints(indexInLayerPile, snapPointsArray)
+	}
+
+	// Animations
+
+	addSliceAnimation(indexInLayerPile, slice, animation) {
+		this._camera.addSliceAnimation(indexInLayerPile, slice, animation)
+	}
+
+	addSoundAnimation(indexInLayerPile, animation) {
+		this._camera.addSoundAnimation(indexInLayerPile, animation)
 	}
 
 	// Functions linked to segments
 
-	// Add snap points to the last segment - since we are still in the process of adding segments
-	addSnapPointsForLastSegment(snapPointsArray) {
-		const segmentsArray = this._layerPile.layersArray.map((layer) => (layer.content))
-		if (segmentsArray.length === 0) {
-			return
-		}
-		const lastSegmentIndex = segmentsArray.length - 1
-		this._camera.addSnapPoints(snapPointsArray, lastSegmentIndex)
-	}
-
-	goToSegmentIndex(segmentIndex, isGoingForward) {
-		this._camera.moveToSegmentIndex(segmentIndex, isGoingForward)
+	goToSegmentIndex(indexInLayerPile, isGoingForward) {
+		this._camera.moveToSegmentIndex(indexInLayerPile, isGoingForward)
 	}
 
 	setupForEntry(isGoingForward) {
@@ -67,7 +75,6 @@ export default class OverflowHandler {
 		if (this._camera.isAtEnd === true) {
 			return false
 		}
-
 		this._camera.moveToNextSnapPoint(shouldGoInstantly)
 		return true
 	}
@@ -83,16 +90,13 @@ export default class OverflowHandler {
 		return true
 	}
 
+	attemptToGoSideways(way) {
+		return this._camera.attemptToMoveSideways(way)
+	}
+
 	// Functions to deal with continuous gestures and zoom
 
 	handleScroll(scrollData, isWheelScroll) {
-		if (this.activeLayersArray.length === 1) {
-			const layer = this.activeLayersArray[0] // Check only the first Segment in a Page
-			const { content } = layer
-			if (content.handleScroll(scrollData, isWheelScroll) === true) {
-				return true
-			}
-		}
 		if (this.isUndergoingChanges === true) {
 			return true
 		}
@@ -115,6 +119,10 @@ export default class OverflowHandler {
 			return
 		}
 		this._camera.setPercent(percent)
+	}
+
+	getCurrentHref() {
+		return this._camera.getCurrentHref()
 	}
 
 	// Functions to deal with inner changes (jumps) and resize
@@ -143,7 +151,6 @@ export default class OverflowHandler {
 
 			switch (this._inScrollDirection) {
 			case "ltr":
-				segment.setPositionInSegmentLine({ x: sumOfPreviousSegmentDimensions, y: 0 })
 				segment.setPosition({
 					x: sumOfPreviousSegmentDimensions + width / 2,
 					y: 0,
@@ -151,7 +158,6 @@ export default class OverflowHandler {
 				sumOfPreviousSegmentDimensions += width
 				break
 			case "rtl":
-				segment.setPositionInSegmentLine({ x: -sumOfPreviousSegmentDimensions, y: 0 })
 				segment.setPosition({
 					x: -sumOfPreviousSegmentDimensions - width / 2,
 					y: 0,
@@ -159,7 +165,6 @@ export default class OverflowHandler {
 				sumOfPreviousSegmentDimensions += width
 				break
 			case "ttb":
-				segment.setPositionInSegmentLine({ x: 0, y: sumOfPreviousSegmentDimensions })
 				segment.setPosition({
 					x: 0,
 					y: sumOfPreviousSegmentDimensions + height / 2,
@@ -167,7 +172,6 @@ export default class OverflowHandler {
 				sumOfPreviousSegmentDimensions += height
 				break
 			case "btt":
-				segment.setPositionInSegmentLine({ x: 0, y: -sumOfPreviousSegmentDimensions })
 				segment.setPosition({
 					x: 0,
 					y: -sumOfPreviousSegmentDimensions - height / 2,

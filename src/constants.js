@@ -1,67 +1,182 @@
 // General
-export const possiblePixelError = 0.5 // Margin of error for pixel computations
-export const defaultManifestFilename = "manifest.json" // Title of the JSON file in a divina folder
-export const defaultBackgroundColor = 0x000000 // Black to ensure the loading message is visible
-export const defaultDummyColor = 0x333333
-export const possibleTagNames = ["language", "resolution"] // List of allowed tags
-
-// Resources
-export const acceptableVideoExtensions = ["mp4"]
-//export const acceptableImageExtensions = ["png", "jpg"] // Not used
+export const DEFAULT_MANIFEST_FILENAME = "manifest.json" // Title of the JSON file in a Divina folder
+export const POSSIBLE_TAG_NAMES = ["language"] // List of allowed tags ("type" can also have variations) // IF YOU ADD ANY, WILL NEED TO BE ADDED TO SLICERESOURCE (props and getters) TOO, for SLICERESOURCE!!!
+export const DEFAULT_BACKGROUND_COLOR = "#000000" // Black, to ensure the loading message is visible
+export const DEFAULT_DUMMY_COLOR = "#333333" // Dark gray
 
 // Loading message
-export const textFontFamily = "Arial"
-export const textFontSize = 24
-export const textFillColor = 0xFFFFFF // White to ensure the message is visible
-export const wordWrapWidth = 275 // Maximum line width
+export const DEFAULT_LOADING_MESSAGE = "Loading"
+export const TEXT_FONT_FAMILY = "Arial"
+export const TEXT_FONT_SIZE = 24
+export const TEXT_FILL_COLOR = "#FFFFFF" // White, to ensure the message is visible
+export const WORD_WRAP_WIDTH = 275 // Maximum line width
+
+// Resources
+// export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used
+export const ACCEPTED_VIDEO_EXTENSIONS = ["mp4"]
 
 // Loading parameters
-export const defaultAllowsDestroy = true
-export const defaultAllowsParallel = false
-// Nb of pages after the current one for which slice textures should be stored in memory
-export const defaultMaxNbOfPagesAfter = 1
-// Nb of pages before the current one for which slice textures should be stored in memory,
-// as a share of defaultMaxNbOfPagesAfter
-export const maxShareOfPagesBefore = 1 / 3
-// Timeout to cancel video load (only in non-parallel loading mode)
-export const defaultVideoLoadTimeout = 2000
+export const DEFAULT_MAX_NB_OF_UNITS_TO_LOAD_AFTER = 3
+// Nb of units before the current one for which resources should be stored in memory,
+// as a share of DEFAULT_MAX_NB_OF_PAGES_AFTER
+export const MIN_SHARE_OF_UNITS_TO_LOAD_BEFORE = 1 / 3
+// Timeout to cancel video load (only in non-parallel loading mode, in milliseconds)
+export const DEFAULT_VIDEO_LOAD_TIMEOUT = 2000
+
+// Loading animation
+export const ROTATION_BY_TICK = 0.1
+export const LINE_WIDTH = 2
+export const SIZE_COEFFICIENT = 0.1
 
 // Story
-export const defaultReadingProgression = "ltr" // If no value is specified or if the value is invalid
-export const defaultContinuous = true // If no value is specified or if the value is invalid
-export const defaultFit = "contain" // If no value is specified or if the value is invalid
-export const defaultOverflow = "scrolled" // If no value is specified or if the value is invalid or "auto"
-export const defaultClipped = false // If no value is specified or if the value is invalid
-export const defaultSpread = "none" // If no value is specified or if the value is invalid or "auto"
-export const defaultDuration = 750 // In milliseconds (used for transitions and snap point jumps)
+export const DEFAULT_DURATION = 750 // In milliseconds (used for transitions and snap point jumps)
+export const POSSIBLE_PIXEL_ERROR = 0.5 // Margin of error for pixel computations
 
-// User controls
-export const defaultAllowsZoom = true
-export const defaultAllowsSwipe = true
-export const defaultAllowsWheelScroll = true
-// To allow discontinuous gestures to trigger pagination jumps (when overflow === "scrolled")
-export const defaultAllowsPaginatedScroll = true
-// To make pagination sticky (only when overflow === "paginated")
-export const defaultIsPaginationSticky = true
-// To compute automatically-computed snap points from the page start (vs. from the current position)
-export const defaultIsPaginationGridBased = true
+
+export const ACCEPTED_VALUES = {
+	loadingMode: {
+		type: "string",
+		allowed: ["page", "segment"],
+		defaultValue: "page",
+	},
+	allowsDestroy: {
+		type: "boolean",
+		defaultValue: false,
+	},
+	allowsParallel: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	allowsSwipe: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	allowsWheelScroll: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	allowsZoomOnDoubleTap: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	allowsZoomOnCtrlOrAltScroll: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	// To allow discontinuous gestures to trigger pagination jumps (when overflow === "scrolled")
+	allowsPaginatedScroll: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	// To make pagination sticky (only when overflow === "paginated")
+	isPaginationSticky: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	// To compute "fake" snap points from the page start (vs. from the current position)
+	isPaginationGridBased: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	direction: { // Also used for readingProgression
+		type: "string",
+		allowed: ["ltr", "rtl", "ttb", "btt"],
+		defaultValue: "ltr",
+	},
+	continuous: {
+		type: "boolean",
+		defaultValue: true,
+	},
+	fit: {
+		type: "string",
+		allowed: ["contain", "cover", "width", "height"],
+		defaultValue: "contain",
+	},
+	clipped: {
+		type: "boolean",
+		defaultValue: false,
+	},
+	overflow: {
+		type: "string",
+		allowed: ["scrolled", "paginated"],
+		defaultValue: "scrolled",
+	},
+	hAlign: {
+		type: "string",
+		allowed: ["left", "center", "right"],
+		defaultValue: "center",
+	},
+	vAlign: {
+		type: "string",
+		allowed: ["top", "center", "bottom"],
+		defaultValue: "center",
+	},
+	spread: {
+		type: "string",
+		allowed: ["none", "both", "landscape"],
+		defaultValue: "none",
+	},
+	constraint: {
+		type: "string",
+		allowed: ["exact", "min", "max"],
+		defaultValue: "exact",
+	},
+	pageSide: {
+		type: "string",
+		allowed: ["left", "center", "right"],
+		defaultValue: "center",
+	},
+	looping: {
+		type: "boolean",
+		defaultValue: false,
+	},
+	transitionType: {
+		type: "string",
+		allowed: ["cut", "dissolve", "slide-in", "slide-out", "push", "animation"],
+		// defaultValue: "cut", // Actually useless (see Transition)
+	},
+	halfTransitionType: {
+		type: "string",
+		allowed: ["cut", "fade-in", "fade-out", "slide-in", "slide-out"],
+		defaultValue: "cut",
+	},
+	transitionControlled: {
+		type: "boolean",
+		defaultValue: false,
+	},
+	viewport: {
+		type: "string",
+		allowed: ["start", "center", "end"],
+		// defaultValue: "center", // Actually useless... for now!
+	},
+	animationType: {
+		type: "string",
+		allowed: ["time", "progress", "point"],
+		defaultValue: "time",
+	},
+	animationVariable: {
+		type: "string",
+		allowed: ["alpha", "x", "y", "scale", "rotation"],
+		// No default value!
+	},
+}
 
 // Interactions
 // Percentage of the relevant viewport dimension (width or height, depending on the story's
 // reading direction) defining an "active" hit zone (to detect forward/backward clicks/taps)
-export const referencePercent = 0.3
-export const velocityFactor = 10 // For a kinetic scroll
-export const timeConstant = 325 // For a kinetic scroll
-export const maxZoomFactor = 3 // Maximum zoom
-export const zoomSensitivityConstant = 3 // To compute zoom based on scroll
+export const REFERENCE_PERCENT = 0.3
+export const VELOCITY_FACTOR = 10 // For a kinetic scroll
+export const TIME_CONSTANT = 325 // For a kinetic scroll
+export const MAX_ZOOM = 3 // Maximum zoom
+export const ZOOM_SENSITIVITY = 3 // To compute zoom based on scroll
 // Percentage of the relevant dimension to scroll to trigger a valid controlled transition
-export const viewportDimensionPercent = 0.5
+export const VIEWPORT_DIMENSION_PERCENT = 0.5
 
 // Snap point speeds: speeds are computed such that the viewport will move by 1 relevant dimension
 // (= the viewport's width or height in pixels) in defaultDuration milliseconds
-export const snapJumpSpeedFactor = 1 / defaultDuration
+export const SNAP_JUMP_SPEED_FACTOR = 1 / DEFAULT_DURATION
 // (with the above, duration of a snap point jump = distance in px / speed,
 // where speed is defaultDuration * snapJumpSpeedFactor (used in Camera))
-export const stickyMoveSpeedFactor = 1 / defaultDuration
+export const STICKY_MOVE_SPEED_FACTOR = 1 / DEFAULT_DURATION
 // (with the above, duration of a sticky snap point move = distance in px / speed,
 // where speed is defaultDuration * stickyMoveSpeedFactor (used in Camera))

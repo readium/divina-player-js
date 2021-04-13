@@ -26,42 +26,41 @@ export default class Camera {
 		return (Math.abs(this._maxX - this._minX) + Math.abs(this._maxY - this._minY) > 0)
 	}
 
-	constructor(scene, overflow, player) {
+	constructor(scene, overflow, hAlign, vAlign, player) {
 		// A scene is just a layerPile (in the divina case, can only be a page)
 		this._scene = scene
 		this._overflow = overflow
+		this._hAlign = hAlign
+		this._vAlign = vAlign
+
 		// Useful for viewportRect and updateDisplayForZoomFactor (and options just below)
 		this._player = player
+		const { eventEmitter } = this._player
+		this._eventEmitter = eventEmitter
 
 		const { options } = player
 		const {
 			allowsPaginatedScroll,
 			isPaginationSticky,
 			isPaginationGridBased,
-			doOnScroll,
 		} = options
-		this._allowsPaginatedScroll = (allowsPaginatedScroll === true
-			|| allowsPaginatedScroll === false)
-			? allowsPaginatedScroll
-			: constants.defaultAllowsPaginatedScroll
-		this._isPaginationSticky = (isPaginationSticky === true || isPaginationSticky === false)
-			? isPaginationSticky
-			: constants.defaultIsPaginationSticky
-		this._isPaginationGridBased = (isPaginationGridBased === true
-			|| isPaginationGridBased === false)
-			? isPaginationGridBased
-			: constants.defaultIsPaginationGridBased
-		this._doOnScroll = doOnScroll
+		const shouldReturnDefaultValue = true
+		this._allowsPaginatedScroll = Utils.returnValidValue("allowsPaginatedScroll", allowsPaginatedScroll,
+			shouldReturnDefaultValue)
+		this._isPaginationSticky = Utils.returnValidValue("isPaginationSticky", isPaginationSticky,
+			shouldReturnDefaultValue)
+		this._isPaginationGridBased = Utils.returnValidValue("isPaginationGridBased", isPaginationGridBased,
+			shouldReturnDefaultValue)
 
 		this._inScrollDirection = null
 		this._relativeStart = null
 		this._relativeEnd = null
+		this._referenceDimension = null
 
-		// Those values can change on a resize (because of the change in viewportRect) but not with zoom
-		// (i.e. the values are those that apply when zoomFactor === 1)
+		// The distance to cover can change on a resize (because of the change in viewportRect),
+		// but it cannot not change with a change in zoomFactor (the value is the one that applies
+		// when zoomFactor === 1; it is always positive)
 		this._distanceToCover = 0
-		this._startPosition = { x: 0, y: 0 } // Camera center position for progress = 0 (or null)
-		this._progressVector = { x: 0, y: 0 } // Cam center endPosition = startPosition + progressVector
 
 		// The below values can necessarily change on a resize, but also with a zoom change
 		this._progress = null // However if null, progress remains null whatever the zoomFactor
@@ -72,16 +71,16 @@ export default class Camera {
 		this._currentPosition = { x: 0, y: 0 } // Camera center in non-scaled/non-zoomed referential
 		this._signedPercent = null // Signed % of currentPosition x or y over full scene width or height
 
-		// Add an empty _rawSnapPointsArray to hold the values specified in the original linkObject
-		// A real _snapPointsArray with progress values will later be computed if needed
-		// (i.e. if the scene is larger than the viewport, which should be checked after each resize)
-		this._rawSnapPointsArray = []
-		this._snapPointsArray = null
+		this._segmentsInfoArray = []
+
+		this._snapPointsArray = []
 		this._reset()
 		this._possibleError = 0
 		this._paginationProgressStep = null
 		this._lastNonTemporaryProgress = null
-		this._virtualPointInfo = {}
+
+		this._sliceAnimationsArray = null
+		this._soundAnimationsArray = null
 
 		this._zoomFactor = 1
 		this._zoomTouchPoint = null
@@ -102,7 +101,7 @@ export default class Camera {
 	setInScrollDirection(inScrollDirection) {
 		this._inScrollDirection = inScrollDirection
 		this._setRelativeStartAndEnd(inScrollDirection)
-		this._setVirtualPointInfo(inScrollDirection)
+		this._setReferenceDimension(inScrollDirection)
 	}
 
 	// Based on the page's inScrollDirection, express the viewport "start"
@@ -132,135 +131,168 @@ export default class Camera {
 		}
 	}
 
-	_setVirtualPointInfo(inScrollDirection) {
-		let getPercent = null
-		let referenceDimension = null
-		let coord = null
-		let worksBackward = false
-
-		switch (inScrollDirection) {
-		case "ltr":
-			getPercent = () => (
-				(this._currentPosition.x - this._minX) / (this._maxX - this._minX)
-			)
-			referenceDimension = "width"
-			coord = "x"
-			worksBackward = false
-			break
-		case "rtl":
-			getPercent = () => (
-				(this._maxX - this._currentPosition.x) / (this._maxX - this._minX)
-			)
-			referenceDimension = "width"
-			coord = "x"
-			worksBackward = true
-			break
-		case "ttb":
-			getPercent = () => (
-				(this._currentPosition.y - this._minY) / (this._maxY - this._minY)
-			)
-			referenceDimension = "height"
-			coord = "y"
-			worksBackward = false
-			break
-		case "btt":
-			getPercent = () => (
-				(this._maxY - this._currentPosition.y) / (this._maxY - this._minY)
-			)
-			referenceDimension = "height"
-			coord = "y"
-			worksBackward = true
-			break
-		default:
-			break
+	_setReferenceDimension(inScrollDirection) {
+		if (inScrollDirection === "ltr" || inScrollDirection === "rtl") {
+			this._referenceDimension = "width"
 		}
-
-		this._virtualPointInfo = {
-			getPercent, referenceDimension, coord, worksBackward,
+		if (inScrollDirection === "ttb" || inScrollDirection === "btt") {
+			this._referenceDimension = "height"
 		}
 	}
 
-	addSnapPoints(snapPointsArray, lastSegmentIndex) {
-		snapPointsArray.forEach((snapPointInfo) => {
-			const { viewport, x, y } = snapPointInfo
-			if ((viewport === "start" || viewport === "center" || viewport === "end")
-				&& (x !== null || y !== null)) {
-				const snapPoint = {
-					segmentIndex: lastSegmentIndex,
-					viewport,
-					x,
-					y,
-				}
-				this._rawSnapPointsArray.push(snapPoint)
-			}
+	addSnapPoints(indexInLayerPile, snapPointsArray) {
+		snapPointsArray.forEach((snapPoint) => {
+			const fullSnapPoint = { ...snapPoint, pageSegmentIndex: indexInLayerPile }
+			this._snapPointsArray.push(fullSnapPoint)
 		})
 	}
 
+	addSliceAnimation(indexInLayerPile, slice, animation) {
+		this._sliceAnimationsArray = this._sliceAnimationsArray || []
+
+		const fullAnimation = { ...animation }
+		const { type, keyframesArray } = animation
+		if (type === "point") {
+			keyframesArray.forEach((keyframe, i) => {
+				fullAnimation.keyframesArray[i].key.pageSegmentIndex = indexInLayerPile
+			})
+		}
+		this._sliceAnimationsArray.push({ slice, animation: fullAnimation })
+	}
+
+	addSoundAnimation(indexInLayerPile, animation) {
+		this._soundAnimationsArray = this._soundAnimationsArray || []
+
+		const fullAnimation = { ...animation }
+		const { type } = animation
+		if (type === "point") {
+			fullAnimation.start.pageSegmentIndex = indexInLayerPile
+			if (fullAnimation.end) {
+				fullAnimation.end.pageSegmentIndex = indexInLayerPile
+			}
+		} else { // If type === "progress", rewrite start and end to unify notation
+			fullAnimation.start = { progress: fullAnimation.start }
+			if (fullAnimation.end !== undefined) {
+				fullAnimation.end = { progress: fullAnimation.end }
+			}
+		}
+		this._soundAnimationsArray.push(fullAnimation)
+	}
+
 	// After an overflowHandler's _positionSegments() operation, so in particular after a resize:
-	// - If the total length of all segments together is less than the viewport dimension,
-	// then the camera will not have space to move (but beware: only if zoomFactor = 1),
-	// so the camera's start and end positions will be set to the center of the whole segment block
-	// - If not, _hasSpaceToMove = true and there is no need to move the camera initially,
-	// since it is already well positioned respective to the first segment
+	// - If the total length of all segments together is less than the relevant viewport dimension,
+	// then the camera will not have space to move (but beware: this is only true if zoomFactor = 1),
+	// so its start and end positions will be set to the center of the whole segment block (= scene)
+	// - If not, _distanceToCover !== 0 (which will force _hasSpaceToMove = true) and the camera
+	// respective to the first segment (e.g. if ltr: the camera's center is positioned so that the
+	// camera's left side corresponds to the first segment's left side, where x = 0)
 	// (Also, do note that small pixel errors are accounted for!)
 	setBoundsAndUpdateOnResize() {
-		let distanceToCover = 0
-		let startCenter = null
-
 		const { viewportRect } = this._player
 		const { width, height } = viewportRect
-		this._startPosition = { x: 0, y: 0 }
-		this._progressVector = { x: 0, y: 0 }
+		const sceneSize = this._scene.size
 
-		this._referenceSceneSize = {
-			width: this._scene.size.width,
-			height: this._scene.size.height,
+		// In the below:
+		// - startP is a start progress value - only used on a secondary axis
+		// - p0 and p1 are camera center positions for progress = 0 and progress = 1,
+		// in the non-zoomed referential (meaning they depend on viewportRect, and are therefore
+		// impacted by a resize), while min and max are in the zoomed (i.e. scaled) referential
+		this._camCenter = {
+			x: {
+				p0: 0, p1: 0, isPrimaryAxis: false, startP: 0.5,
+			},
+			y: {
+				p0: 0, p1: 0, isPrimaryAxis: false, startP: 0.5,
+			},
 		}
+		this._distanceToCover = 0
+
+		let distanceToCover
+		let signFactor
 
 		if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-			const sceneContainerWidth = this._scene.size.width
-			distanceToCover = sceneContainerWidth - width
-			const signFactor = (this._inScrollDirection === "rtl") ? -1 : 1
-			if (distanceToCover <= constants.possiblePixelError) {
+			this._camCenter.x.isPrimaryAxis = true
+
+			distanceToCover = sceneSize.width - width
+			signFactor = (this._inScrollDirection === "rtl") ? -1 : 1
+
+			if (distanceToCover <= constants.POSSIBLE_PIXEL_ERROR) {
 				distanceToCover = 0
-				startCenter = signFactor * (sceneContainerWidth / 2)
+				this._camCenter.x.p0 = signFactor * (sceneSize.width / 2)
 			} else {
-				startCenter = signFactor * (width / 2)
+				this._distanceToCover = distanceToCover
+				this._camCenter.x.p0 = signFactor * (width / 2)
 			}
-			this._startPosition.x = startCenter
-			this._progressVector.x = signFactor * distanceToCover
+			this._camCenter.x.p1 = this._camCenter.x.p0 + signFactor * distanceToCover
+
+			// There is no need for a direction on the secondary axis, so we'll define p0 as the
+			// value for which y is min (top), and p1 as the value for which y is max (bottom)
+			// Remember that, in Page, the height in case of ltr or rtl with more than 1 segment
+			// is set to viewport height, so y.p0 and y.p1 are left at 0, and no vAlign applies
+			// (meaning it is considered as "center" by default)
+			if (sceneSize.height >= height - constants.POSSIBLE_PIXEL_ERROR) {
+				this._camCenter.y.p0 = (height - sceneSize.height) / 2
+				this._camCenter.y.p1 = (sceneSize.height - height) / 2
+				if (this._vAlign === "top") {
+					this._camCenter.y.startP = 0
+				} else if (this._vAlign === "bottom") {
+					this._camCenter.y.startP = 1
+				}
+			}
 
 		} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-			const sceneContainerHeight = this._scene.size.height
-			distanceToCover = sceneContainerHeight - height
-			const signFactor = (this._inScrollDirection === "btt") ? -1 : 1
-			if (distanceToCover <= constants.possiblePixelError) {
+			this._camCenter.y.isPrimaryAxis = true
+
+			distanceToCover = sceneSize.height - height
+			signFactor = (this._inScrollDirection === "btt") ? -1 : 1
+
+			if (distanceToCover <= constants.POSSIBLE_PIXEL_ERROR) {
 				distanceToCover = 0
-				startCenter = signFactor * (sceneContainerHeight / 2)
+				this._camCenter.y.p0 = signFactor * (sceneSize.height / 2)
 			} else {
-				startCenter = signFactor * (height / 2)
+				this._distanceToCover = distanceToCover
+				this._camCenter.y.p0 = signFactor * (height / 2)
 			}
-			this._startPosition.y = startCenter
-			this._progressVector.y = signFactor * distanceToCover
-		}
-		this._distanceToCover = Math.max(distanceToCover, 0)
+			this._camCenter.y.p1 = this._camCenter.y.p0 + signFactor * distanceToCover
 
-		// Now if the page is larger than the effective viewport...
-		if (this._distanceToCover > 0) {
-
-			// Compute the possible error for progress calculations
-			this._possibleError = this._getProgressStepForLength(constants.possiblePixelError)
-
-			// Compute the progress delta corresponding to one pagination step forward
-			this._paginationProgressStep = this._getPaginationProgressStep()
-
-			// Build snap points (i.e. define their progress values), if relevant
-			this._buildRelevantSnapPoints()
+			if (sceneSize.width >= width - constants.POSSIBLE_PIXEL_ERROR) {
+				this._camCenter.x.p0 = (width - sceneSize.width) / 2
+				this._camCenter.x.p1 = (sceneSize.width - width) / 2
+				if (this._hAlign === "left") {
+					this._camCenter.x.startP = 0
+				} else if (this._hAlign === "right") {
+					this._camCenter.x.startP = 1
+				}
+			}
 		}
 
 		const callback = () => {
+			// Update snap point-related speeds based on inScrollDirection
+			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+				this._snapJumpSpeed = sceneSize.width * constants.SNAP_JUMP_SPEED_FACTOR
+				this._stickyMoveSpeed = sceneSize.width * constants.STICKY_MOVE_SPEED_FACTOR
+			} else {
+				this._snapJumpSpeed = sceneSize.height * constants.SNAP_JUMP_SPEED_FACTOR
+				this._stickyMoveSpeed = sceneSize.height * constants.STICKY_MOVE_SPEED_FACTOR
+			}
+
 			// Force zoomFactor to 1 and recompute x and y bounds
 			this._setZoomFactorAndUpdateBounds(1)
+
+			// Recompute progress by segment
+			this._updateSegmentInfoArray()
+
+			// If the page is larger than the effective viewport...
+			if (this._distanceToCover > 0) {
+
+				// Compute the possible error for progress calculations
+				this._possibleError = this._getProgressStepForLength(constants.POSSIBLE_PIXEL_ERROR)
+
+				// Compute the progress delta corresponding to one pagination step forward
+				this._paginationProgressStep = this._getPaginationProgressStep()
+
+				this._computeProgressValuesForResourcePoints()
+			}
 
 			// Now reposition the camera and update progress (if not null)
 			this._updatePositionAndProgressOnResize()
@@ -292,61 +324,137 @@ export default class Camera {
 		return progressStep
 	}
 
-	// Build relevant snap points by adding a progress value to their raw information
-	_buildRelevantSnapPoints() {
-		const snapPointsArray = []
-		let lastProgress = -1
-		this._rawSnapPointsArray.forEach((rawSnapPoint) => {
-			const progress = this._getProgressForSnapPoint(rawSnapPoint)
-			if (progress !== null && progress > lastProgress) {
-				const snapPoint = { ...rawSnapPoint, progress }
-				snapPointsArray.push(snapPoint)
-				lastProgress = progress
-			}
+	// Build all relevant points (for snap points and animations)
+	// by adding a progress value to their raw information
+	// (ensuring that progress always increases in arrays of snap points and keyframes)
+	_computeProgressValuesForResourcePoints() {
+		// For snap points
+		let lastProgress = 0
+		this._snapPointsArray.forEach((point, i) => {
+			let progress = this._getProgressForPoint(point)
+			progress = Math.max(progress, lastProgress)
+			this._snapPointsArray[i].progress = progress
+			lastProgress = progress
 		})
-		this._snapPointsArray = snapPointsArray
+
+		// For point-based animations
+		if (this._sliceAnimationsArray) {
+			this._sliceAnimationsArray.forEach(({ animation }, i) => {
+				lastProgress = 0
+				const { type, keyframesArray } = animation
+				keyframesArray.forEach(({ key }, j) => {
+					let progress = (type === "point") ? this._getProgressForPoint(key) : key
+					progress = Math.max(progress, lastProgress)
+					this._sliceAnimationsArray[i].animation.keyframesArray[j].progress = progress
+					lastProgress = progress
+				})
+			})
+		}
+		if (this._soundAnimationsArray) {
+			this._soundAnimationsArray.forEach(({ type, start, end }, i) => {
+				if (type === "point") {
+					let progress = this._getProgressForPoint(start)
+					this._soundAnimationsArray[i].start.progress = progress
+					if (end) {
+						progress = this._getProgressForPoint(end)
+						this._soundAnimationsArray[i].end.progress = progress
+					}
+				}
+			})
+		}
 	}
 
-	_getProgressForSnapPoint(rawSnapPoint) {
+	_getProgressForPoint(point) {
 		const {
-			segmentIndex,
+			pageSegmentIndex,
 			viewport,
 			x,
 			y,
-		} = rawSnapPoint
-		const segment = this._scene.layersArray[segmentIndex].content
-		const { size, positionInSegmentLine } = segment
+			unit,
+		} = point
+		if (pageSegmentIndex >= this._segmentsInfoArray.length) {
+			return null
+		}
 
-		// Get the top left position of the camera for the snap point alignment
-		const position = this._getCameraPositionInSegmentForAlignment(viewport, { x, y }, size)
+		const segmentInfo = this._segmentsInfoArray[pageSegmentIndex]
+		const { size, positionInSegmentLine } = segmentInfo
+
+		// Get the center position of the camera for the snap point alignment
+		const position = this._getCameraPositionInSegmentForAlignment(viewport, { x, y }, unit, size)
 		if (!position) {
 			return null
 		}
-		// Update the position based on the segment's position in the scene
-		position.x += positionInSegmentLine.x
-		position.y += positionInSegmentLine.y
 
-		// Compute the distance from the scene container's start point to that new point
-		const distanceToCenter = Utils.getDistance(this._startPosition, position)
-		// Convert that value into an acceptable progress value (between 0 and 1)
 		let progress = null
-		if (distanceToCenter < constants.possiblePixelError) {
-			progress = 0
-		} else if (Math.abs(this._distanceToCover - distanceToCenter) < constants.possiblePixelError) {
-			progress = 1
-		} else {
-			progress = Math.min(Math.max(distanceToCenter / this._distanceToCover, 0), 1)
+
+		if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+
+			// Update the position based on the segment's position in the scene
+
+			if (this._inScrollDirection === "ltr") {
+				position.x += positionInSegmentLine
+			} else {
+				position.x += -positionInSegmentLine
+			}
+
+			// Compute the distance from the scene container's start point to that new point
+
+			const xDistance = Math.abs(position.x - this._camCenter.x.p0)
+
+			if (xDistance < constants.POSSIBLE_PIXEL_ERROR) {
+				progress = 0
+			} else if (Math.abs(this._distanceToCover - xDistance) <= constants.POSSIBLE_PIXEL_ERROR) {
+				progress = 1
+			} else {
+				progress = Math.min(Math.max(xDistance / this._distanceToCover, 0), 1)
+			}
+
+		} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+
+			if (this._inScrollDirection === "ttb") {
+				position.y += positionInSegmentLine
+			} else {
+				position.y += -positionInSegmentLine
+			}
+
+			const yDistance = Math.abs(position.y - this._camCenter.y.p0)
+
+			if (yDistance < constants.POSSIBLE_PIXEL_ERROR) {
+				progress = 0
+			} else if (Math.abs(this._distanceToCover - yDistance) <= constants.POSSIBLE_PIXEL_ERROR) {
+				progress = 1
+			} else {
+				progress = Math.min(Math.max(yDistance / this._distanceToCover, 0), 1)
+			}
 		}
 
 		return progress
 	}
 
-	// Get the position of the camera's top left point corresponding to a given snap point alignment
-	_getCameraPositionInSegmentForAlignment(viewportPoint, coords, segmentSize) {
+	// Get the position of the camera's center point corresponding to a given point alignment
+	_getCameraPositionInSegmentForAlignment(viewport, coords, unit, segmentSize) {
 		const sign = (this._inScrollDirection === "rtl" || this._inScrollDirection === "btt") ? -1 : 1
-		const x = Utils.parseCoordinate(coords.x, segmentSize.width)
-		const y = Utils.parseCoordinate(coords.y, segmentSize.height)
-		if (x === null || y === null) {
+		let x = null
+		if (coords.x !== undefined) {
+			if (unit === "%") {
+				x = Math.min(Math.max(0, (coords.x * segmentSize.width) / 100), segmentSize.width)
+			} else if (unit === "px") {
+				x = Math.min(Math.max(0, coords.x), segmentSize.width)
+			}
+		} else {
+			x = 0
+		}
+		let y = null
+		if (coords.y !== undefined) {
+			if (unit === "%") {
+				y = Math.min(Math.max(0, (coords.y * segmentSize.height) / 100), segmentSize.height)
+			} else if (unit === "px") {
+				y = Math.min(Math.max(0, coords.y), segmentSize.height)
+			}
+		} else {
+			y = 0
+		}
+		if (x === null && y === null) {
 			return null
 		}
 
@@ -356,7 +464,7 @@ export default class Camera {
 			x: sign * x,
 			y: sign * y,
 		}
-		switch (viewportPoint) {
+		switch (viewport) {
 		case "start":
 			position.x -= (this._relativeStart.x - 0.5) * width
 			position.y -= (this._relativeStart.y - 0.5) * height
@@ -368,12 +476,13 @@ export default class Camera {
 		default: // "center"
 			break
 		}
+
 		return position
 	}
 
 	// Called by a resize or zoom change
 	_setZoomFactorAndUpdateBounds(zoomFactor) {
-		this._zoomFactor = Math.min(Math.max(zoomFactor, 1), constants.maxZoomFactor)
+		this._zoomFactor = Math.min(Math.max(zoomFactor, 1), constants.MAX_ZOOM)
 		this._scene.setScale(this._zoomFactor) // Reminder: this._scene is a Container
 
 		this._player.updateDisplayForZoomFactor(zoomFactor)
@@ -384,68 +493,98 @@ export default class Camera {
 	}
 
 	_updateMinAndMaxX() {
-		const { rootSize, viewportRect } = this._player
-		const { width } = viewportRect
-
-		const tippingZoomFactorValue = width / this._referenceSceneSize.width
+		const { viewportRect, viewportBoundingRect } = this._player
 
 		if (this._inScrollDirection === "ltr") {
-			// Reminder: this._startPosition.x does not change
-			// And = this._referenceSceneSize.width / 2 if this._referenceSceneSize.width < width
-			if (this._zoomFactor < tippingZoomFactorValue) {
-				const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1)
-				this._minX = this._startPosition.x + k * (width / 2 - this._startPosition.x)
+			// If the scene overflows from the start...
+			if (this._scene.size.width > viewportRect.width) {
+				this._minX = Math.min((viewportRect.width / 2) * this._zoomFactor,
+					viewportBoundingRect.width / 2)
+				this._maxX = -this._minX + this._scene.size.width * this._zoomFactor
+
+			// ... otherwise if the zoom makes the scene overflow
+			} else if (this._scene.size.width * this._zoomFactor > viewportBoundingRect.width) {
+				this._minX = viewportBoundingRect.width / 2
+				this._maxX = -this._minX + this._scene.size.width * this._zoomFactor
+
+			// ... otherwise
+			} else {
+				this._minX = (this._scene.size.width / 2) * this._zoomFactor
 				this._maxX = this._minX
-			} else {
-				this._minX = width / 2
-				this._maxX = this._minX + this._referenceSceneSize.width * this._zoomFactor - width
 			}
+
 		} else if (this._inScrollDirection === "rtl") {
-			if (this._zoomFactor < tippingZoomFactorValue) {
-				const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1)
-				this._maxX = this._startPosition.x - k * (width / 2 + this._startPosition.x)
-				this._minX = this._maxX
+			if (this._scene.size.width > viewportRect.width) {
+				this._maxX = -Math.min((viewportRect.width / 2) * this._zoomFactor,
+					viewportBoundingRect.width / 2)
+				this._minX = -this._maxX - this._scene.size.width * this._zoomFactor
+
+			} else if (this._scene.size.width * this._zoomFactor > viewportBoundingRect.width) {
+				this._maxX = -viewportBoundingRect.width / 2
+				this._minX = -this._maxX - this._scene.size.width * this._zoomFactor
+
 			} else {
-				this._maxX = -width / 2
-				this._minX = this._maxX - this._referenceSceneSize.width * this._zoomFactor + width
+				this._maxX = -(this._scene.size.width / 2) * this._zoomFactor
+				this._minX = this._maxX
 			}
+
 		} else {
-			const sizeDiff = this._referenceSceneSize.width * this._zoomFactor - rootSize.width
-			const delta = (sizeDiff > 0) ? sizeDiff / 2 : 0
-			this._minX = this._startPosition.x - delta
-			this._maxX = this._startPosition.x + delta
+			const { p0, p1 } = this._camCenter.x
+
+			// Compute a delta depending on whether the segment line is scrollable on its secondary x axis
+			const sizeDiff = (p0 === p1) // p0===p1 <=> not scrollable on secondary y axis
+				? this._scene.size.width * this._zoomFactor - viewportBoundingRect.width
+				: viewportRect.width * this._zoomFactor - viewportBoundingRect.width
+			const delta = (sizeDiff > 0) ? (sizeDiff / 2) : 0
+
+			this._minX = p0 * this._zoomFactor - delta
+			this._maxX = p1 * this._zoomFactor + delta
 		}
 	}
 
 	_updateMinAndMaxY() {
-		const { rootSize, viewportRect } = this._player
-		const { height } = viewportRect
-
-		const tippingZoomFactorValue = height / this._referenceSceneSize.height
+		const { viewportRect, viewportBoundingRect } = this._player
 
 		if (this._inScrollDirection === "ttb") {
-			if (this._zoomFactor < tippingZoomFactorValue) {
-				const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1)
-				this._minY = this._startPosition.y + k * (height / 2 - this._startPosition.y)
+			if (this._scene.size.height > viewportRect.height) {
+				this._minY = Math.min((viewportRect.height / 2) * this._zoomFactor,
+					viewportBoundingRect.height / 2)
+				this._maxY = -this._minY + this._scene.size.height * this._zoomFactor
+
+			} else if (this._scene.size.height * this._zoomFactor > viewportBoundingRect.height) {
+				this._minY = viewportBoundingRect.height / 2
+				this._maxY = -this._minY + this._scene.size.height * this._zoomFactor
+
+			} else {
+				this._minY = (this._scene.size.height / 2) * this._zoomFactor
 				this._maxY = this._minY
-			} else {
-				this._minY = height / 2
-				this._maxY = this._minY + this._referenceSceneSize.height * this._zoomFactor - height
 			}
+
 		} else if (this._inScrollDirection === "btt") {
-			if (this._zoomFactor < tippingZoomFactorValue) {
-				const k = (this._zoomFactor - 1) / (tippingZoomFactorValue - 1)
-				this._maxY = this._startPosition.y - k * (height / 2 + this._startPosition.y)
-				this._minY = this._maxY
+			if (this._scene.size.height > viewportRect.height) {
+				this._maxY = -Math.min((viewportRect.height / 2) * this._zoomFactor,
+					viewportBoundingRect.height / 2)
+				this._minY = -this._maxY - this._scene.size.height * this._zoomFactor
+
+			} else if (this._scene.size.height * this._zoomFactor > viewportBoundingRect.height) {
+				this._maxY = -viewportBoundingRect.height / 2
+				this._minY = -this._maxY - this._scene.size.height * this._zoomFactor
+
 			} else {
-				this._maxY = -height / 2
-				this._minY = this._maxY - this._referenceSceneSize.height * this._zoomFactor + height
+				this._maxY = -(this._scene.size.height / 2) * this._zoomFactor
+				this._minY = this._maxY
 			}
+
 		} else {
-			const sizeDiff = this._referenceSceneSize.height * this._zoomFactor - rootSize.height
-			const delta = (sizeDiff > 0) ? sizeDiff / 2 : 0
-			this._minY = this._startPosition.y - delta
-			this._maxY = this._startPosition.y + delta
+			const { p0, p1 } = this._camCenter.y
+
+			const sizeDiff = (p0 === p1)
+				? this._scene.size.height * this._zoomFactor - viewportBoundingRect.height
+				: viewportRect.height * this._zoomFactor - viewportBoundingRect.height
+			const delta = (sizeDiff > 0) ? (sizeDiff / 2) : 0
+
+			this._minY = p0 * this._zoomFactor - delta
+			this._maxY = p1 * this._zoomFactor + delta
 		}
 	}
 
@@ -464,56 +603,118 @@ export default class Camera {
 		this._offsetInScaledReferential /= 2
 	}
 
+	_updateSegmentInfoArray() {
+		if (!this._referenceDimension) {
+			return
+		}
+		const { viewportRect } = this._player
+
+		this._segmentsInfoArray = []
+
+		let positionInSegmentLine = 0
+		this._scene.layersArray.forEach((segmentLayer) => {
+			const segment = segmentLayer.content
+			const { segmentIndex } = segment
+
+			let segmentInfo = {
+				segmentIndex,
+				href: segmentLayer.getHref(),
+			}
+
+			if (this._distanceToCover) {
+				const coveredDistance = positionInSegmentLine - viewportRect[this._referenceDimension] / 2
+				const progress = Math.min(Math.max(coveredDistance / this._distanceToCover, 0), 1)
+				const { size } = segmentLayer
+				const referenceLength = size[this._referenceDimension]
+				segmentInfo = {
+					...segmentInfo,
+					progress, // Progress when the image touches the center of the viewport (going forward)
+					size,
+					length: referenceLength,
+					positionInSegmentLine, // In non-scaled/zoomed referential
+				}
+
+				positionInSegmentLine += referenceLength
+			}
+
+			this._segmentsInfoArray.push(segmentInfo)
+		})
+	}
+
 	_updatePositionAndProgressOnResize() { // Reminder: this._zoomFactor necessarily is 1
+
 		// If the scene can now entirely fit within the viewport
 		if (this._distanceToCover === 0) {
+			const startPosition = this._getStartPosition()
+			this._setPosition(startPosition)
+			const shouldUpdatePosition = true
+			const shouldUpdateVirtualPoint = true
+			this.setProgress(null, shouldUpdatePosition, shouldUpdateVirtualPoint)
 
-			this._setPosition(this._startPosition)
-			this.setProgress(null)
+		} else if (this._virtualPoint) {
+			// Note that progress may indeed have been null before (hence no virtual point yet)
 
-		} else { // Note that progress may have been null before
+			// Keep virtual point fixed
 
-			// Keep center of camera fixed
+			const progress = this._getProgressForVirtualPoint(this._virtualPoint)
 
-			const { width, height } = this._scene.size
-			const newPosition = {
-				x: Math.min(Math.max(this._signedPercent * width,
-					this._minX), this._maxX),
-				y: Math.min(Math.max(this._signedPercent * height,
-					this._minY), this._maxY),
-			}
-
-			if (this._overflow === "scrolled") {
-				this._setPosition(newPosition)
-			}
-
-			const shouldStoreLastNonTemporaryProgress = (this._overflow === "paginated"
-				&& this._isPaginationSticky === true)
-			this._updateProgressForPosition(newPosition, shouldStoreLastNonTemporaryProgress)
+			const shouldUpdateVirtualPoint = false
 
 			if (this._overflow === "paginated" && this.isAutoScrolling === false) {
+				const shouldUpdatePosition = false
+				this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 				const isTheResultOfADragEnd = false
 				this._moveToClosestSnapPoint(isTheResultOfADragEnd)
-			}
 
-			// Update snap point-related speeds based on inScrollDirection
-			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-				this._snapJumpSpeed = width * constants.snapJumpSpeedFactor
-				this._stickyMoveSpeed = width * constants.stickyMoveSpeedFactor
-			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
-				this._snapJumpSpeed = height * constants.snapJumpSpeedFactor
-				this._stickyMoveSpeed = height * constants.stickyMoveSpeedFactor
+			} else {
+				const shouldUpdatePosition = true
+				this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 			}
 		}
+	}
+
+	_getProgressForVirtualPoint(virtualPoint) {
+		const { pageSegmentIndex, percent } = virtualPoint
+		const point = {
+			pageSegmentIndex,
+			viewport: "center",
+			x: 0,
+			y: 0,
+			unit: "%",
+		}
+		const coord = percent * 100
+		if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+			point.x = coord
+		} else {
+			point.y = coord
+		}
+		const progress = this._getProgressForPoint(point)
+		return progress
+	}
+
+	_getStartPosition() {
+		const { x, y } = this._camCenter
+		const startPosition = {}
+		if (x.isPrimaryAxis === true) {
+			const { p0, p1, startP } = y
+			const startY = p0 + startP * (p1 - p0)
+			startPosition.x = x.p0
+			startPosition.y = startY
+		} else {
+			const { p0, p1, startP } = x
+			const startX = p0 + startP * (p1 - p0)
+			startPosition.x = startX
+			startPosition.y = y.p0
+		}
+		return startPosition
 	}
 
 	_setPosition({ x, y }) { // Note that x and y correspond to the camera's center position
 		this._currentPosition = { x, y }
 		this._scene.setPosition({ x: -x, y: -y }) // this._scene is still a Container
-
 		if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
 			this._signedPercent = x / (this._scene.size.width * this._zoomFactor)
-		} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+		} else {
 			this._signedPercent = y / (this._scene.size.height * this._zoomFactor)
 		}
 	}
@@ -525,11 +726,12 @@ export default class Camera {
 		}
 		if (shouldStoreLastNonTemporaryProgress === true
 			&& this._lastNonTemporaryProgress === null) {
-			this._lastNonTemporaryProgress = this._progress
+			this._lastNonTemporaryProgress = this._progress // Useful for a sticky drag
 		}
 		const progress = this._getProgressForPosition(position)
 		const shouldUpdatePosition = false
-		this.setProgress(progress, shouldUpdatePosition)
+		const shouldUpdateVirtualPoint = true // SHOULD BE FALSE EVENTUALLY
+		this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 	}
 
 	_getProgressForPosition(position) {
@@ -552,111 +754,172 @@ export default class Camera {
 	}
 
 	// Position the scene container to conform to the specified progress value
-	setProgress(p = null, shouldUpdatePosition = true) {
+	setProgress(p = null, shouldUpdatePosition = true, shouldUpdateVirtualPoint = false) {
 		this._progress = p
-		this._virtualPoint = this._getVirtualPoint()
-		if (this._doOnScroll) {
-			this._doOnScroll(this._virtualPoint)
+
+		if (p !== null && shouldUpdateVirtualPoint === true) {
+			this._virtualPoint = this._getVirtualPoint()
+
+			const { pageNavigator } = this._player
+			if (pageNavigator.loadingMode === "segment" && pageNavigator.isInAGoTo === false) { // CAUSE PAGENAV NOT CREATED THE FIRST TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+				const forceUpdate = false
+				if (this._virtualPoint) {
+					const { segmentIndex } = this._virtualPoint
+					pageNavigator.updateSegmentLoadTasks(segmentIndex, forceUpdate)
+				} else if (this._segmentsInfoArray.length > 0 && this._segmentsInfoArray[0]) {
+					pageNavigator.updateSegmentLoadTasks(this._segmentsInfoArray[0].segmentIndex, forceUpdate)
+				}
+			}
 		}
+
+		// Process progress animations
+		if (p !== null) {
+			const data = { percent: this._progress }
+			this._eventEmitter.emit("inpagescroll", data)
+
+			if (this._sliceAnimationsArray) {
+				this._sliceAnimationsArray.forEach((animationData) => {
+					this._playSliceAnimation(animationData)
+				})
+			}
+			if (this._soundAnimationsArray) {
+				this._soundAnimationsArray.forEach((soundAnimation) => {
+					this._playSoundAnimation(soundAnimation)
+				})
+			}
+		}
+
 		if (shouldUpdatePosition === false) {
 			return
 		}
+
 		if (p === null) {
-			this._setPosition(this._startPosition)
-		} else if (this._inScrollDirection === "ltr") {
-			this._setPosition({
-				x: this._minX + p * this._progressVector.x * this._zoomFactor,
-				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
-			})
-		} else if (this._inScrollDirection === "rtl") {
-			this._setPosition({
-				x: this._maxX + p * this._progressVector.x * this._zoomFactor,
-				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
-			})
-		} else if (this._inScrollDirection === "ttb") {
-			this._setPosition({
-				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				y: this._minY + p * this._progressVector.y * this._zoomFactor,
-			})
-		} else if (this._inScrollDirection === "btt") {
-			this._setPosition({
-				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				y: this._maxY + p * this._progressVector.y * this._zoomFactor,
-			})
+			const startPosition = this._getStartPosition()
+			this._setPosition(startPosition)
+
+		} else {
+			let position = this._currentPosition
+			if (this._inScrollDirection === "ltr") {
+				position = {
+					x: this._minX + p * (this._camCenter.x.p1 - this._camCenter.x.p0) * this._zoomFactor,
+					y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
+				}
+			} else if (this._inScrollDirection === "rtl") {
+				position = {
+					x: this._maxX + p * (this._camCenter.x.p1 - this._camCenter.x.p0) * this._zoomFactor,
+					y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
+				}
+			} else if (this._inScrollDirection === "ttb") {
+				position = {
+					x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+					y: this._minY + p * (this._camCenter.y.p1 - this._camCenter.y.p0) * this._zoomFactor,
+				}
+			} else if (this._inScrollDirection === "btt") {
+				position = {
+					x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
+					y: this._maxY + p * (this._camCenter.y.p1 - this._camCenter.y.p0) * this._zoomFactor,
+				}
+			}
+			this._setPosition(position)
+		}
+	}
+
+	_playSliceAnimation(animationData) {
+		const { slice, animation } = animationData
+
+		const { variable, keyframesArray } = animation
+		if (!keyframesArray || keyframesArray.length === 0) {
+			return
+		}
+		let i = keyframesArray.length - 1
+		let { progress } = keyframesArray[i]
+		while (i >= 0 && progress >= this._progress) {
+			i -= 1
+			if (i >= 0) {
+				progress = keyframesArray[i].progress
+			}
+		}
+		i = Math.max(i, 0)
+
+		const previousProgress = keyframesArray[i].progress
+		const previousValue = keyframesArray[i].value
+
+		if (i === keyframesArray.length - 1) {
+			const { value } = keyframesArray[i]
+			slice.setVariable(variable, value)
+
+		} else if (keyframesArray[i + 1].progress !== null) {
+			const nextProgress = keyframesArray[i + 1].progress
+			const nextValue = keyframesArray[i + 1].value
+
+			let value = nextValue
+			if (nextProgress !== previousProgress) { // Linear easing is assumed
+				value = (this._progress - previousProgress) / (nextProgress - previousProgress)
+				value *= (nextValue - previousValue)
+				value += previousValue
+			}
+			slice.setVariable(variable, value)
+		}
+	}
+
+	_playSoundAnimation(animation) {
+		const { resourceId, start, end } = animation
+		const { resourceManager } = this._player
+		const resource = resourceManager.getResourceWithId(resourceId)
+		if (!resource) {
+			return
+		}
+		if (!end) {
+			if (this._progress >= start) {
+				resource.playIfNeeded()
+			}
+		} else if (this._progress >= start.progress && this._progress < end.progress) {
+			resource.playIfNeeded()
+		} else {
+			resource.stopIfNeeded()
 		}
 	}
 
 	_getVirtualPoint() {
-		if (this._progress === null) {
+		if (this._progress === null || this._segmentsInfoArray.length < 1
+			|| !this._referenceDimension) {
 			return null
 		}
 
-		const { viewportRect } = this._player
-		const { getPercent, referenceDimension, coord } = this._virtualPointInfo
-
-		const percent = getPercent()
-
-		let i = 0
-		let virtualPoint = null
-		let remainingDistance = viewportRect[referenceDimension] / 2
-		remainingDistance += (coord === "x")
-			? (percent * (this._maxX - this._minX))
-			: (percent * (this._maxY - this._minY))
-		remainingDistance /= this._zoomFactor
-
-		while (i < this._scene.layersArray.length && virtualPoint === null) {
-			const segmentLayer = this._scene.layersArray[i]
-			const { size } = segmentLayer
-			const referenceDistance = size[referenceDimension]
-			remainingDistance -= referenceDistance
-
-			if (remainingDistance <= constants.possiblePixelError && referenceDistance > 0) {
-				let percentInSegment = (remainingDistance + referenceDistance) / referenceDistance
-				percentInSegment = Math.min(Math.max(percentInSegment, 0), 1)
-				const { worksBackward } = this._virtualPointInfo
-				virtualPoint = {
-					segmentIndex: i,
-					href: segmentLayer.getFirstHref(),
-					[coord]: (worksBackward === true) ? (1 - percentInSegment) : percentInSegment,
-					percent,
-				}
-			}
+		let i = 1
+		let segmentInfo = this._segmentsInfoArray[1]
+		while (i < this._segmentsInfoArray.length
+			&& segmentInfo.progress <= this._progress) { // No this._possibleError taken into account here
 			i += 1
+			segmentInfo = this._segmentsInfoArray[i]
+		}
+
+		const { positionInSegmentLine, length, href } = this._segmentsInfoArray[i - 1]
+		const { viewportRect } = this._player
+		const viewportLength = viewportRect[this._referenceDimension]
+
+		const coveredDistance = this._progress * this._distanceToCover
+		let percent = (coveredDistance - positionInSegmentLine + viewportLength / 2) / length
+		percent = Math.min(Math.max(percent, 0), 1)
+
+		const { segmentIndex } = this._segmentsInfoArray[i - 1]
+		const virtualPoint = {
+			segmentIndex,
+			pageSegmentIndex: i - 1,
+			href,
+			percent, // percent in segment
 		}
 
 		return virtualPoint
 	}
 
 	setPercent(percent) {
-		switch (this._inScrollDirection) {
-		case "ltr":
-			this._setPosition({
-				x: this._minX + percent * (this._maxX - this._minX),
-				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
-			})
-			break
-		case "rtl":
-			this._setPosition({
-				x: this._maxX - percent * (this._maxX - this._minX),
-				y: Math.min(Math.max(this._currentPosition.y, this._minY), this._maxY),
-			})
-			break
-		case "ttb":
-			this._setPosition({
-				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				y: this._minY + percent * (this._maxY - this._minY),
-			})
-			break
-		case "btt":
-			this._setPosition({
-				x: Math.min(Math.max(this._currentPosition.x, this._minX), this._maxX),
-				y: this._maxY - percent * (this._maxY - this._minY),
-			})
-			break
-		default:
-			break
+		if (this._progress === null || percent < 0 || percent > 1) {
+			return
 		}
-		this._updateProgressForPosition()
+		const shouldUpdatePosition = true
+		const shouldUpdateVirtualPoint = true
+		this.setProgress(percent, shouldUpdatePosition, shouldUpdateVirtualPoint)
 	}
 
 	_moveToClosestSnapPoint(isTheResultOfADragEnd = true) {
@@ -680,8 +943,11 @@ export default class Camera {
 		// ...whereas after a resize or dezoom
 		} else {
 			allowsSameProgress = true
-			nextProgress = this._getNextSnapPointProgress(allowsSameProgress)
-			previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress)
+			const lastNonTemporaryProgress = null
+			nextProgress = this._getNextSnapPointProgress(allowsSameProgress,
+				lastNonTemporaryProgress)
+			previousProgress = this._getPreviousSnapPointProgress(allowsSameProgress,
+				lastNonTemporaryProgress)
 		}
 
 		const progressDifferenceToNext = nextProgress - this._progress
@@ -696,44 +962,42 @@ export default class Camera {
 		if (isTheResultOfADragEnd === true) {
 			const isUpdate = false
 			this._startSnapPointJump(targetProgress, isUpdate)
+
 		} else { // Move instantly
 			const shouldUpdatePosition = true
-			this.setProgress(targetProgress, shouldUpdatePosition)
+			const shouldUpdateVirtualPoint = true
+			this.setProgress(targetProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 		}
 		this._lastNonTemporaryProgress = null
 	}
 
 	// Get the progress value of the next snap point in the list (1 if there is none)
-	_getNextSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress = null) {
-		if (!this._snapPointsArray
-			|| (this._overflow === "scrolled" && this._allowsPaginatedScroll === false)) {
-			return null
-		}
+	_getNextSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress) {
 
 		// If lastNonTemporaryProgress is defined, then a step forward
 		// (via a discontinuous gesture or a sticky drag) is under way
 		const referenceProgress = (lastNonTemporaryProgress !== null)
 			? lastNonTemporaryProgress
 			: this._progress
+
 		let i = 0
 		while (i < this._snapPointsArray.length
-			&& ((allowsSameProgress === true)
-				? this._snapPointsArray[i].progress <= referenceProgress + this._possibleError
-				: this._snapPointsArray[i].progress < referenceProgress - this._possibleError)) {
+			&& this._isSnapProgressInferior(allowsSameProgress, referenceProgress, i) === true) {
 			i += 1
 		}
 
-		let nextProgress = 1
+		let nextProgress = 1 // Will ensure a jump to the end of the page at least
 		if (i < this._snapPointsArray.length) {
 			nextProgress = this._snapPointsArray[i].progress
 		}
 
 		// Select the closest value between that one and the one corresponding to one pagination away
-		if (this._paginationProgressStep) {
+		if (this._paginationProgressStep && this._allowsPaginatedScroll === true) {
 			let nextPaginatedProgress = nextProgress
 
 			if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
 				nextPaginatedProgress = lastNonTemporaryProgress + this._paginationProgressStep
+
 			} else {
 				nextPaginatedProgress = (allowsSameProgress === true)
 					? Math.ceil((this._progress - this._possibleError) / this._paginationProgressStep)
@@ -748,33 +1012,35 @@ export default class Camera {
 		return nextProgress
 	}
 
-	// Get the progress value of the previous snap point in the list (0 if there is none)
-	_getPreviousSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress = null) {
-		if (!this._snapPointsArray
-			|| (this._overflow === "scrolled" && this._allowsPaginatedScroll === false)) {
-			return null
+	_isSnapProgressInferior(allowsSameProgress, referenceProgress, i) {
+		if (allowsSameProgress === true) { // A kind of "isSnapProgressStrictlyInferior"
+			return (this._snapPointsArray[i].progress < referenceProgress - this._possibleError)
 		}
+		return (this._snapPointsArray[i].progress <= referenceProgress + this._possibleError)
+	}
+
+	// Get the progress value of the previous snap point in the list (0 if there is none)
+	_getPreviousSnapPointProgress(allowsSameProgress = false, lastNonTemporaryProgress) {
 
 		// If lastNonTemporaryProgress is defined, then a step backward
 		// (via a discontinuous gesture or a sticky drag) is under way
 		const referenceProgress = (lastNonTemporaryProgress !== null)
 			? lastNonTemporaryProgress
 			: this._progress
+
 		let i = this._snapPointsArray.length - 1
 		while (i >= 0
-			&& ((allowsSameProgress === true)
-				? this._snapPointsArray[i].progress >= referenceProgress - this._possibleError
-				: this._snapPointsArray[i].progress > referenceProgress + this._possibleError)) {
+			&& this._isSnapProgressSuperior(allowsSameProgress, referenceProgress, i) === true) {
 			i -= 1
 		}
 
-		let previousProgress = 0
+		let previousProgress = 0 // Will ensure a jump to the start of the page at least
 		if (i >= 0) {
 			previousProgress = this._snapPointsArray[i].progress
 		}
 
 		// Select the closest value between that one and the one corresponding to one pagination away
-		if (this._paginationProgressStep) {
+		if (this._paginationProgressStep && this._allowsPaginatedScroll === true) {
 			let previousPaginatedProgress = previousProgress
 
 			if (lastNonTemporaryProgress !== null && this._isPaginationGridBased === false) {
@@ -790,6 +1056,13 @@ export default class Camera {
 			previousProgress = Math.max(previousProgress, previousPaginatedProgress)
 		}
 		return previousProgress
+	}
+
+	_isSnapProgressSuperior(allowsSameProgress, referenceProgress, i) {
+		if (allowsSameProgress === true) { // A kind of "isSnapProgressStrictlySuperior"
+			return (this._snapPointsArray[i].progress > referenceProgress + this._possibleError)
+		}
+		return (this._snapPointsArray[i].progress >= referenceProgress - this._possibleError)
 	}
 
 	zoom(zoomData) {
@@ -816,7 +1089,7 @@ export default class Camera {
 		if (isContinuous === false) {
 
 			// Compute zoom factor
-			zoomFactor = (this._zoomFactor !== 1) ? 1 : constants.maxZoomFactor
+			zoomFactor = (this._zoomFactor !== 1) ? 1 : constants.MAX_ZOOM
 
 			// Compute camera's fixed point
 			zoomFixedPoint = this._computeFixedPoint(touchPoint, viewportRect)
@@ -829,9 +1102,9 @@ export default class Camera {
 			// Compute zoom factor
 			if (delta) {
 				const { height } = viewportRect
-				const zoomSensitivity = constants.zoomSensitivityConstant / height
+				const zoomSensitivity = constants.ZOOM_SENSITIVITY / height
 				zoomFactor = Math.min(Math.max(this._zoomFactor - delta * zoomSensitivity, 1),
-					constants.maxZoomFactor)
+					constants.MAX_ZOOM)
 			} else {
 				zoomFactor = this._zoomFactor * multiplier
 			}
@@ -840,6 +1113,7 @@ export default class Camera {
 			zoomFixedPoint = (touchPoint !== this._zoomTouchPoint)
 				? this._computeFixedPoint(touchPoint, viewportRect)
 				: this._currentPosition
+
 			this._zoomTouchPoint = touchPoint
 		}
 
@@ -873,12 +1147,13 @@ export default class Camera {
 
 	_updatePositionAndProgressOnZoomChange(zoomChange, zoomFixedPoint) {
 		// Change currentPosition so that zoomFixedPoint remains visually fixed
-		this._setPosition({
+		const position = {
 			x: Math.min(Math.max(this._currentPosition.x + zoomChange * zoomFixedPoint.x,
 				this._minX), this._maxX),
 			y: Math.min(Math.max(this._currentPosition.y + zoomChange * zoomFixedPoint.y,
 				this._minY), this._maxY),
-		})
+		}
+		this._setPosition(position)
 
 		// Update progress to conform to that new position
 		const shouldStoreLastNonTemporaryProgress = (this._overflow === "paginated"
@@ -886,7 +1161,8 @@ export default class Camera {
 		this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress)
 
 		// If reverting to normal zoomFactor=1 value when overflow=paginated, snap to closest snap point
-		if (this._zoomFactor === 1 && this._overflow === "paginated") {
+		if (this._hasSpaceToMove === true
+			&& this._zoomFactor === 1 && this._overflow === "paginated") {
 			const isTheResultOfADragEnd = false
 			this._moveToClosestSnapPoint(isTheResultOfADragEnd)
 		}
@@ -966,18 +1242,22 @@ export default class Camera {
 			endCallback,
 		} = this._jumpData
 
-		const percent = (Date.now() - startDate) / duration
+		const percent = (Date.now() - startDate) / (duration || 1)
+
+		const shouldUpdatePosition = true
+		const shouldUpdateVirtualPoint = true
 
 		if (duration === 0 || percent >= 1 || shouldForceToEnd === true) {
-			this.setProgress(targetProgress)
+			this.setProgress(targetProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 			this._reset()
 			if (endCallback) {
 				endCallback()
 			}
+
 		} else {
 			let forcedProgress = startProgress + (targetProgress - startProgress) * percent
 			forcedProgress = Math.min(Math.max(forcedProgress, 0), 1)
-			this.setProgress(forcedProgress)
+			this.setProgress(forcedProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 			requestAnimationFrame(this._autoProgress.bind(this))
 		}
 	}
@@ -991,6 +1271,45 @@ export default class Camera {
 		return true
 	}
 
+	attemptToMoveSideways(way) {
+		if (this._allowsPaginatedScroll === false && this._overflow === "scrolled") {
+			return false
+		}
+		const { viewportRect } = this._player
+		const { width, height } = viewportRect
+		const currentPosition = { ...this._currentPosition }
+		switch (way) {
+		case "left":
+			if (currentPosition.x > this._camCenter.x.p0 + constants.POSSIBLE_PIXEL_ERROR) {
+				currentPosition.x = Math.max(this._camCenter.x.p0, currentPosition.x - width)
+			}
+			break
+		case "right":
+			if (currentPosition.x < this._camCenter.x.p1 - constants.POSSIBLE_PIXEL_ERROR) {
+				currentPosition.x = Math.min(this._camCenter.x.p1, currentPosition.x + width)
+			}
+			break
+		case "up":
+			if (currentPosition.y > this._camCenter.y.p0 + constants.POSSIBLE_PIXEL_ERROR) {
+				currentPosition.y = Math.max(this._camCenter.y.p0, currentPosition.y - height)
+			}
+			break
+		case "down":
+			if (currentPosition.y < this._camCenter.y.p1 - constants.POSSIBLE_PIXEL_ERROR) {
+				currentPosition.y = Math.min(this._camCenter.y.p1, currentPosition.y + height)
+			}
+			break
+		default:
+			return false
+		}
+		if (currentPosition.x !== this._currentPosition.x
+			|| currentPosition.y !== this._currentPosition.y) {
+			this._setPosition(currentPosition)
+			return true
+		}
+		return false
+	}
+
 	// Apply the amount of user scrolling to the scene container's position via the camera
 	// by computing what new progress value the delta corresponds to
 	handleScroll(scrollData, isWheelScroll) {
@@ -999,43 +1318,68 @@ export default class Camera {
 				&& (this._isPaginationSticky === false || isWheelScroll === true)))) {
 			return false
 		}
+
 		const { deltaX, deltaY } = scrollData
-		this._setPosition({
-			x: Math.min(Math.max(this._currentPosition.x - deltaX, this._minX), this._maxX),
-			y: Math.min(Math.max(this._currentPosition.y - deltaY, this._minY), this._maxY),
-		})
+		const currentPosition = { ...this._currentPosition }
+
+		// Entirely disallow sideways scroll for a sideways gesture when pagination should be sticky
+		if (this.isZoomed === false && this._overflow === "paginated"
+			&& this._isPaginationSticky === true) {
+			if (this._camCenter.x.isPrimaryAxis === true) {
+				currentPosition.x -= deltaX
+			} else {
+				currentPosition.y -= deltaY
+			}
+		} else {
+			currentPosition.x -= deltaX
+			currentPosition.y -= deltaY
+		}
+
+		currentPosition.x = Math.min(Math.max(currentPosition.x, this._minX), this._maxX)
+		currentPosition.y = Math.min(Math.max(currentPosition.y, this._minY), this._maxY)
+		this._setPosition(currentPosition)
+
 		const shouldStoreLastNonTemporaryProgress = (this._overflow === "paginated"
 			&& this._isPaginationSticky === true)
 		this._updateProgressForPosition(this._currentPosition, shouldStoreLastNonTemporaryProgress)
+
+		// What images are visible?
+
 		return true
 	}
 
-	moveToSegmentIndex(segmentIndex, isGoingForward) {
+	// Used in a goTo
+	moveToSegmentIndex(pageSegmentIndex, isGoingForward) {
 		// If the scene is not larger than the viewport, just display it
 		if (this._hasSpaceToMove === false) {
 			return
 		}
-		// If a segmentIndex is specified and progress is defined,
+
+		// If a pageSegmentIndex is specified and progress is defined,
 		// then get the progress value to which the segment corresponds
-		if (segmentIndex !== null && this._progress !== null) {
-			const progress = this._getProgressForSegmentIndex(segmentIndex)
-			this.setProgress(progress || 0)
+		if (pageSegmentIndex !== null && this._progress !== null) {
+			const progress = this._getProgressForSegmentIndex(pageSegmentIndex)
+			const shouldUpdatePosition = true
+			const shouldUpdateVirtualPoint = true
+			this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+
 		// Otherwise just go to the start or end of the scene
 		} else {
 			this.moveToStartOrEnd(isGoingForward)
 		}
 	}
 
-	_getProgressForSegmentIndex(segmentIndex) {
+	_getProgressForSegmentIndex(pageSegmentIndex) {
 		// The progress value is computed for the "start" viewport point in the case
 		// the inScrollDirection is ltr or btt, and for the "end" point otherwise
-		const snapPoint = {
-			segmentIndex,
+		const point = {
+			pageSegmentIndex,
 			viewport: "start",
-			x: "0%",
-			y: "0%",
+			x: 0,
+			y: 0,
+			unit: "%",
 		}
-		const progress = this._getProgressForSnapPoint(snapPoint)
+		const progress = this._getProgressForPoint(point)
 		return progress
 	}
 
@@ -1045,7 +1389,10 @@ export default class Camera {
 		}
 
 		this._reset()
-		this.setProgress((isGoingForward === true) ? 0 : 1)
+		const progress = (isGoingForward === true) ? 0 : 1
+		const shouldUpdatePosition = true
+		const shouldUpdateVirtualPoint = true
+		this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
 
 		if (isGoingForward === true) {
 			this._signedPercent = 0
@@ -1055,6 +1402,16 @@ export default class Camera {
 				? -1
 				: 1
 		}
+	}
+
+	getCurrentHref() {
+		if (this._virtualPoint) {
+			return this._virtualPoint.href
+		}
+		if (this._segmentsInfoArray.length > 0 && this._segmentsInfoArray[0]) {
+			return this._segmentsInfoArray[0].href
+		}
+		return null
 	}
 
 }

@@ -1,151 +1,234 @@
 import { Loader } from "../Renderer"
-import Task from "./Task"
 import TextureResource from "./TextureResource"
+import VideoTextureResource from "./VideoTextureResource"
+import AudioResource from "./AudioResource"
 import ResourceLoadTaskQueue from "./ResourceLoadTaskQueue"
+import Task from "./Task"
 
 import * as Utils from "../utils"
 import * as constants from "../constants"
 
 export default class ResourceManager {
 
-	get resourceTextures() { return this._textureResources }
+	// Used in PageNavigator
 
-	constructor(doWithLoadPercentChange, textureSource, player) {
-		this._doWithLoadPercentChange = doWithLoadPercentChange
-		this._textureSource = textureSource
-		this._player = player
+	get loadingMode() { return this._loadingMode }
 
-		const { options } = player
-		const {
-			allowsParallel = constants.defaultAllowsParallel,
-			videoLoadTimeout = constants.defaultVideoLoadTimeout,
-		} = options || {}
+	get allowsDestroy() { return this._allowsDestroy }
 
-		this._allowsParallel = allowsParallel
-		this._videoLoadTimeout = videoLoadTimeout
+	get maxNbOfUnitsToLoadAfter() { return this._maxNbOfUnitsToLoadAfter }
 
-		this._textureResources = {}
-
-		this._taskQueue = null
-		this._nbOfCompletedTasks = 0
-
-		if (this._doWithLoadPercentChange) {
-			this._doWithLoadPercentChange(0)
-		}
-	}
+	get maxNbOfUnitsToLoadBefore() { return this._maxNbOfUnitsToLoadBefore }
 
 	// Used in Player
-	storeResourceInfo(resource = null, sliceId) {
-		if (!resource || sliceId === undefined) {
-			return
-		}
 
-		this._storeTextureInfo(resource, sliceId)
+	get haveFirstResourcesLoaded() { return this._haveAllInitialTasksRun }
 
-		const { alternate } = resource
-		if (alternate) {
-			Object.keys(alternate).forEach((tagName) => {
-				Object.keys(alternate[tagName] || {}).forEach((tagValue) => {
-					this._storeTextureInfo(alternate[tagName][tagValue], sliceId)
-				})
-			})
-		}
+	constructor(player) {
+		this._player = player
+
+		this._doWithLoadPercentChange = null
+		this._resourceSource = {}
+
+		this._resources = {}
+
+		this._taskQueue = null
+
+		this._haveAllInitialTasksRun = false
+		this._nbOfCompletedTasks = 0
+
+		this._maxNbOfUnitsToLoadAfter = 0
+		this._maxNbOfUnitsToLoadBefore = 0
 	}
 
-	_storeTextureInfo(textureInfo = null, sliceId) {
-		const { path } = textureInfo || {}
-		if (!path) {
-			return
+	getResourceId(coreResourceData) {
+		const { type, path } = coreResourceData || {}
+		if (!path || Utils.isAString(path) === false) {
+			return null
 		}
-		if (!this._textureResources[path]) {
-			this._textureResources[path] = new TextureResource(textureInfo, sliceId)
+
+		// Check if a resource with the same path already exists, but consider it
+		// only if it is an image (duplicates are allowed for video and audio resources)
+		let resource = null
+		let i = 0
+		const resourcesArray = Object.values(this._resources)
+		while (i < resourcesArray.length && !resource) {
+			// Duplicates are not allowed for "image" and "audio" resources
+			if (resourcesArray[i].path === path && type !== "video") {
+				resource = resourcesArray[i]
+			}
+			i += 1
+		}
+
+		if (!resource) { // Create and store new resource
+			switch (type) {
+			case "image":
+				resource = new TextureResource(coreResourceData, this._player)
+				break
+			case "video":
+				resource = new VideoTextureResource(coreResourceData, this._player)
+				break
+			case "audio":
+				resource = new AudioResource(coreResourceData, this._player)
+				break
+			default:
+				return null
+			}
+			this._resources[resource.id] = resource
+		}
+
+		const { id } = resource
+		return id
+	}
+
+	getResourceWithId(resourceId) {
+		return this._resources[resourceId] || {}
+	}
+
+	// Used in Player to configure ResourceManager
+	setResourceSourceAndOptions(resourceSource, options) {
+		this._resourceSource = resourceSource
+
+		const {
+			loadingMode,
+			allowsDestroy,
+			allowsParallel,
+			videoLoadTimeout = constants.DEFAULT_VIDEO_LOAD_TIMEOUT,
+		} = options || {}
+
+		const shouldReturnDefaultValue = true
+		this._loadingMode = Utils.returnValidValue("loadingMode", loadingMode,
+			shouldReturnDefaultValue)
+		this._allowsDestroy = Utils.returnValidValue("allowsDestroy", allowsDestroy,
+			shouldReturnDefaultValue)
+		this._allowsParallel = Utils.returnValidValue("allowsParallel", allowsParallel,
+			shouldReturnDefaultValue)
+		this._videoLoadTimeout = videoLoadTimeout
+
+		let priorityFactor = 1
+
+		const { maxNbOfUnitsToLoadAfter } = options || {}
+
+		if (maxNbOfUnitsToLoadAfter === null) { // If was explicitly set as null!
+			this._maxNbOfUnitsToLoadAfter = null
+			this._maxNbOfUnitsToLoadBefore = null
+			priorityFactor = Math.max((1 / constants.MIN_SHARE_OF_UNITS_TO_LOAD_BEFORE) - 1, 1)
+
 		} else {
-			this._textureResources[path].addTextureInfo(textureInfo, sliceId)
+			this._maxNbOfUnitsToLoadAfter = (Utils.isANumber(maxNbOfUnitsToLoadAfter) === true
+				&& maxNbOfUnitsToLoadAfter >= 0)
+				? maxNbOfUnitsToLoadAfter
+				: constants.DEFAULT_MAX_NB_OF_UNITS_TO_LOAD_AFTER
+			this._maxNbOfUnitsToLoadAfter = Math.ceil(this._maxNbOfUnitsToLoadAfter)
+
+			this._maxNbOfUnitsToLoadBefore = this._maxNbOfUnitsToLoadAfter
+			this._maxNbOfUnitsToLoadBefore *= constants.MIN_SHARE_OF_UNITS_TO_LOAD_BEFORE
+			this._maxNbOfUnitsToLoadBefore = Math.ceil(this._maxNbOfUnitsToLoadBefore)
+
+			priorityFactor = (this._maxNbOfUnitsToLoadAfter / this._maxNbOfUnitsToLoadBefore) || 1
 		}
+
+		this._buildAsyncTaskQueue(priorityFactor)
 	}
 
-	// When setting (including changing) the page navigator (used in Player)
-	reset(maxPriority, priorityFactor) {
-		// Build async task queue if there is none...
+	_buildAsyncTaskQueue(priorityFactor) {
+		const { slices } = this._player
+		const nbOfSlices = Object.keys(slices).length
+		const maxPriority = this._maxNbOfUnitsToLoadAfter || nbOfSlices
+
+		this._taskQueue = new ResourceLoadTaskQueue(maxPriority, this._allowsParallel, priorityFactor)
+	}
+
+	setDoWithLoadPercentChange(doWithLoadPercentChange) {
+		if (!doWithLoadPercentChange) {
+			return
+		}
+		this._doWithLoadPercentChange = doWithLoadPercentChange
+		this._doWithLoadPercentChange(0)
+	}
+
+	// Stop all loading tasks when setting (including changing) the page navigator (used in Player)
+	killPendingLoads() {
 		if (!this._taskQueue) {
-			this._taskQueue = new ResourceLoadTaskQueue(maxPriority, priorityFactor,
-				this._allowsParallel)
-		// ...or stop all loading tasks otherwise
-		} else {
-			this._taskQueue.reset()
-			this._nbOfCompletedTasks = 0
+			return
 		}
-
-		// Clear sliceIdsSets so they can be populated again for the considered reading mode
-		Object.values(this._textureResources).forEach((textureResource) => {
-			textureResource.resetSliceIdsSets()
-		})
+		this._taskQueue.reset()
+		// Note that killing all tasks will call their respective resource.cancelLoad()
+		this._nbOfCompletedTasks = 0
 	}
 
-	updateForTargetPageIndex(targetPageIndex) {
+	// Used in PageNavigator (way to update priorities for load tasks if some are still pending))
+	updateForTargetSegmentIndex(targetSegmentIndex) { // Which is an absolute segment index
 		// Update priorities for load tasks (if some tasks are still pending)
-		this._taskQueue.updatePriorities(targetPageIndex)
+		this._taskQueue.updatePriorities(targetSegmentIndex)
 	}
 
-	// Used in Slice
-	loadTexturesAtPaths(pathsArray, sliceId, pageIndex) {
+	// Used in PageNavigator (idsArray.length=1 except for a sequence)
+	loadResources(sliceResourceDataArray, segmentIndex) {
 		let taskId = null
 
-		const pathsToLoadArray = []
-		pathsArray.forEach((path) => {
-			if (path && this._textureResources[path]) {
-				const textureResource = this._textureResources[path]
-				const { id, hasStartedLoading } = textureResource
-				if (hasStartedLoading === false) {
+		const resourceIdsToLoadArray = []
+		sliceResourceDataArray.forEach(({ resourceId, fragment, sliceId }) => {
+			if (this._resources[resourceId]) {
+				const resource = this._resources[resourceId] || {}
+				if (resource.type !== "audio") { // addOrUpdateFragment is only defined for a TextureResource
+					resource.addOrUpdateFragment(fragment, sliceId)
+				}
+
+				// If has not started loading, start preparing the loading task
+				if (resource.hasNotStartedLoading === true) {
 					if (taskId === null) {
-						taskId = String(id)
-					} else {
-						taskId += String(id)
+						taskId = String(resourceId)
+					} else { // For a sequence, all images are loaded together as just one task
+						taskId += String(resourceId)
 					}
-					pathsToLoadArray.push(path)
+					resourceIdsToLoadArray.push(resourceId)
+					resource.notifyLoadStart()
+
+				// Otherwise if a texture has been loaded, ensure it is applied
+				} else if (resource.hasLoadedSomething === true && resource.type !== "audio") {
+					const { slices } = this._player
+					resource.applyAllTextures(slices)
 				}
 			}
 		})
 
 		const callback = () => {
 			const { slices } = this._player
-			pathsArray.forEach((path) => {
-				const textureResource = this._textureResources[path]
-				if (textureResource) {
-					textureResource.applyAllTextures(slices)
+			resourceIdsToLoadArray.forEach((resourceId) => {
+				const resource = this._resources[resourceId]
+				if (resource && resource.type !== "audio") {
+					resource.applyAllTextures(slices)
 				}
 			})
 		}
-		// Note that callback will ensure slice.loadStatus = 2 (or -1),
-		// which will prevent re-triggering loadTexturesAtPaths for the slice
-
-		if (pathsToLoadArray.length === 0) {
+		// Note that callback will ensure slice.loadStatus=2 (or -1),
+		// which will prevent re-triggering loadResourcesWithIds for the slice
+		if (resourceIdsToLoadArray.length === 0) {
 			callback()
 			return
 		}
 
-		// If is already loading, still consider if priority order > that of when started loading
-
 		let task = this._taskQueue.getTaskWithId(taskId)
-		const data = { pageIndex }
+		const data = { segmentIndex }
 
 		// Add resource load task to queue if not already in queue
 		if (!task) {
 			const loader = new Loader()
-			const doAsync = () => this._loadResources(pathsToLoadArray, pageIndex, loader)
+			const doAsync = () => this._loadResources(resourceIdsToLoadArray, loader)
 			const doOnEnd = callback
 			const doOnKill = () => {
 				// Cancel loading for resources not loaded yet (and thus change their load status)
+				loader.reset()
 				const { slices } = this._player
-				pathsToLoadArray.forEach((path) => {
-					if (path && this._textureResources[path]) {
-						const textureResource = this._textureResources[path]
-						if (textureResource.hasLoaded === false) {
-							textureResource.cancelLoad(slices)
+				resourceIdsToLoadArray.forEach((resourceId) => {
+					if (this._resources[resourceId]) {
+						const resource = this._resources[resourceId]
+						if (resource.hasLoadedSomething === false) {
+							resource.cancelLoad(slices)
 						}
 					}
 				})
-				loader.reset()
 			}
 			task = new Task(taskId, data, doAsync, doOnEnd, doOnKill)
 			this._taskQueue.addTask(task)
@@ -156,55 +239,80 @@ export default class ResourceManager {
 		}
 	}
 
-	_loadResources(pathsToLoadArray, pageIndex, loader) {
-		pathsToLoadArray.forEach((path) => {
-			if (path && this._textureResources[path]) {
-				const textureResource = this._textureResources[path]
-				textureResource.notifyLoadStart()
-			}
-		})
-		return new Promise((resolve) => {
-			this._addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve)
+	_loadResources(resourceIdsArray, loader) {
+		return new Promise((resolve, reject) => {
+			this._addResourcesToLoaderAndLoad(resourceIdsArray, loader, resolve, reject)
 		})
 	}
 
-	_addResourcesToLoaderAndLoad(pathsToLoadArray, loader, resolve) {
-		const firstPath = pathsToLoadArray[0]
-		const firstTextureResource = this._textureResources[firstPath]
+	_addResourcesToLoaderAndLoad(resourceIdsArray, loader, resolve, reject) {
+		const firstResourceId = resourceIdsArray[0]
+		const firstResource = this._resources[firstResourceId]
+		if (!firstResource) {
+			reject()
+			return
+		}
 
-		if (pathsToLoadArray.length === 1 && firstTextureResource
-			&& firstTextureResource.type === "video") { // Only consider a video if it is alone
+		if (firstResource.type === "audio" || firstResource.type === "video") {
 
-			const src = this._getSrc(firstPath)
-			const doOnVideoLoadSuccess = (textureData) => {
-				this._acknowledgeResourceHandling([textureData], resolve)
+			// Only consider a video if it is alone, i.e. not in a sequence
+			// (more constraining than what the type itself allows)
+			if (resourceIdsArray.length !== 1) {
+				reject()
+				return
 			}
-			const doOnVideoLoadFail = (path, fallbackPath) => {
-				this._addToLoaderAndLoad([{ path, fallbackPath }], loader, resolve)
+
+			const { path } = firstResource
+			const src = this._getSrc(path)
+
+			if (firstResource.type === "audio") {
+				const doOnAudioLoadSuccess = (data) => {
+					this._acknowledgeResourceHandling([data], resolve)
+				}
+				const doOnAudioLoadFail = null
+				firstResource.attemptToLoadAudio(src, doOnAudioLoadSuccess, doOnAudioLoadFail,
+					this._videoLoadTimeout, this._allowsParallel, resolve)
+
+			} else if (firstResource.type === "video") {
+				const doOnVideoLoadSuccess = (resolve2, textureData) => {
+					this._acknowledgeResourceHandling([textureData], resolve2)
+				}
+				const doOnVideoLoadFail = (resolve2, fallbackPath = null) => {
+					if (fallbackPath) {
+						const resourceData = { resourceId: firstResourceId, path, fallbackPath }
+						this._addToLoaderAndLoad([resourceData], loader, resolve2)
+
+					} else {
+						const { slices } = this._player
+						firstResource.cancelLoad(slices)
+						resolve2()
+					}
+				}
+
+				firstResource.attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail,
+					this._videoLoadTimeout, this._allowsParallel, resolve)
 			}
-			firstTextureResource.attemptToLoadVideo(src, doOnVideoLoadSuccess, doOnVideoLoadFail,
-				this._videoLoadTimeout, this._allowsParallel, resolve)
 
 		} else {
-			const pathsAndFallbackPathsArray = []
-			pathsToLoadArray.forEach((path) => {
-				if (path && this._textureResources[path]) {
-					const { type } = this._textureResources[path]
+			const resourceDataArray = []
+			resourceIdsArray.forEach((resourceId) => {
+				if (this._resources[resourceId]) {
+					const { type, path } = this._resources[resourceId]
 					// Reminder: a sequence transition forces its resourcesArray
 					// to only contain image types anyway
 					if (type === "image") {
-						pathsAndFallbackPathsArray.push({ path })
+						resourceDataArray.push({ resourceId, path })
 					}
 				}
 			})
-			this._addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve)
+			this._addToLoaderAndLoad(resourceDataArray, loader, resolve)
 		}
 	}
 
 	_getSrc(path, fallbackPath = null) {
 		let src = fallbackPath || path
 
-		const { folderPath, data } = this._textureSource
+		const { folderPath, data } = this._resourceSource
 
 		// If src has a scheme, use the address as is, otherwise add folderPath as prefix
 		if (folderPath && Utils.hasAScheme(src) === false) {
@@ -219,39 +327,38 @@ export default class ResourceManager {
 		return src
 	}
 
-	_addToLoaderAndLoad(pathsAndFallbackPathsArray, loader, resolve) {
-		pathsAndFallbackPathsArray.forEach(({ path, fallbackPath }) => {
-			this._addToLoader(loader, path, fallbackPath)
+	_addToLoaderAndLoad(resourceDataArray, loader, resolve) {
+		resourceDataArray.forEach(({ resourceId, path, fallbackPath }) => {
+			this._addToLoader(loader, resourceId, path, fallbackPath)
 		})
 		this._load(loader, resolve)
 	}
 
-	_addToLoader(loader, path, fallbackPath = null) {
+	_addToLoader(loader, resourceId, path, fallbackPath = null) {
 		const src = this._getSrc(path, fallbackPath)
-		loader.add(path, src)
+		loader.add(resourceId, src)
 	}
 
 	_load(loader, resolve) {
 		if (loader.hasTasks === true) {
-			loader.load()
 			// If loading succeeds, move on
-			loader.onComplete((textureDataArray) => {
-				this._acknowledgeResourceHandling(textureDataArray, resolve)
+			loader.onComplete((dataArray) => {
+				this._acknowledgeResourceHandling(dataArray, resolve)
 			})
+			loader.load()
 		} else {
 			this._acknowledgeResourceHandling(null, resolve)
 		}
 	}
 
-	_acknowledgeResourceHandling(textureDataArray, resolve) {
-		if (textureDataArray) {
-			textureDataArray.forEach((textureData) => {
-				const { name, baseTexture, texture } = textureData || {}
-				// Store the baseTexture (and compute clipped textures for media fragments as needed),
-				// knowing that name = path
-				if (name && this._textureResources[name]) {
-					const textureResource = this._textureResources[name]
-					textureResource.setBaseTexture(baseTexture, texture)
+	_acknowledgeResourceHandling(dataArray, resolve) {
+		if (dataArray) {
+			dataArray.forEach((textureData) => {
+				const { resourceId } = textureData || {}
+				if (resourceId !== undefined && this._resources[resourceId]
+					&& this._resources[resourceId].type !== "audio") {
+					const textureResource = this._resources[resourceId]
+					textureResource.setActualTexture(textureData)
 				}
 			})
 		}
@@ -259,71 +366,75 @@ export default class ResourceManager {
 	}
 
 	// Used in Player
-	addStoryOpenTaskAndLoad(doOnLoadEnd, maxPriority) {
-		// Add a last task to trigger doOnLoadEnd
-		const id = -1
-		const data = null
-		const doAsync = null
-		const doOnEnd = doOnLoadEnd
-		const doOnKill = null
-		const forcedPriority = maxPriority
-		const task = new Task(id, data, doAsync, doOnEnd, doOnKill, forcedPriority)
-		this._taskQueue.addTask(task)
-
+	runInitialTasks(doAfterRunningInitialTasks, forcedNb = null) {
 		// Start the async queue with a function to handle a change in load percent
 		this._nbOfCompletedTasks = 0
-		const { nbOfTasks } = this._taskQueue
+		const nbOfTasks = forcedNb || this._taskQueue.nbOfTasks
+
 		const doAfterEachInitialTask = () => {
 			this._nbOfCompletedTasks += 1
-			const percent = (nbOfTasks > 0) ? (this._nbOfCompletedTasks / nbOfTasks) : 1
-			const loadPercent = Math.round(100 * percent)
 			if (this._doWithLoadPercentChange) {
+				const percent = (nbOfTasks > 0) ? (this._nbOfCompletedTasks / nbOfTasks) : 1
+				const loadPercent = Math.round(100 * percent)
 				this._doWithLoadPercentChange(loadPercent)
 			}
+
+			if (this._nbOfCompletedTasks === nbOfTasks && doAfterRunningInitialTasks) {
+				this._taskQueue.setDoAfterEachInitialTask(null)
+				this._haveAllInitialTasksRun = true
+				doAfterRunningInitialTasks()
+			}
 		}
-		this._taskQueue.start(doAfterEachInitialTask)
+		this._taskQueue.setDoAfterEachInitialTask(doAfterEachInitialTask)
+		this._taskQueue.start()
 	}
 
 	// Used in SequenceSlice
-	getTextureWithPath(path, mediaFragment = null) {
-		if (!path || !this._textureResources || !this._textureResources[path]) {
+	getTextureWithId(resourceId, fragment = null) {
+		if (!this._resources[resourceId] || this._resources[resourceId].type === "audio") {
 			return null
 		}
-		const textureResource = this._textureResources[path]
-		const texture = textureResource.getTextureForMediaFragment(mediaFragment)
+		const resource = this._resources[resourceId]
+		const texture = resource.getTextureForFragment(fragment)
 		return texture
 	}
 
 	// Used in Slice (and SequenceSlice)
-	notifyTextureRemovalFromSlice(path) {
-		const { slices } = this._player
-		if (path && this._textureResources[path]) {
-			const textureResource = this._textureResources[path]
-			textureResource.destroyTexturesIfPossible(slices)
-		}
-	}
-
-	// Used in PageNavigator
-	forceDestroyTexturesForPath(path) {
-		if (!path || !this._textureResources[path]) {
+	destroyResourceForSliceIfPossible(resourceId) {
+		if (!this._resources[resourceId] || this._resources[resourceId].type === "audio") {
 			return
 		}
-		const textureResource = this._textureResources[path]
-		textureResource.forceDestroyTextures()
+		const textureResource = this._resources[resourceId]
+		const forceDestroy = false
+		const { slices } = this._player
+		textureResource.destroyIfPossible(forceDestroy, slices)
 	}
 
-	killPendingLoads() {
-		this._taskQueue.reset()
-		// Note that killing all tasks will call their respective textureResource.cancelLoad()
-		this._nbOfCompletedTasks = 0
+	// Used in PageNavigator (after a change in reading mode or tag)
+	forceDestroyAllResourcesExceptIds(resourceIdsArray) {
+		Object.values(this._resources).forEach((resource) => {
+			const { id, hasLoadedSomething } = resource
+			if (hasLoadedSomething === true && resourceIdsArray.includes(id) === false) {
+				const forceDestroy = true
+				const { slices } = this._player
+				resource.destroyIfPossible(forceDestroy, slices)
+			}
+		})
+
 	}
 
+	// Used in Player (on app destroy)
 	destroy() {
 		this.killPendingLoads()
-		Object.values(this._textureResources).forEach((textureResource) => {
-			textureResource.forceDestroyTextures()
+		Object.values(this._resources).forEach((resource) => {
+			if (resource.type !== "audio") {
+				const forceDestroy = true
+				const { slices } = this._player
+				resource.destroyIfPossible(forceDestroy, slices)
+			}
 		})
-		this._textureResources = null
+		this._resources = null
+		this._taskQueue = null
 	}
 
 }
