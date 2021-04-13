@@ -16,42 +16,47 @@ export default class Page extends LayerPile {
 	// Used in Segment
 	get pageIndex() { return this._pageIndex }
 
-	// Used in StoryLoader and below
-	get segmentsArray() { return this._layersArray.map(({ content }) => (content)) }
-
 	// Used in InteractionManager
+
+	get inScrollDirection() { return this._inScrollDirection }
 
 	get hitZoneToPrevious() { return this._hitZoneToPrevious }
 
 	get hitZoneToNext() { return this._hitZoneToNext }
 
-	get inScrollDirection() { return this._inScrollDirection }
+	get secondaryAxis() { return this._secondaryAxis }
 
 	get size() {
 		let width = 0
 		let height = 0
 		// The size is derived from the sizes of all segments
-		this.segmentsArray.forEach((segment) => {
+		this._layersArray.forEach((layer) => {
+			const segment = layer.content
 			const { size } = segment
-			const { viewportRect } = this._player
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
 				width += size.width
-				if (this._isADoublePage === true) {
-					height = Math.max(height, size.height)
-				} else {
-					height = viewportRect.height
-				}
-			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+				height = Math.max(height, size.height)
+			} else {
 				height += size.height
-				width = viewportRect.width
+				width = Math.max(width, size.width)
 			}
 		})
+		if (this._layersArray.length > 1) {
+			const { viewportRect } = this._player
+			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
+				height = Math.min(height, viewportRect.height)
+			} else if (this._inScrollDirection === "ttb" || this._inScrollDirection === "btt") {
+				width = Math.min(width, viewportRect.width)
+			}
+			// Note that the above will prevent scrolling on the secondary axis
+			// in a page that has more than one segment
+		}
 		return { width, height }
 	}
 
-	constructor(pageIndex, isADoublePage, overflow, player) {
+	constructor(pageIndex, isADoublePage, overflow, hAlign, vAlign, player) {
 		const name = `page${pageIndex}`
-		super(name)
+		super("page", name)
 
 		this._pageIndex = pageIndex
 		this._isADoublePage = isADoublePage
@@ -61,51 +66,13 @@ export default class Page extends LayerPile {
 		this._hitZoneToNext = null
 		this._inScrollDirection = null
 
-		this._addOverflowHandler(overflow, player)
+		this._addOverflowHandler(overflow, hAlign, vAlign, player)
 
-		const { options } = player
-		const { doOnPageLoadStatusUpdate } = options
-		if (doOnPageLoadStatusUpdate) {
-			this._doOnPageLoadStatusUpdate = doOnPageLoadStatusUpdate
-		}
+		this._timeAnimationsArray = []
 	}
 
 	// Used in Slideshow
-	setDirection(direction) {
-		this._setInScrollDirection(direction)
-
-		switch (direction) {
-		case "ltr":
-			this._setHitZoneToPrevious("left")
-			this._setHitZoneToNext("right")
-			break
-		case "rtl":
-			this._setHitZoneToPrevious("right")
-			this._setHitZoneToNext("left")
-			break
-		case "ttb":
-			this._setHitZoneToPrevious("top")
-			this._setHitZoneToNext("bottom")
-			break
-		case "btt":
-			this._setHitZoneToPrevious("bottom")
-			this._setHitZoneToNext("top")
-			// Ditto
-			break
-		default:
-			break
-		}
-	}
-
-	_setHitZoneToPrevious(quadrant) {
-		this._hitZoneToPrevious = quadrant
-	}
-
-	_setHitZoneToNext(quadrant) {
-		this._hitZoneToNext = quadrant
-	}
-
-	_setInScrollDirection(inScrollDirection) {
+	setInScrollDirection(inScrollDirection) {
 		this._inScrollDirection = inScrollDirection
 		if (!this._handler || this._handler.type !== "overflowHandler") {
 			return
@@ -113,25 +80,58 @@ export default class Page extends LayerPile {
 		this._handler.setInScrollDirection(inScrollDirection)
 	}
 
-	addSegment(segment, shouldAddSegmentAtStart = false) {
-		// Add the segment to the layer pile
-		const segmentLayer = new Layer("segment", segment)
-		this._addLayer(segmentLayer, shouldAddSegmentAtStart)
+	// Used in Slideshow
+	setHitZoneToPrevious(quadrant) {
+		this._hitZoneToPrevious = quadrant
 	}
 
-	addSnapPointsForLastSegment(snapPointsArray) {
+	// Used in Slideshow
+	setHitZoneToNext(quadrant) {
+		this._hitZoneToNext = quadrant
+	}
+
+	// Used in Slideshow
+	setSecondaryAxis(axis) {
+		this._secondaryAxis = axis
+	}
+
+	addSegment(segment) {
+		// Add the segment to the layer pile
+		const segmentLayer = new Layer("segment", segment)
+		this._addLayer(segmentLayer)
+	}
+
+	addSnapPoints(pageSegmentIndex, snapPointsArray) {
 		if (!this._handler || this._handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.addSnapPointsForLastSegment(snapPointsArray)
+		this._handler.addSnapPoints(pageSegmentIndex, snapPointsArray)
+	}
+
+	addSliceAnimation(pageSegmentIndex, slice, animation) {
+		if (this._handler && this._handler.type === "overflowHandler") {
+			this._handler.addSliceAnimation(pageSegmentIndex, slice, animation)
+		}
+	}
+
+	addSoundAnimation(pageSegmentIndex, animation) {
+		if (!this._handler || this._handler.type !== "overflowHandler") {
+			return
+		}
+		this._handler.addSoundAnimation(pageSegmentIndex, animation)
 	}
 
 	// Used in PageNavigator
-	goToSegmentIndex(segmentIndex, isGoingForward = true) {
+	goToSegmentIndex(pageSegmentIndex, isGoingForward = true) {
 		if (!this._handler || this._handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.goToSegmentIndex(segmentIndex, isGoingForward)
+		this._handler.goToSegmentIndex(pageSegmentIndex, isGoingForward)
+	}
+
+	// Used in PageNavigator
+	getLastPageSegmentIndex() {
+		return (this._layersArray.length - 1)
 	}
 
 	attemptStickyStep() {
@@ -155,10 +155,18 @@ export default class Page extends LayerPile {
 		this._handler.setPercent(percent)
 	}
 
+	// Used in PageNavigator
+	getCurrentHref() {
+		if (!this._handler || this._handler.type !== "overflowHandler") {
+			return null
+		}
+		return this._handler.getCurrentHref()
+	}
+
 	resizePage() {
-		const storyNavigator = this._parent
-		if (storyNavigator) {
-			storyNavigator.layersArray.forEach((layer) => {
+		const pageNavigator = this._parent
+		if (pageNavigator) {
+			pageNavigator.layersArray.forEach((layer) => {
 				const { content, isActive } = layer // content is a Page
 				if (content === this && isActive === true) {
 					this.resize()
@@ -172,8 +180,10 @@ export default class Page extends LayerPile {
 
 		super.updateLoadStatus()
 
-		if (this._loadStatus !== oldStatus && this._doOnPageLoadStatusUpdate) {
-			this._doOnPageLoadStatusUpdate(this._pageIndex, this._loadStatus)
+		if (this._loadStatus !== oldStatus) {
+			const { eventEmitter } = this._player
+			const data = { pageIndex: this._pageIndex, loadStatus: this._loadStatus }
+			eventEmitter.emit("pageloadstatusupdate", data)
 		}
 	}
 

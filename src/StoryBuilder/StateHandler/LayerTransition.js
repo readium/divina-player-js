@@ -22,9 +22,7 @@ export default class LayerTransition {
 			type, duration, direction, sliceType, slice, controlled,
 		} = entryOrExit || {}
 
-		if (!entryOrExit
-			|| !(type === "show" || type === "hide" || type === "fade-in" || type === "fade-out"
-				|| type === "slide-in" || type === "slide-out" || type === "animation")) {
+		if (!entryOrExit) {
 			return
 		}
 		this._type = type
@@ -32,8 +30,9 @@ export default class LayerTransition {
 
 		let actualDuration = duration
 		if (type !== "animation" || sliceType !== "video") {
-			actualDuration = (duration !== undefined) ? duration : constants.defaultDuration
-			// Note that duration can be 0 for a "hide" layer transition
+			actualDuration = (duration !== undefined) ? duration : constants.DEFAULT_DURATION
+			// A video animation is allowed to have no defined duration (it will play until the end)
+			// Also, duration can be 0 for a "hide" layer transition
 		}
 		this._duration = actualDuration // May still be undefined (but only for a video)
 
@@ -74,7 +73,7 @@ export default class LayerTransition {
 			}
 
 			this._startTime = startTime
-			this._run()
+			this._run(null)
 		}
 	}
 
@@ -85,18 +84,14 @@ export default class LayerTransition {
 		}
 
 		let percent = 1
-
-		// For an intermediate state (i.e. a controlled transition - not applicable
-		// to videos for now since we do not want to seek a specific point in a video)
-		if (layerTransitionPercent !== null && this._sliceType !== "video") {
+		if (layerTransitionPercent !== null) {
 			percent = layerTransitionPercent
 
-		// For an uncontrolled (i.e. timed) transition
-		// Note: bear in mind that this._duration may still be undefined at this stage for a video
+		// Note that this._duration may still be undefined for a video
 		} else if (this._duration && this._duration > 0) {
 			percent = (Date.now() - this._startTime) / this._duration
 
-		// For a video transition (keep playing until percent = 1)
+		// Play a video transition until percent=1
 		} else if (this._sliceType === "video" && this._slice) {
 			percent = 0
 		}
@@ -105,23 +100,18 @@ export default class LayerTransition {
 
 		// If the user has forced the transition to its end...
 		if (stateChange.shouldForceToEnd === true
-			// ... or the transition is not a video running to its end, and it has actually ended
-			// (except if the percent value is given by layerTransitionPercent, i.e. controlled)
-			|| (this._sliceType !== "video" && percent >= 1 && layerTransitionPercent !== 1)) {
+			// ... or if it is not a video running to its end, and it has actually ended,
+			// end transition if percent=1, except if percent is given by layerTransitionPercent
+			|| (percent >= 1 && layerTransitionPercent !== 1)) {
 			this.end()
 
+		// Otherwise just apply the required changes based on time
 		} else if (this._type === "animation") {
-
-			// If the transition is a sequence, we can seek a specific point in it
-			if (this._sliceType === "sequence" && this._slice && layerTransitionPercent !== null) {
-				this._slice.pauseAtPercent(percent)
-			} else {
-				// Bear in mind we do not want to seek a specific point in a video,
-				// so keep on playing the transition, waiting until its eventual end
+			if (layerTransitionPercent === null) {
+				// Continue playing the layerTransition, waiting for its eventual end
 				requestAnimationFrame(this._run.bind(this, null))
 			}
 
-		// Otherwise just apply the required changes based on time
 		} else {
 			const { viewportRect } = this._handler
 			const { width, height } = viewportRect

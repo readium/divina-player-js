@@ -37,6 +37,11 @@ export default class Layer {
 	constructor(type, content) {
 		this._type = type
 		this._content = content
+		if (this._content.setParentLayer) {
+			this._content.setParentLayer(this)
+		}
+
+		this._soundAnimationsArray = null
 
 		this._isActive = false
 	}
@@ -48,20 +53,29 @@ export default class Layer {
 		this._content.setParent(parent)
 	}
 
-	setEntryForward(entryForward) {
-		this._entryForward = entryForward
+	// Used in StoryBuilder
+	setHalfTransition(type, value) {
+		switch (type) {
+		case "entryForward":
+			this._entryForward = value
+			break
+		case "exitForward":
+			this._exitForward = value
+			break
+		case "entryBackward":
+			this._entryBackward = value
+			break
+		case "exitBackward":
+			this._exitBackward = value
+			break
+		default:
+			break
+		}
 	}
 
-	setExitForward(exitForward) {
-		this._exitForward = exitForward
-	}
-
-	setEntryBackward(entryBackward) {
-		this._entryBackward = entryBackward
-	}
-
-	setExitBackward(exitBackward) {
-		this._exitBackward = exitBackward
+	addSoundAnimations(soundAnimationsArray) {
+		this._soundAnimationsArray = this._soundAnimationsArray || []
+		this._soundAnimationsArray.push(...soundAnimationsArray)
 	}
 
 	attemptToGoForward(shouldCancelTransition, doIfIsUndergoingChanges) {
@@ -76,6 +90,13 @@ export default class Layer {
 			return false
 		}
 		return this._content.attemptToGoBackward(shouldCancelTransition, doIfIsUndergoingChanges)
+	}
+
+	attemptToGoSideways(way) {
+		if (!this._content || !this._content.attemptToGoSideways) {
+			return false
+		}
+		return this._content.attemptToGoSideways(way)
 	}
 
 	setScale(scale) {
@@ -118,77 +139,89 @@ export default class Layer {
 	}
 
 	// Used in PageNavigator
-	getPathsToLoad() {
+	getResourceIdsToLoad(recursive = true, force) {
 		if (!this._content) {
 			return []
 		}
 
-		const fullPathsArray = []
+		const resourceIdsArray = []
 
-		let pathsArray = this._content.getPathsToLoad()
-		fullPathsArray.push(...pathsArray)
+		if (recursive === true) {
+			const idsArray = this._content.getResourceIdsToLoad(recursive, force)
+			resourceIdsArray.push(...idsArray)
+		}
 
 		if (this._entryForward) {
-			pathsArray = Layer.getPathsForLayerTransition(this._entryForward)
-			fullPathsArray.push(...pathsArray)
+			const idsArray = Layer.getResourceIdsForLayerTransition(this._entryForward, force)
+			resourceIdsArray.push(...idsArray)
 		}
 		if (this._exitForward) {
-			pathsArray = Layer.getPathsForLayerTransition(this._exitForward)
-			fullPathsArray.push(...pathsArray)
+			const idsArray = Layer.getResourceIdsForLayerTransition(this._exitForward, force)
+			resourceIdsArray.push(...idsArray)
 		}
 		if (this._entryBackward) {
-			pathsArray = Layer.getPathsForLayerTransition(this._entryBackward)
-			fullPathsArray.push(...pathsArray)
+			const idsArray = Layer.getResourceIdsForLayerTransition(this._entryBackward, force)
+			resourceIdsArray.push(...idsArray)
 		}
 		if (this._exitBackward) {
-			pathsArray = Layer.getPathsForLayerTransition(this._exitBackward)
-			fullPathsArray.push(...pathsArray)
+			const idsArray = Layer.getResourceIdsForLayerTransition(this._exitBackward, force)
+			resourceIdsArray.push(...idsArray)
 		}
 
-		return fullPathsArray
+		if (this._soundAnimationsArray) {
+			this._soundAnimationsArray.forEach((soundAnimation) => {
+				const { resourceId } = soundAnimation || {}
+				if (resourceId !== undefined) {
+					resourceIdsArray.push([{ resourceId }])
+				}
+			})
+		}
+
+		return resourceIdsArray
 	}
 
-	static getPathsForLayerTransition(layerTransition) {
+	static getResourceIdsForLayerTransition(layerTransition, force) {
 		const { slice } = layerTransition
 		if (!slice) {
 			return []
 		}
-		return slice.getPathsToLoad()
+		return slice.getResourceIdsToLoad(force)
 	}
 
-	destroyTexturesIfPossible() {
+	destroyResourcesIfPossible() {
 		if (!this._content) {
 			return
 		}
-		this._content.destroyTexturesIfPossible()
+		this._content.destroyResourcesIfPossible()
 
 		if (this._entryForward) {
-			Layer.destroyTexturesIfPossibleForHalfTransition(this._entryForward)
+			Layer.destroyResourcesIfPossibleForHalfTransition(this._entryForward)
 		}
 		if (this._exitForward) {
-			Layer.destroyTexturesIfPossibleForHalfTransition(this._exitForward)
+			Layer.destroyResourcesIfPossibleForHalfTransition(this._exitForward)
 		}
 		if (this._entryBackward) {
-			Layer.destroyTexturesIfPossibleForHalfTransition(this._entryBackward)
+			Layer.destroyResourcesIfPossibleForHalfTransition(this._entryBackward)
 		}
 		if (this._exitBackward) {
-			Layer.destroyTexturesIfPossibleForHalfTransition(this._exitBackward)
+			Layer.destroyResourcesIfPossibleForHalfTransition(this._exitBackward)
 		}
 	}
 
-	static destroyTexturesIfPossibleForHalfTransition(halfTransition) {
+	static destroyResourcesIfPossibleForHalfTransition(halfTransition) {
 		const { slice } = halfTransition
 		if (!slice) {
 			return
 		}
-		slice.destroyTexturesIfPossible()
+		slice.destroyResourcesIfPossible()
 	}
 
-	getFirstHref() {
-		if (!this._content || !this._content.getFirstHref) {
+	// Used in Camera for virtual points
+	getHref() {
+		if (!this._content || !this._content.getHref) {
 			return null
 		}
-		return this._content.getFirstHref()
+		return this._content.getHref()
 	}
 
 }
