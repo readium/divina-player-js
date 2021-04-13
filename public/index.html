@@ -48,7 +48,7 @@
 		
 		// URL of the specific page/resource to access directly (i.e. start reading from) in a divina
 		let targetUrl = "http://google.fr/";
-		
+
 		// Options for the Divina Player
 		let options = {
 			maxNbOfUnitsToLoadAfter: null,
@@ -109,20 +109,21 @@
 		};
 
 		window.onload = function () {
+
+			// Create the rootElement for the Divina Player programmatically 
+			let stage = createAndAddDivElement(window.document.body, { id: "stage" });
+
 			let Player = divinaPlayer;
 			if (!Player) {
 				console.error("ERROR TO LOAD THE LOAD PLAYER")
 				return
 			}
 
-			// Get the root element
-			let stage = window.document.getElementById("stage")
-
 			// Create the player
-			let player = new Player(stage)
+			let player = new Player(stage, "transparent");
 			console.log(player)
 			// Load the divina from its folder path
-			player.openDivinaFromFolderPath(divinaFoldersArray[0], targetUrl, options)
+			player.openDivinaFromFolderPath(storyFoldersArray[0], targetUrl, options)
 
 			// Handle events emitted by the player
 			let eventEmitter = player.eventEmitter
