@@ -6,7 +6,6 @@
 	"license": "BSD-3",
 	"main": "lib/divina.cjs.js",
 	"module": "lib/divina.esm.js",
-	"bundle": "dist/divina.js",
 	"bundleOutput": {
 		"name": "divinaPlayer"
 	},
