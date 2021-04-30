@@ -49,8 +49,6 @@ export default class Loader {
 				const resourceId = Number(name)
 				if (this._resourceIdsToLoad[resourceId] === true && texture && texture.baseTexture) {
 					const { baseTexture } = texture
-					baseTexture.isPowerOfTwo = true
-					texture.mipmap = false
 					const textureData = {
 						resourceId,
 						texture: {

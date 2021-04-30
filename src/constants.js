@@ -16,6 +16,7 @@ export const WORD_WRAP_WIDTH = 275 // Maximum line width
 export const ACCEPTED_VIDEO_EXTENSIONS = ["mp4"]
 
 // Loading parameters
+// Nb of units (pages or segments) after the current one for which resources should be stored
 export const DEFAULT_MAX_NB_OF_UNITS_TO_LOAD_AFTER = 3
 // Nb of units before the current one for which resources should be stored in memory,
 // as a share of DEFAULT_MAX_NB_OF_PAGES_AFTER
@@ -29,9 +30,8 @@ export const LINE_WIDTH = 2
 export const SIZE_COEFFICIENT = 0.1
 
 // Story
-export const DEFAULT_DURATION = 750 // In milliseconds (used for transitions and snap point jumps)
+export const DEFAULT_DURATION = 250 // In milliseconds (used for transitions and snap point jumps)
 export const POSSIBLE_PIXEL_ERROR = 0.5 // Margin of error for pixel computations
-
 
 export const ACCEPTED_VALUES = {
 	loadingMode: {

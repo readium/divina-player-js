@@ -134,9 +134,10 @@ export default class ResourceManager {
 	_buildAsyncTaskQueue(priorityFactor) {
 		const { slices } = this._player
 		const nbOfSlices = Object.keys(slices).length
-		const maxPriority = this._maxNbOfUnitsToLoadAfter || nbOfSlices
+		const maxPriority = this._maxNbOfUnitsToLoadAfter || nbOfSlices // i.e. if _maxNbOfUnitsToLoadAfter explicitly null, nbOfSlices, otherwise
 
-		this._taskQueue = new ResourceLoadTaskQueue(maxPriority, this._allowsParallel, priorityFactor)
+		this._taskQueue = new ResourceLoadTaskQueue(this._loadingMode, maxPriority, this._allowsParallel,
+			priorityFactor)
 	}
 
 	setDoWithLoadPercentChange(doWithLoadPercentChange) {
@@ -158,13 +159,12 @@ export default class ResourceManager {
 	}
 
 	// Used in PageNavigator (way to update priorities for load tasks if some are still pending))
-	updateForTargetSegmentIndex(targetSegmentIndex) { // Which is an absolute segment index
-		// Update priorities for load tasks (if some tasks are still pending)
-		this._taskQueue.updatePriorities(targetSegmentIndex)
+	updatePriorities(targetPageIndex, targetSegmentIndex) {
+		this._taskQueue.updatePriorities(targetPageIndex, targetSegmentIndex)
 	}
 
 	// Used in PageNavigator (idsArray.length=1 except for a sequence)
-	loadResources(sliceResourceDataArray, segmentIndex) {
+	loadResources(sliceResourceDataArray, pageIndex, segmentIndex) {
 		let taskId = null
 
 		const resourceIdsToLoadArray = []
@@ -210,7 +210,7 @@ export default class ResourceManager {
 		}
 
 		let task = this._taskQueue.getTaskWithId(taskId)
-		const data = { segmentIndex }
+		const data = { pageIndex, segmentIndex }
 
 		// Add resource load task to queue if not already in queue
 		if (!task) {
@@ -369,7 +369,8 @@ export default class ResourceManager {
 	runInitialTasks(doAfterRunningInitialTasks, forcedNb = null) {
 		// Start the async queue with a function to handle a change in load percent
 		this._nbOfCompletedTasks = 0
-		const nbOfTasks = forcedNb || this._taskQueue.nbOfTasks
+		let nbOfTasks = forcedNb || this._taskQueue.nbOfTasks
+		nbOfTasks = Math.min(nbOfTasks, this._taskQueue.nbOfTasks)
 
 		const doAfterEachInitialTask = () => {
 			this._nbOfCompletedTasks += 1

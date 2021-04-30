@@ -18,12 +18,9 @@ export default class InteractionManager {
 		// Create Hammer object to handle user gestures
 		this._mc = new Hammer.Manager(rootElement)
 
-		// Implement single and double tap detection
-		const singleTap = new Hammer.Tap({ event: "singletap" })
-		const doubleTap = new Hammer.Tap({ event: "doubletap", taps: 2 })
-		this._mc.add([doubleTap, singleTap])
-		singleTap.requireFailure(doubleTap)
-		doubleTap.recognizeWith(singleTap)
+		// Implement single tap detection
+		this._singleTap = new Hammer.Tap({ event: "singletap" })
+		this._mc.add(this._singleTap)
 
 		// Only finalize the implementation of single tap detection at this stage
 		this._handleSingleTap = this._handleSingleTap.bind(this)
@@ -146,7 +143,11 @@ export default class InteractionManager {
 		this._mc.on("pinch", this._handlePinch)
 
 		if (this._allowsZoomOnDoubleTap === true) {
-			// Finalize the implementation of double tap detection
+			// Implement double tap detection
+			const doubleTap = new Hammer.Tap({ event: "doubletap", taps: 2 })
+			this._mc.add(doubleTap)
+			this._singleTap.requireFailure(doubleTap)
+			doubleTap.recognizeWith(this._singleTap)
 			this._handleDoubleTap = this._handleDoubleTap.bind(this)
 			this._mc.on("doubletap", this._handleDoubleTap)
 		}
