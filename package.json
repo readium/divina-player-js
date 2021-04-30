@@ -1,6 +1,6 @@
 {
 	"name": "divina-player-js",
-	"version": "0.3.0",
+	"version": "0.4.0",
 	"description": "Player for the Divina Format",
 	"author": "Florian Dupas (Kwalia)",
 	"license": "BSD-3",
@@ -10,8 +10,8 @@
 		"pixi.js-legacy": "^5.3.9"
 	},
 	"devDependencies": {
-		"@babel/core": "^7.13.14",
-		"@babel/preset-env": "^7.13.12",
+		"@babel/core": "^7.14.0",
+		"@babel/preset-env": "^7.14.0",
 		"babel-eslint": "^10.1.0",
 		"babel-loader": "^8.2.2",
 		"concurrently": "^4.1.2",
@@ -20,7 +20,7 @@
 		"eslint-plugin-import": "^2.22.1",
 		"live-server": "^1.2.1",
 		"string-replace-loader": "^2.3.0",
-		"webpack": "^5.28.0",
+		"webpack": "^5.36.2",
 		"webpack-cli": "^4.6.0"
 	},
 	"scripts": {

@@ -80,7 +80,8 @@ export default class Player {
 		this._tagManager = null
 		this._options = {}
 
-		this._startHref = null
+		this._startLocator = null
+		this._target = { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 		this._resourceManager = new ResourceManager(this)
 
 		this._isMuted = true
@@ -232,48 +233,48 @@ export default class Player {
 	}
 
 	// For loading the divina data from a folder path
-	openDivinaFromFolderPath(path, href = null, options = null) {
+	openDivinaFromFolderPath(path, locator = null, options = null) {
 		const resourceSource = { folderPath: path }
 		const asyncLoadFunction = () => (this._divinaParser.loadFromPath(path, "folder"))
-		this._loadDataAndBuildStory(asyncLoadFunction, href, options, resourceSource)
+		this._loadDataAndBuildStory(asyncLoadFunction, locator, options, resourceSource)
 	}
 
 	// For loading the divina data from a manifest path
-	openDivinaFromManifestPath(path, href = null, options = null) {
+	openDivinaFromManifestPath(path, locator = null, options = null) {
 		const resourceSource = { folderPath: Utils.getFolderPathFromManifestPath(path) }
 		const asyncLoadFunction = () => (this._divinaParser.loadFromPath(path, "manifest"))
-		this._loadDataAndBuildStory(asyncLoadFunction, href, options, resourceSource)
+		this._loadDataAndBuildStory(asyncLoadFunction, locator, options, resourceSource)
 	}
 
 	// For loading the divina data from a json and folder path
-	openDivinaFromJsonAndFolderPath(json, path, href = null, options = null) {
+	openDivinaFromJsonAndFolderPath(json, path, locator = null, options = null) {
 		const resourceSource = { folderPath: path }
 		const asyncLoadFunction = () => (this._divinaParser.loadFromJson(json))
-		this._loadDataAndBuildStory(asyncLoadFunction, href, options, resourceSource)
+		this._loadDataAndBuildStory(asyncLoadFunction, locator, options, resourceSource)
 	}
 
 	// For loading the divina data from a json
-	openDivinaFromJson(json, href = null, options = null) {
+	openDivinaFromJson(json, locator = null, options = null) {
 		const path = null
-		this.openDivinaFromJsonAndFolderPath(json, path, href, options)
+		this.openDivinaFromJsonAndFolderPath(json, path, locator, options)
 	}
 
 	// For loading the divina data from data = { json, base64DataByHref }
-	openDivinaFromData(data, href = null, options = null) {
+	openDivinaFromData(data, locator = null, options = null) {
 		const resourceSource = { data }
 		const json = (data && data.json) ? data.json : null
 		const asyncLoadFunction = () => (this._divinaParser.loadFromJson(json))
-		this._loadDataAndBuildStory(asyncLoadFunction, href, options, resourceSource)
+		this._loadDataAndBuildStory(asyncLoadFunction, locator, options, resourceSource)
 	}
 
-	_loadDataAndBuildStory(asyncLoadFunction, href, options, resourceSource) {
+	_loadDataAndBuildStory(asyncLoadFunction, locator, options, resourceSource) {
 		asyncLoadFunction()
 			.then((result) => {
 				if (!result || result.error) {
 					this._showErrorMessage((result) ? result.error : null)
 				} else {
 					const { folderPath, pageNavigatorsData } = result
-					this._buildStory(href, options, resourceSource, folderPath, pageNavigatorsData)
+					this._buildStory(locator, options, resourceSource, folderPath, pageNavigatorsData)
 				}
 			})
 			.catch((error) => {
@@ -292,8 +293,8 @@ export default class Player {
 		this._textManager.showMessage({ type: "error", data: error.message })
 	}
 
-	_buildStory(href = null, options = null, resourceSource, folderPath, pageNavigatorsData) {
-		this._startHref = href
+	_buildStory(locator = null, options = null, resourceSource, folderPath, pageNavigatorsData) {
+		this._startLocator = locator
 		this._options = options || {}
 
 		// Set allowed story interactions based on options
@@ -413,12 +414,26 @@ export default class Player {
 		const oldPageNavigator = this._pageNavigator
 
 		// Get target page and segment indices
-		let href = this._startHref
+		let { href } = this._startLocator || {}
 		if (this._resourceManager.haveFirstResourcesLoaded === true) {
 			href = (oldPageNavigator) ? oldPageNavigator.getCurrentHref() : null
 		}
-		const canUseShortenedHref = true
-		this._target = this._getTarget(pageNavType, href, canUseShortenedHref)
+		if (href) {
+			const canUseShortenedHref = true
+			this._target = this._getTargetFromHref(pageNavType, href, canUseShortenedHref)
+		} else if (this._startLocator && this._startLocator.locations) {
+			const { locations, type } = this._startLocator
+			const { position, progression } = locations
+			if (position !== undefined) {
+				const segmentIndex = position
+				if (progression !== undefined) {
+					this._target = this._getTargetFromSegmentIndex(type || "scroll", segmentIndex)
+					this._target.progress = progression
+				} else {
+					this._target = this._getTargetFromSegmentIndex(type || "single", segmentIndex)
+				}
+			}
+		}
 
 		// Now clean old page navigator
 		if (oldPageNavigator) {
@@ -501,7 +516,7 @@ export default class Player {
 
 	// For reaching a specific resource directly in the story (typically via a table of contents,
 	// however it is also used as the first step into the story navigation)
-	_getTarget(readingMode, targetHref, canUseShortenedHref = false) {
+	_getTargetFromHref(readingMode, targetHref, canUseShortenedHref = false) {
 		if (!targetHref) {
 			return { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 		}
@@ -535,6 +550,24 @@ export default class Player {
 		return { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 	}
 
+	_getTargetFromSegmentIndex(readingMode, segmentIndex) {
+		let target = { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
+		if (segmentIndex === undefined) {
+			return target
+		}
+
+		Object.values(this._slices).forEach((slice) => {
+			const { pageNavInfo } = slice
+			const info = pageNavInfo[readingMode]
+			const { pageIndex, pageSegmentIndex } = info || {}
+			if (info && info.segmentIndex === segmentIndex) {
+				target = { pageIndex, pageSegmentIndex, segmentIndex }
+			}
+		})
+
+		return target
+	}
+
 	_updateLoadTasks(target) {
 		const targetSegmentIndex = (target) ? target.segmentIndex : null
 		this._pageNavigator.updateLoadTasks(targetSegmentIndex)
@@ -563,10 +596,11 @@ export default class Player {
 	}
 
 	_goToTarget(target) {
+		const { pageIndex, pageSegmentIndex, progress } = target
 		this._target = null
-		const { pageIndex, pageSegmentIndex } = target
 		const shouldSkipTransition = true
-		this._pageNavigator.goToPageWithIndex(pageIndex, pageSegmentIndex, shouldSkipTransition)
+		this._pageNavigator.goToPageWithIndex(pageIndex, pageSegmentIndex, progress,
+			shouldSkipTransition)
 	}
 
 	// Used in VideoTexture (for fallbacks) and Slice (for alternates)
@@ -578,7 +612,7 @@ export default class Player {
 	// For accessing a resource in the story from the table of contents
 	// (note that this is the only goTo function that can be called before pageNavigator creation)
 	goTo(href, canUseShortenedHref = false) { // T
-		this._target = this._getTarget(this.readingMode, href, canUseShortenedHref)
+		this._target = this._getTargetFromHref(this.readingMode, href, canUseShortenedHref)
 		if (!this._pageNavigator) {
 			return
 		}

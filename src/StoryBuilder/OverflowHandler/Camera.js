@@ -269,11 +269,11 @@ export default class Camera {
 		const callback = () => {
 			// Update snap point-related speeds based on inScrollDirection
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
-				this._snapJumpSpeed = sceneSize.width * constants.SNAP_JUMP_SPEED_FACTOR
-				this._stickyMoveSpeed = sceneSize.width * constants.STICKY_MOVE_SPEED_FACTOR
+				this._snapJumpSpeed = width * constants.SNAP_JUMP_SPEED_FACTOR
+				this._stickyMoveSpeed = width * constants.STICKY_MOVE_SPEED_FACTOR
 			} else {
-				this._snapJumpSpeed = sceneSize.height * constants.SNAP_JUMP_SPEED_FACTOR
-				this._stickyMoveSpeed = sceneSize.height * constants.STICKY_MOVE_SPEED_FACTOR
+				this._snapJumpSpeed = height * constants.SNAP_JUMP_SPEED_FACTOR
+				this._stickyMoveSpeed = height * constants.STICKY_MOVE_SPEED_FACTOR
 			}
 
 			// Force zoomFactor to 1 and recompute x and y bounds
@@ -761,7 +761,7 @@ export default class Camera {
 			this._virtualPoint = this._getVirtualPoint()
 
 			const { pageNavigator } = this._player
-			if (pageNavigator.loadingMode === "segment" && pageNavigator.isInAGoTo === false) { // CAUSE PAGENAV NOT CREATED THE FIRST TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			if (pageNavigator.loadingMode === "segment" && pageNavigator.isInAGoTo === false) {
 				const forceUpdate = false
 				if (this._virtualPoint) {
 					const { segmentIndex } = this._virtualPoint
@@ -774,7 +774,9 @@ export default class Camera {
 
 		// Process progress animations
 		if (p !== null) {
-			const data = { percent: this._progress }
+			const { segmentIndex = 0 } = this._virtualPoint || {}
+			const locations = { position: segmentIndex, progression: this._progress }
+			const data = { percent: this._progress, locator: { locations, title: "scroll" } }
 			this._eventEmitter.emit("inpagescroll", data)
 
 			if (this._sliceAnimationsArray) {

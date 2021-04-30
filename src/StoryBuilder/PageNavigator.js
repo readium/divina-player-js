@@ -77,8 +77,6 @@ export default class PageNavigator extends LayerPile {
 			segmentIndex: null,
 		}
 
-		this._tags = null
-
 		this._pageDeltaForTransitionControl = null
 	}
 
@@ -104,7 +102,7 @@ export default class PageNavigator extends LayerPile {
 
 	// Used above (on starting a page change)
 	updatePageLoadTasks(targetPageIndex, isGoingForward) {
-		const actualTargetSegmentIndex = (isGoingForward === true)
+		const targetSegmentIndex = (isGoingForward === true)
 			? this.getIndexOfFirstSegmentInPage(targetPageIndex)
 			: this.getIndexOfFirstSegmentInPage(targetPageIndex + 1) - 1
 
@@ -113,30 +111,33 @@ export default class PageNavigator extends LayerPile {
 			const pageRange = this._getPageOrSegmentRange("page", targetPageIndex)
 			segmentRange = this._getSegmentRangeFromPageRange(pageRange)
 		} else {
-			segmentRange = this._getPageOrSegmentRange("segment", actualTargetSegmentIndex)
+			segmentRange = this._getPageOrSegmentRange("segment", targetSegmentIndex)
 		}
-		segmentRange.segmentIndex = actualTargetSegmentIndex
+		segmentRange.segmentIndex = targetSegmentIndex
 
 		const forceUpdate = false
-		this._updateLoadTasksForSegmentRange(actualTargetSegmentIndex, segmentRange, forceUpdate)
+		this._updateLoadTasksForSegmentRange(targetPageIndex, targetSegmentIndex, segmentRange,
+			forceUpdate)
 	}
 
-	// Used in Player and Camera
+	// Used in Camera
 	updateSegmentLoadTasks(segmentIndex, forceUpdate) { // Which is an absolute segment index
 		if (segmentIndex === null) { // In the case of a tag change, keep current segmentRange
-			this._updateLoadTasksForSegmentRange(this._segmentRange.segmentIndex, this._segmentRange,
-				forceUpdate)
+			this._updateLoadTasksForSegmentRange(this.pageIndex, this._segmentRange.segmentIndex,
+				this._segmentRange, forceUpdate)
 
 		} else {
 			const segmentRange = this._getPageOrSegmentRange("segment", segmentIndex)
 			segmentRange.segmentIndex = segmentIndex
-			this._updateLoadTasksForSegmentRange(segmentIndex, segmentRange, forceUpdate)
+			// Note that pageIndex is not affected by a scroll - HOWEVER = null THE FIRST TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			this._updateLoadTasksForSegmentRange(this.pageIndex || 0, segmentIndex, segmentRange, forceUpdate)
 		}
 	}
 
-	_updateLoadTasksForSegmentRange(targetSegmentIndex, segmentRange, forceUpdate = false) {
+	_updateLoadTasksForSegmentRange(targetPageIndex = 0, targetSegmentIndex, segmentRange,
+		forceUpdate = false) {
 		// Update priorities for load tasks (if some tasks are still pending)
-		this._resourceManager.updateForTargetSegmentIndex(targetSegmentIndex)
+		this._resourceManager.updatePriorities(targetPageIndex, targetSegmentIndex)
 
 		// Determine which pages have been added or removed
 		const { startIndex, endIndex } = segmentRange
@@ -193,33 +194,33 @@ export default class PageNavigator extends LayerPile {
 				arrayOfSliceResourceDataArray.push(...array)
 
 				arrayOfSliceResourceDataArray.forEach((sliceResourceDataArray) => {
-					this._resourceManager.loadResources(sliceResourceDataArray, segmentIndex)
+					this._resourceManager.loadResources(sliceResourceDataArray, pageIndex, segmentIndex)
 					sliceResourceDataArray.forEach(({ resourceId }) => {
 						newResourceIdsSet.add(resourceId)
 					})
 				})
-			}
 
-			// Handle sound resources
-			if (this._soundsDataArray) {
-				this._soundsDataArray.forEach((soundData) => {
-					const { resourceId, segmentIndicesArray } = soundData
-					if (!segmentIndicesArray) { // For a global sound
-						this._resourceManager.loadResources([{ resourceId }], segmentIndex)
-						newResourceIdsSet.add(resourceId)
-					} else {
-						let result = false
-						segmentsToAddIndices.forEach((index) => {
-							if (segmentIndicesArray.includes(index) === true) {
-								result = true
-							}
-						})
-						if (result === true) { // SHOULD ONLY BE TRIGGERED ON A PAGE CHANGE, IDEALLY!
-							this._resourceManager.loadResources([{ resourceId }], segmentIndex) // SAME AS ABOVE!
+				// Handle sound resources
+				if (this._soundsDataArray) {
+					this._soundsDataArray.forEach((soundData) => {
+						const { resourceId, segmentIndicesArray } = soundData
+						if (!segmentIndicesArray) { // For a global sound
+							this._resourceManager.loadResources([{ resourceId }], pageIndex, segmentIndex)
 							newResourceIdsSet.add(resourceId)
+						} else {
+							let result = false
+							segmentsToAddIndices.forEach((index) => {
+								if (segmentIndicesArray.includes(index) === true) {
+									result = true
+								}
+							})
+							if (result === true) { // SHOULD ONLY BE TRIGGERED ON A PAGE CHANGE, IDEALLY!
+								this._resourceManager.loadResources([{ resourceId }], pageIndex, segmentIndex) // SAME AS ABOVE!
+								newResourceIdsSet.add(resourceId)
+							}
 						}
-					}
-				})
+					})
+				}
 			}
 		})
 
@@ -357,6 +358,16 @@ export default class PageNavigator extends LayerPile {
 			return
 		}
 
+		// Signal the page change (to be done before goToSegmentIndex for better event management)
+		const segmentIndex = this.getIndexOfFirstSegmentInPage(this.pageIndex)
+		const locations = { position: segmentIndex }
+		const data = {
+			pageIndex: this.pageIndex,
+			nbOfPages: this.nbOfPages,
+			locator: { locations, title: this._pageNavType },
+		}
+		this._eventEmitter.emit("pagechange", data)
+
 		// If the pageNavigator has sounds to play, and they haven't started playing yet, do it
 		if (this._timeAnimationManager) { // DO NOT CREATE IT IF NO ANIMATIONS!!!
 			this._timeAnimationManager.initializeAnimations(this.pageIndex)
@@ -368,10 +379,6 @@ export default class PageNavigator extends LayerPile {
 			this._targetPageSegmentIndex = null // To ensure segmentRange update in "segment" loading mode
 			this._currentPage.goToSegmentIndex(targetPageSegmentIndex)
 		}
-
-		// Signal the page change
-		const data = { pageIndex: this.pageIndex, nbOfPages: this.nbOfPages }
-		this._eventEmitter.emit("pagechange", data)
 	}
 
 	// Used in StateHandler
@@ -406,7 +413,7 @@ export default class PageNavigator extends LayerPile {
 
 	// Player functions
 
-	goToPageWithIndex(pageIndex, pageSegmentIndex, shouldSkipTransition = false,
+	goToPageWithIndex(pageIndex, pageSegmentIndex, progress, shouldSkipTransition = false,
 		isChangeControlled = false) {
 		let isGoingForward = true
 		this._targetPageSegmentIndex = pageSegmentIndex
@@ -434,6 +441,10 @@ export default class PageNavigator extends LayerPile {
 			} else {
 				this._currentPage.goToSegmentIndex(this._targetPageSegmentIndex, isGoingForward)
 				this._targetPageSegmentIndex = null
+			}
+
+			if (progress) {
+				this.setPercentInPage(progress)
 			}
 		}
 

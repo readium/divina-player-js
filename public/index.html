@@ -56,21 +56,25 @@
 		// (value should be null or <= 0 to prevent the menu from opening automatically)
 		let durationOfOpeningAtStart = 1500;
 		
-		// URL of the specific page/resource to access directly (i.e. start reading from) within a Divina
-		let targetUrl = null;	
+		// Locator can be { href }, where href is the URL of the specific page/resource to access directly
+		// or { locations: { position, progression } }, where position is the absolute segment index
+		// (and progression is the percent in the page, which is only defined for an overflowing page)
+		//let locator = null;
+		let locator = null;
 		
 		// Options for the Divina Player
 		let options = {
-			maxNbOfUnitsToLoadAfter: null,
-			initialNbOfResourcesToLoad: null,
-			allowsDestroy: false,
+			//maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
+			initialNbOfResourcesToLoad: 1000,//null, // If 0 or null, the normal nb of initial resources will load
+			allowsDestroy: true,
 			allowsParallel: true,
-			//allowsZoom: true,
+			allowsZoomOnDoubleTap: true,
+			allowsZoomOnCtrlOrAltScroll: true,
 			allowsSwipe: true,
 			allowsWheelScroll: true,
 			allowsPaginatedScroll: true,
-			isPaginationSticky: true,
 			isPaginationGridBased: true,
+			isPaginationSticky: true,
 			videoLoadTimeout: 2000,
 		};
 
@@ -167,7 +171,7 @@
 				};
 
 				if (storyFolderName) {
-					menuAndPlayerObject.player.openDivinaFromFolderPath(storyFolderName, targetUrl, options);
+					menuAndPlayerObject.player.openDivinaFromFolderPath(storyFolderName, locator, options);
 				}
 
 				// Handle events emitted by the player
