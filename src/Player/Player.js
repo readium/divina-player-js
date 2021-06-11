@@ -59,14 +59,14 @@ export default class Player {
 		// Create the player's renderer
 		this._renderer = new Renderer(rootElement, backgroundColor)
 
-		// Create the container that will hold the loading message
-		this._textManager = new TextManager(this._renderer.mainContainer)
-
 		// Size the player for the first time
 		this._viewportRect = {
 			x: 0, y: 0, width: 0, height: 0,
 		}
 		this.resize()
+
+		// Create the container that will hold the loading message
+		this._textManager = new TextManager(this._renderer.mainContainer, this)
 
 		// Create the interaction manager (which will deal with user gestures)
 		this._interactionManager = new InteractionManager(this, rootElement)
@@ -569,8 +569,8 @@ export default class Player {
 	}
 
 	_updateLoadTasks(target) {
-		const targetSegmentIndex = (target) ? target.segmentIndex : null
-		this._pageNavigator.updateLoadTasks(targetSegmentIndex)
+		const { pageIndex = null, segmentIndex = null } = target || {}
+		this._pageNavigator.updateLoadTasks(pageIndex, segmentIndex)
 	}
 
 	// Used above or externally (in the latter case the change will be validated here,
@@ -585,6 +585,14 @@ export default class Player {
 			return
 		}
 
+		// For text slices
+		Object.values(this._slices).forEach((slice) => {
+			if (tagName === "language" && slice.setLanguage) {
+				slice.setLanguage(tagValue)
+			}
+		})
+
+		// For resource slices
 		if (shouldUpdateLoadTasks === true) { // False only on first set
 			this._updateLoadTasks(null)
 		}

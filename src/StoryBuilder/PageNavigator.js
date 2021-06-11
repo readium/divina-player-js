@@ -13,7 +13,7 @@ export default class PageNavigator extends LayerPile {
 
 	// Used in StateHandler
 	get doOnStateChangeStartOrCancel() {
-		return (stateIndex, isGoingForward) => this.updatePageLoadTasks(stateIndex, isGoingForward)
+		return (stateIndex, isGoingForward) => this._updatePageLoadTasks(stateIndex, isGoingForward)
 	}
 
 	// Used below, in Player and in ResourceManager
@@ -88,20 +88,41 @@ export default class PageNavigator extends LayerPile {
 		this._soundsDataArray.push(soundData)
 	}
 
-	// Used in Player (targetSegmentIndex can be null in the case of a tag change)
-	updateLoadTasks(targetSegmentIndex) {
+	// Used in Slideshow and Player (targetSegmentIndex can be null in the case of a tag change)
+	updateLoadTasks(targetPageIndex, targetSegmentIndex) {
 		// Kill tasks in the async task queue
 		this._resourceManager.killPendingLoads()
 
-		// Create async tasks for destroying and loading resources
-		// (force an update of teh load tasks within the segment range
-		// even if its start and end indices have not changed)
+		// Create async tasks for destroying and loading resources (i.e. force an update of load tasks
+		// within the segment range even if the range's start and end indices have not changed)
 		const forceUpdate = true
-		this.updateSegmentLoadTasks(targetSegmentIndex, forceUpdate)
+		if (this.loadingMode === "segment") {
+			this.updateSegmentLoadTasks(targetSegmentIndex, forceUpdate)
+		} else {
+			const pageIndex = (targetPageIndex !== null) ? targetPageIndex : (this.pageIndex || 0)
+			const isGoingForward = ((pageIndex - (this.pageIndex || 0)) >= 0)
+			this._updatePageLoadTasks(pageIndex, isGoingForward, forceUpdate)
+		}
 	}
 
-	// Used above (on starting a page change)
-	updatePageLoadTasks(targetPageIndex, isGoingForward) {
+	// Used just above and in Camera
+	updateSegmentLoadTasks(segmentIndex, forceUpdate) {
+		if (segmentIndex === null) { // In the case of a tag change, keep current segmentRange
+			this._updateLoadTasksForSegmentRange(this.pageIndex, this._segmentRange.segmentIndex,
+				this._segmentRange, forceUpdate)
+
+		} else {
+			const segmentRange = this._getPageOrSegmentRange("segment", segmentIndex)
+			segmentRange.segmentIndex = segmentIndex
+
+			// Note that pageIndex is not affected by a scroll (and is initially null)
+			this._updateLoadTasksForSegmentRange(this.pageIndex || 0, segmentIndex, segmentRange,
+				forceUpdate)
+		}
+	}
+
+	// Used above (on starting a page change or after a goTo or tag change in page loading mode)
+	_updatePageLoadTasks(targetPageIndex, isGoingForward, forceUpdate = false) {
 		const targetSegmentIndex = (isGoingForward === true)
 			? this.getIndexOfFirstSegmentInPage(targetPageIndex)
 			: this.getIndexOfFirstSegmentInPage(targetPageIndex + 1) - 1
@@ -115,23 +136,8 @@ export default class PageNavigator extends LayerPile {
 		}
 		segmentRange.segmentIndex = targetSegmentIndex
 
-		const forceUpdate = false
 		this._updateLoadTasksForSegmentRange(targetPageIndex, targetSegmentIndex, segmentRange,
 			forceUpdate)
-	}
-
-	// Used in Camera
-	updateSegmentLoadTasks(segmentIndex, forceUpdate) { // Which is an absolute segment index
-		if (segmentIndex === null) { // In the case of a tag change, keep current segmentRange
-			this._updateLoadTasksForSegmentRange(this.pageIndex, this._segmentRange.segmentIndex,
-				this._segmentRange, forceUpdate)
-
-		} else {
-			const segmentRange = this._getPageOrSegmentRange("segment", segmentIndex)
-			segmentRange.segmentIndex = segmentIndex
-			// Note that pageIndex is not affected by a scroll - HOWEVER = null THE FIRST TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			this._updateLoadTasksForSegmentRange(this.pageIndex || 0, segmentIndex, segmentRange, forceUpdate)
-		}
 	}
 
 	_updateLoadTasksForSegmentRange(targetPageIndex = 0, targetSegmentIndex, segmentRange,
@@ -413,7 +419,8 @@ export default class PageNavigator extends LayerPile {
 
 	// Player functions
 
-	goToPageWithIndex(pageIndex, pageSegmentIndex, progress, shouldSkipTransition = false,
+	// Also called in Slideshow
+	goToPageWithIndex(pageIndex, pageSegmentIndex, progress = 0, shouldSkipTransition = false,
 		isChangeControlled = false) {
 		let isGoingForward = true
 		this._targetPageSegmentIndex = pageSegmentIndex

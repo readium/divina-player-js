@@ -8,7 +8,7 @@
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
-			background-color: #444444;
+			background-color: #000000;
 		}
 		#stage {
 			position: fixed;
@@ -64,9 +64,9 @@
 		
 		// Options for the Divina Player
 		let options = {
-			//maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
-			initialNbOfResourcesToLoad: 1000,//null, // If 0 or null, the normal nb of initial resources will load
-			allowsDestroy: true,
+			maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
+			initialNbOfResourcesToLoad: null, // If 0 or null, the normal nb of initial resources will load
+			allowsDestroy: false,
 			allowsParallel: true,
 			allowsZoomOnDoubleTap: true,
 			allowsZoomOnCtrlOrAltScroll: true,

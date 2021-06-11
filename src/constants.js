@@ -1,18 +1,19 @@
 // General
 export const DEFAULT_MANIFEST_FILENAME = "manifest.json" // Title of the JSON file in a Divina folder
 export const POSSIBLE_TAG_NAMES = ["language"] // List of allowed tags ("type" can also have variations) // IF YOU ADD ANY, WILL NEED TO BE ADDED TO SLICERESOURCE (props and getters) TOO, for SLICERESOURCE!!!
-export const DEFAULT_BACKGROUND_COLOR = "#000000" // Black, to ensure the loading message is visible
 export const DEFAULT_DUMMY_COLOR = "#333333" // Dark gray
 
 // Loading message
-export const DEFAULT_LOADING_MESSAGE = "Loading"
-export const TEXT_FONT_FAMILY = "Arial"
-export const TEXT_FONT_SIZE = 24
-export const TEXT_FILL_COLOR = "#FFFFFF" // White, to ensure the message is visible
-export const WORD_WRAP_WIDTH = 275 // Maximum line width
+export const LOADING_FILL_COLOR = "#FFFFFF" // White
+export const LOADING_FONT_FAMILY = "Arial"
+export const LOADING_FONT_SIZE = { value: 24, unit: "px" } // Do not use the "%" unit here
+export const LOADING_MESSAGE = "Loading"
 
-// Resources
-// export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used
+// Text and resources
+export const MAX_FONT_SIZE = 1000 // In pixels (also, percent values cannot be larger than 100%)
+export const MAX_LETTER_SPACING = 1000
+export const ACCEPTED_FONT_FAMILIES = ["Arial", "Helvetica", "Times", "Verdana"]
+// export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used (see utils.js)
 export const ACCEPTED_VIDEO_EXTENSIONS = ["mp4"]
 
 // Loading parameters
@@ -158,6 +159,31 @@ export const ACCEPTED_VALUES = {
 		type: "string",
 		allowed: ["alpha", "x", "y", "scale", "rotation"],
 		// No default value!
+	},
+	backgroundColor: {
+		type: "color",
+		defaultValue: null,
+	},
+	fillColor: {
+		type: "color",
+		defaultValue: "#000000", // Black
+	},
+	fontFamily: {
+		type: "string",
+		allowed: ACCEPTED_FONT_FAMILIES,
+		defaultValue: "Arial",
+	},
+	fontSize: {
+		type: "value&Unit",
+		defaultValue: { value: 24, unit: "px" },
+	},
+	lineHeight: {
+		type: "value&Unit",
+		// No default value (though should be "28px" for a "24px" Arial)
+	},
+	letterSpacing: {
+		type: "number",
+		defaultValue: 0,
 	},
 }
 

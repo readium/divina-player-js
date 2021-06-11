@@ -32,4 +32,18 @@ export default class Segment extends LayerPile {
 		this.updateLoadStatus()
 	}
 
+	resize() {
+		super.resize()
+
+		// If the segment has multiple layers, clipt it to its actual size
+		if (this._layersArray.length <= 1) {
+			return
+		}
+		if (!this._maskingPixiContainer) {
+			this.addMask()
+		}
+		const { width, height } = this.size
+		this.setMaskRect(-width / 2, -height / 2, width, height)
+	}
+
 }

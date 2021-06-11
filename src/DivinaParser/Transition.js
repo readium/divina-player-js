@@ -6,7 +6,7 @@ import * as constants from "../constants"
 
 export default class Transition {
 
-	static createTransition(transition, player) {
+	static createTransition(transition, player, textOptions) {
 		const {
 			type, duration, direction, file, sequence,
 		} = transition || {}
@@ -45,7 +45,7 @@ export default class Transition {
 				}
 				const parentInfo = null
 				const forcedRole = "transition"
-				const linkObject = new LinkObject(fullObject, player, parentInfo, forcedRole)
+				const linkObject = new LinkObject(fullObject, player, textOptions, parentInfo, forcedRole)
 				const { slice } = linkObject
 				actualTransition.slice = slice
 

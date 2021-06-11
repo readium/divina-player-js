@@ -143,11 +143,14 @@ export default class InteractionManager {
 		this._mc.on("pinch", this._handlePinch)
 
 		if (this._allowsZoomOnDoubleTap === true) {
-			// Implement double tap detection
+
+			// Implement single and double tap detection
 			const doubleTap = new Hammer.Tap({ event: "doubletap", taps: 2 })
-			this._mc.add(doubleTap)
+			this._mc.add([doubleTap, this._singleTap])
 			this._singleTap.requireFailure(doubleTap)
 			doubleTap.recognizeWith(this._singleTap)
+
+			// Only finalize the implementation of single tap detection at this stage
 			this._handleDoubleTap = this._handleDoubleTap.bind(this)
 			this._mc.on("doubletap", this._handleDoubleTap)
 		}

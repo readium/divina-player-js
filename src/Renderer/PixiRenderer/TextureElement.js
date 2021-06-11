@@ -25,6 +25,11 @@ export default class TextureElement extends Container {
 				height: Math.min(this._height * this._scale, viewportRect.height),
 			}
 		}
+		return this.unclippedSize
+	}
+
+	// Used below
+	get unclippedSize() {
 		// In double reading mode, empty slices should be considered to have their neighbor's size
 		if (this._role === "empty" && this._neighbor) {
 			return this._neighbor.size
@@ -36,16 +41,9 @@ export default class TextureElement extends Container {
 		}
 	}
 
-	// Used below
+	// Used in TextSlice and TextElement
 	get unscaledSize() {
-		if (this._clipped === false) {
-			return this.size
-		}
-		// Note that clipped is necessarily false in double reading mode
-		return {
-			width: this._width * this._scale,
-			height: this._height * this._scale,
-		}
+		return { width: this._width, height: this._height }
 	}
 
 	constructor(role, player, parentInfo = null) {
@@ -64,8 +62,8 @@ export default class TextureElement extends Container {
 		this._playableSprite = null
 		this._namePrefix = null
 
-		this._width = 0
-		this._height = 0
+		this._width = 1
+		this._height = 1
 		this._scale = 1
 
 		this._clipped = false
@@ -103,11 +101,12 @@ export default class TextureElement extends Container {
 	_setSize(size) {
 		const { width, height } = size
 
-		this._width = width
-		this._height = height
+		// Canvases cannot draw content less than 1 pixel wide and high
+		this._width = Math.max(width, 1)
+		this._height = Math.max(height, 1)
 
-		this._sprite.width = width
-		this._sprite.height = height
+		this._sprite.width = this._width
+		this._sprite.height = this._height
 
 		if (this._playableSprite) {
 			this._playableSprite.width = this._width
@@ -126,13 +125,17 @@ export default class TextureElement extends Container {
 		}
 		this._texture = texture
 		if (!texture) {
-			this._sprite.texture = PixiTexture.WHITE
-			const dummyColor = Utils.convertColorStringToNumber(constants.DEFAULT_DUMMY_COLOR)
-			this._setTint(dummyColor)
+			this._setBackgroundColor(constants.DEFAULT_DUMMY_COLOR)
 		} else {
 			this._sprite.texture = texture.pixiTexture
 			this._setTint(0xFFFFFF)
 		}
+	}
+
+	_setBackgroundColor(color) {
+		this._sprite.texture = PixiTexture.WHITE
+		const tint = Utils.convertColorStringToNumber(color)
+		this._setTint(tint)
 	}
 
 	_setTint(tint) {
@@ -231,12 +234,12 @@ export default class TextureElement extends Container {
 
 		// If the slice has a parent slice, position it respective to that parent slice
 		if (this._role === "layersChild" && this._parentInfo) {
-			// Used unscaledSize since to ensure that the position is based
+			// Used unclippedSize since to ensure that the position is based
 			// on the top left point of the parent slice (instead of the effective viewport)
-			const { unscaledSize } = this._parentInfo.slice
+			const { unclippedSize } = this._parentInfo.slice
 			this._sprite.position = {
-				x: (this.size.width - unscaledSize.width) / (2 * this._scale),
-				y: (this.size.height - unscaledSize.height) / (2 * this._scale),
+				x: (this.size.width - unclippedSize.width) / (2 * this._scale),
+				y: (this.size.height - unclippedSize.height) / (2 * this._scale),
 			}
 			if (this._playableSprite) {
 				this._playableSprite.position = this._sprite.position
@@ -297,7 +300,7 @@ export default class TextureElement extends Container {
 
 		// Now apply the scale to the container
 		if (this._role === "layersParent") {
-			if (this._scale !== scale) { // To prevent triggering an infinite loop
+			if (this._scale !== scale) { // So as not to trigger an infinite loop
 				this.setScale(scale)
 				if (this._parent) {
 					this._parent.resizePage()
@@ -338,6 +341,13 @@ export default class TextureElement extends Container {
 		const { width, height } = viewportRect
 		this.setMaskRect((-width / this._scale) / 2, (-height / this._scale) / 2,
 			width / this._scale, height / this._scale)
+	}
+
+	_applySizeClip() {
+		if (!this._maskingPixiContainer) {
+			this.addMask()
+		}
+		this.setMaskRect(-this._width / 2, -this._height / 2, this._width, this._height)
 	}
 
 	// Used in Slice on final destroy
