@@ -64,13 +64,20 @@ export default class Slideshow extends PageNavigator {
 				targetPageIndex = this.nbOfPages - 1
 				targetPageSegmentIndex = this.getLastPageSegmentIndexForPage(targetPageIndex)
 			}
-			if (targetPageIndex !== null) {
+			if (targetPageIndex >= 0) {
 				let targetSegmentIndex = this.getIndexOfFirstSegmentInPage(targetPageIndex)
 				targetSegmentIndex += targetPageSegmentIndex
-				this.updateLoadTasks(targetSegmentIndex)
+				this.updateLoadTasks(targetPageIndex, targetSegmentIndex)
 
 				const shouldSkipTransition = true
-				this.goToPageWithIndex(targetPageIndex, targetPageSegmentIndex, shouldSkipTransition)
+				const progress = ((way === "right" && this._direction === "ltr")
+					|| (way === "left" && this._direction === "rtl")
+					|| (way === "down" && this._direction === "ttb")
+					|| (way === "up" && this._direction === "btt"))
+					? 1
+					: 0
+				this.goToPageWithIndex(targetPageIndex, targetPageSegmentIndex, progress,
+					shouldSkipTransition)
 			}
 
 		} else {

@@ -19,6 +19,13 @@ export default class Slice extends TextureElement {
 	// Used in Layer and ResourceManager
 	get loadStatus() { return this._loadStatus }
 
+	// Used in TextSlice
+	get hasVariableSize() {
+		return ((this._referenceSize)
+			? (this._referenceSize.width === null || this._referenceSize.height === null)
+			: true)
+	}
+
 	// Used in TextureResource
 	get isActive() {
 		if (!this._parent) {
@@ -69,21 +76,21 @@ export default class Slice extends TextureElement {
 		const { resourceManager } = player
 		const mainResource = resourceManager.getResourceWithId(id) || {}
 		const {
-			type = "empty",
+			type = properties.type,
 			width = properties.width,
 			height = properties.height,
 		} = mainResource
-
-		this._type = `${type || "empty"}Slice`
+		this._type = `${type}Slice`
 
 		// Set a (surely temporary) size
-		const { viewportRect } = player
-		const firstSize = (width && height) ? { width, height } : viewportRect
-		this._setSize(firstSize)
+		this._referenceSize = { width, height }
+		this._updateSizeFromReferenceSize()
 
 		// Add a dummy texture to begin with
 		this._hasLoadedOnce = false
 		if (role === "empty") {
+			this._loadStatus = 2
+		} else if (type === "text") {
 			this._loadStatus = 2
 		} else {
 			this._assignDummyTexture()
@@ -94,6 +101,27 @@ export default class Slice extends TextureElement {
 
 		this._videoTexture = null
 		this._doOnEnd = null
+	}
+
+	_updateSizeFromReferenceSize() {
+		const { width, height } = this._referenceSize
+		if (width && height) {
+			this._setSize(this._referenceSize)
+		} else {
+			const { viewportRect } = this._player
+			const viewportRatio = (viewportRect.height > 0)
+				? (viewportRect.width / viewportRect.height)
+				: 1
+			if (width) {
+				const size = { width, height: width / viewportRatio }
+				this._setSize(size)
+			} else if (height) {
+				const size = { height, width: height * viewportRatio }
+				this._setSize(size)
+			} else {
+				this._setSize(viewportRect)
+			}
+		}
 	}
 
 	// Used in StoryBuilder
@@ -109,7 +137,7 @@ export default class Slice extends TextureElement {
 	// Used in Layer (for PageNavigator)
 	getResourceIdsToLoad(force = false) { // force = true on changing tags or reading modes
 		const { role } = this._properties
-		if (role === "empty"
+		if (role === "empty" || this._type === "textSlice"
 			|| (force === false && (this._loadStatus === 1 || this._loadStatus === 2))) {
 			return []
 		}
@@ -278,6 +306,10 @@ export default class Slice extends TextureElement {
 			return
 		}
 
+		if (this._type === "textSlice") {
+			this._updateSizeFromReferenceSize()
+		}
+
 		const { pageNavigator } = this._player
 
 		const fit = pageNavigator.metadata.forcedFit || this._properties.fit
@@ -317,7 +349,7 @@ export default class Slice extends TextureElement {
 		this._stopAndRemoveLoadingAnimation()
 
 		const { role } = this._properties
-		if (this._loadStatus !== 2 || role === "empty") {
+		if (this._loadStatus !== 2 || role === "empty" || this._type === "textSlice") {
 			return
 		}
 
@@ -387,7 +419,7 @@ export default class Slice extends TextureElement {
 	// Used in StoryBuilder
 	static createEmptySlice(player) {
 		const resourceInfoArray = []
-		const properties = { role: "empty" }
+		const properties = { role: "empty", type: "empty" }
 		const parentInfo = null
 		const slice = new Slice(resourceInfoArray, properties, player, parentInfo)
 		return slice

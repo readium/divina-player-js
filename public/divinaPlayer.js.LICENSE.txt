@@ -290,6 +290,8 @@ and limitations under the License.
 
 /*! ./TextManager */
 
+/*! ./TextSlice */
+
 /*! ./Texture */
 
 /*! ./TextureElement */
@@ -472,6 +474,10 @@ and limitations under the License.
 /*!*******************************!*\
   !*** ./src/Renderer/index.js ***!
   \*******************************/
+
+/*!********************************!*\
+  !*** ./src/Slice/TextSlice.js ***!
+  \********************************/
 
 /*!*********************************!*\
   !*** ./node_modules/url/url.js ***!

@@ -3,7 +3,6 @@ import { Application as PixiApplication, utils as PixiUtils } from "pixi.js-lega
 import Container from "./Container"
 
 import * as Utils from "../../utils"
-import * as constants from "../../constants"
 
 export default class Renderer {
 
@@ -29,7 +28,10 @@ export default class Renderer {
 		}
 
 		if (options.transparent !== true) {
-			const defaultColor = Utils.convertColorStringToNumber(constants.DEFAULT_BACKGROUND_COLOR)
+			const shouldReturnDefaultValue = true
+			const defaultBackgroundColor = Utils.returnValidValue("backgroundColor", backgroundColor,
+				shouldReturnDefaultValue)
+			const defaultColor = Utils.convertColorStringToNumber(defaultBackgroundColor)
 			options.backgroundColor = backgroundColor || defaultColor
 		}
 		this._app = new PixiApplication(options)
@@ -61,12 +63,6 @@ export default class Renderer {
 
 	// Used in Player as a consequence of a zoomFactor change or on a resize
 	updateDisplay(zoomFactor, viewportRect) {
-		if (zoomFactor === this._zoomFactor
-			&& viewportRect.width === this._viewportRect.width
-			&& viewportRect.height === this._viewportRect.height) {
-			return
-		}
-
 		this._zoomFactor = zoomFactor
 		this._viewportRect = viewportRect
 

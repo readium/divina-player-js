@@ -2,12 +2,27 @@ import { TextElement, Container } from "../Renderer"
 
 import * as constants from "../constants"
 
+const {
+	LOADING_FILL_COLOR,
+	LOADING_FONT_FAMILY,
+	LOADING_FONT_SIZE,
+	LOADING_MESSAGE,
+} = constants
+
 export default class TextManager extends Container {
 
-	constructor(mainContainer) {
+	constructor(mainContainer, player) {
 		super("textManager", "textManager", mainContainer)
 
-		this._textElement = new TextElement("textElement", this)
+		this._player = player
+
+		const textOptions = {
+			fillColor: LOADING_FILL_COLOR,
+			fontFamily: LOADING_FONT_FAMILY,
+			fontSize: LOADING_FONT_SIZE,
+			hAlign: "center",
+		}
+		this._textElement = new TextElement("loadingText", this, textOptions)
 	}
 
 	showMessage(message) { // Where message should be = { type, data }
@@ -21,7 +36,7 @@ export default class TextManager extends Container {
 		let text = null
 		switch (type) {
 		case "loading":
-			text = `${constants.DEFAULT_LOADING_MESSAGE}... ${data}%`
+			text = `${LOADING_MESSAGE}... ${data}%`
 			break
 		case "error":
 			text = `ERROR!\n${data}`
