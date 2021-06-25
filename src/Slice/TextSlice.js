@@ -9,16 +9,26 @@ export default class TextSlice extends Slice {
 		super([], properties, player, parentInfo)
 
 		this._textOptions = textOptions
-		const { backgroundColor } = textOptions
 
 		this._resourceInfoArray = resourceInfoArray // Which is a textVersionsArray
 
+		const { backgroundColor } = textOptions
 		if (backgroundColor) {
 			this._setBackgroundColor(backgroundColor)
 		}
 
 		this._text = null
 		this._textElement = null
+	}
+
+	resize() {
+		const oldSize = this.size
+		super.resize()
+		this._applySizeClip()
+		if (!this._textElement || (this.hasVariableSize === true // At least one dimension is not fixed
+			&& (this.size.width !== oldSize.width || this.size.height !== oldSize.height))) {
+			this._createAndPositionTextElement()
+		}
 	}
 
 	_createAndPositionTextElement() {
@@ -31,8 +41,8 @@ export default class TextSlice extends Slice {
 		}
 		this._textElement.setText(this._text)
 
-		const textMetrics = this._textElement.getTextMetrics()
-		const { width, height } = textMetrics
+		const { boundingRect } = this._textElement
+		const { width, height } = boundingRect
 		const position = {
 			x: (width - this._width) / 2,
 			y: (height - this._height) / 2,
@@ -89,18 +99,12 @@ export default class TextSlice extends Slice {
 		this._textElement.setPosition(position)
 	}
 
-	resize() {
-		const oldSize = this.size
-		super.resize()
-		this._applySizeClip()
-		if (!this._textElement || (this.hasVariableSize === true
-			&& (this.size.width !== oldSize.width || this.size.height !== oldSize.height))) {
-			this._createAndPositionTextElement()
-		}
-	}
-
 	setLanguage(language) {
-		this._text = this._getRelevantText(language)
+		const text = this._getRelevantText(language)
+		if (this._text === text) {
+			return
+		}
+		this._text = text
 		this._createAndPositionTextElement()
 	}
 

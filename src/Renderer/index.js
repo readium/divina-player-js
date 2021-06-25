@@ -5,6 +5,7 @@ const chosenRenderer = PixiRenderer
 const {
 	Renderer,
 	Container,
+	TextBlock,
 	TextElement,
 	TextureElement,
 	Loader,
@@ -14,6 +15,7 @@ const {
 export {
 	Renderer,
 	Container,
+	TextBlock,
 	TextElement,
 	TextureElement,
 	Loader,

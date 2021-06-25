@@ -176,7 +176,7 @@ export default class Container {
 		this._pixiContainer.scale.set(actualScale)
 	}
 
-	// Beware: rotations should apply to sprites, not to their enclosing pixiContainer
+	// Beware: rotations apply to sprites, not to their enclosing pixiContainer
 	setRotation(rotation) {
 		if (this._playableSprite) {
 			this._playableSprite.rotation = rotation
@@ -197,8 +197,8 @@ export default class Container {
 		return this._pixiContainer.position.y
 	}
 
-	getScale() {
-		return this._scale
+	getScaleFactor() {
+		return this._scaleFactor
 	}
 
 	// Beware: rotations should apply to sprites, not to their enclosing pixiContainer

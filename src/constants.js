@@ -6,13 +6,12 @@ export const DEFAULT_DUMMY_COLOR = "#333333" // Dark gray
 // Loading message
 export const LOADING_FILL_COLOR = "#FFFFFF" // White
 export const LOADING_FONT_FAMILY = "Arial"
-export const LOADING_FONT_SIZE = { value: 24, unit: "px" } // Do not use the "%" unit here
+export const LOADING_FONT_SIZE = { value: 30, unit: "px" } // Do not use the "%" unit here
 export const LOADING_MESSAGE = "Loading"
 
 // Text and resources
 export const MAX_FONT_SIZE = 1000 // In pixels (also, percent values cannot be larger than 100%)
 export const MAX_LETTER_SPACING = 1000
-export const ACCEPTED_FONT_FAMILIES = ["Arial", "Helvetica", "Times", "Verdana"]
 // export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used (see utils.js)
 export const ACCEPTED_VIDEO_EXTENSIONS = ["mp4"]
 
@@ -170,12 +169,12 @@ export const ACCEPTED_VALUES = {
 	},
 	fontFamily: {
 		type: "string",
-		allowed: ACCEPTED_FONT_FAMILIES,
+		// No allowed array means that all values are allowed!
 		defaultValue: "Arial",
 	},
 	fontSize: {
 		type: "value&Unit",
-		defaultValue: { value: 24, unit: "px" },
+		defaultValue: { value: 20, unit: "%" },
 	},
 	lineHeight: {
 		type: "value&Unit",

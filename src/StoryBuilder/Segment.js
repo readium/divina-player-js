@@ -11,6 +11,13 @@ export default class Segment extends LayerPile {
 	// Used in Camera and Slice
 	get segmentIndex() { return this._segmentIndex }
 
+	// Used in Camera
+	get unscaledSize() {
+		return (this._layersArray.length > 0)
+			? this._layersArray[0].content.unscaledSize
+			: { width: 0, height: 0 }
+	}
+
 	constructor(pageSegmentIndex, segmentIndex, page, sliceLayersArray, player) {
 		const { pageIndex } = page
 		const name = `page${pageIndex}Segment${pageSegmentIndex}`

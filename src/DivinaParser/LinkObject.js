@@ -229,12 +229,8 @@ export default class LinkObject {
 				}
 
 				const fullObject = { ...sequenceImage, type: "image" }
-				const {
-					isValid, resourceInfoArray,
-				} = ResourceBuilder.createResourceInfoArray(fullObject, player)
-				if (isValid === true) {
-					result.arrayOfResourceInfoArray.push(resourceInfoArray)
-				}
+				const { resourceInfoArray } = ResourceBuilder.createResourceInfoArray(fullObject, player)
+				result.arrayOfResourceInfoArray.push(resourceInfoArray)
 			}
 		})
 		return result

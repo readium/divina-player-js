@@ -21,7 +21,7 @@ export default class StateHandler {
 
 	get stateIndex() { return this._stateIndex }
 
-	// User in LayerTransition
+	// Used in LayerTransition
 
 	get stateChange() { return this._currentStateChange }
 

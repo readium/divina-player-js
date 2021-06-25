@@ -21,9 +21,8 @@ export default class Slice extends TextureElement {
 
 	// Used in TextSlice
 	get hasVariableSize() {
-		return ((this._referenceSize)
-			? (this._referenceSize.width === null || this._referenceSize.height === null)
-			: true)
+		return (!this._referenceSize
+			|| (this._referenceSize.width === null || this._referenceSize.height === null))
 	}
 
 	// Used in TextureResource
@@ -439,6 +438,7 @@ export default class Slice extends TextureElement {
 			break
 		case "scale":
 			this.setScaleFactor(value)
+			this.resize() // So as to reposition child layers based on scaleFactor
 			break
 		case "rotation":
 			this.setRotation(value)
@@ -458,7 +458,7 @@ export default class Slice extends TextureElement {
 		case "y":
 			return this.getY()
 		case "scale":
-			return this.getScale()
+			return this.getScaleFactor()
 		case "rotation":
 			return this.getRotation()
 		default:
