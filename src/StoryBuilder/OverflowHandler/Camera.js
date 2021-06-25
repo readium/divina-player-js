@@ -377,10 +377,11 @@ export default class Camera {
 		}
 
 		const segmentInfo = this._segmentsInfoArray[pageSegmentIndex]
-		const { size, positionInSegmentLine } = segmentInfo
+		const { size, unscaledSize, positionInSegmentLine } = segmentInfo
 
 		// Get the center position of the camera for the snap point alignment
-		const position = this._getCameraPositionInSegmentForAlignment(viewport, { x, y }, unit, size)
+		const position = this._getCameraPositionInSegmentForAlignment(viewport, { x, y }, unit, size,
+			unscaledSize)
 		if (!position) {
 			return null
 		}
@@ -432,14 +433,16 @@ export default class Camera {
 	}
 
 	// Get the position of the camera's center point corresponding to a given point alignment
-	_getCameraPositionInSegmentForAlignment(viewport, coords, unit, segmentSize) {
+	_getCameraPositionInSegmentForAlignment(viewport, coords, unit, segmentSize,
+		unscaledSegmentSize) {
 		const sign = (this._inScrollDirection === "rtl" || this._inScrollDirection === "btt") ? -1 : 1
 		let x = null
 		if (coords.x !== undefined) {
 			if (unit === "%") {
 				x = Math.min(Math.max(0, (coords.x * segmentSize.width) / 100), segmentSize.width)
 			} else if (unit === "px") {
-				x = Math.min(Math.max(0, coords.x), segmentSize.width)
+				const percent = Math.min(Math.max(0, coords.x / unscaledSegmentSize.width), 1)
+				x = Math.min(Math.max(0, percent * segmentSize.width), segmentSize.width)
 			}
 		} else {
 			x = 0
@@ -449,7 +452,8 @@ export default class Camera {
 			if (unit === "%") {
 				y = Math.min(Math.max(0, (coords.y * segmentSize.height) / 100), segmentSize.height)
 			} else if (unit === "px") {
-				y = Math.min(Math.max(0, coords.y), segmentSize.height)
+				const percent = Math.min(Math.max(0, coords.y / unscaledSegmentSize.height), 1)
+				y = Math.min(Math.max(0, percent * segmentSize.height), segmentSize.height)
 			}
 		} else {
 			y = 0
@@ -614,11 +618,12 @@ export default class Camera {
 		let positionInSegmentLine = 0
 		this._scene.layersArray.forEach((segmentLayer) => {
 			const segment = segmentLayer.content
-			const { segmentIndex } = segment
+			const { segmentIndex, unscaledSize } = segment
 
 			let segmentInfo = {
 				segmentIndex,
 				href: segmentLayer.getHref(),
+				unscaledSize,
 			}
 
 			if (this._distanceToCover) {

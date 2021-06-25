@@ -238,8 +238,8 @@ export default class TextureElement extends Container {
 			// on the top left point of the parent slice (instead of the effective viewport)
 			const { unclippedSize } = this._parentInfo.slice
 			this._sprite.position = {
-				x: (this.size.width - unclippedSize.width) / (2 * this._scale),
-				y: (this.size.height - unclippedSize.height) / (2 * this._scale),
+				x: (this.size.width - unclippedSize.width / this._scaleFactor) / (2 * this._scale),
+				y: (this.size.height - unclippedSize.height / this._scaleFactor) / (2 * this._scale),
 			}
 			if (this._playableSprite) {
 				this._playableSprite.position = this._sprite.position

@@ -286,6 +286,8 @@ and limitations under the License.
 
 /*! ./Task */
 
+/*! ./TextBlock */
+
 /*! ./TextElement */
 
 /*! ./TextManager */
@@ -661,6 +663,10 @@ and limitations under the License.
 
 /*!************************************************!*\
   !*** ./src/Renderer/PixiRenderer/Container.js ***!
+  \************************************************/
+
+/*!************************************************!*\
+  !*** ./src/Renderer/PixiRenderer/TextBlock.js ***!
   \************************************************/
 
 /*!************************************************!*\

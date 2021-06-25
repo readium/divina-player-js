@@ -91,7 +91,8 @@ const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
 		return (shouldReturnDefaultValue === true) ? defaultValue : null
 	}
 	if (type === "string") {
-		if (value && isAString(value) === true && allowed.includes(value) === true) {
+		if (value && isAString(value) === true
+			&& (allowed === undefined || allowed.includes(value) === true)) {
 			return value
 		}
 		return (shouldReturnDefaultValue === true) ? defaultValue : null
