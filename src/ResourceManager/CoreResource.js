@@ -6,7 +6,11 @@ export default class CoreResource {
 
 	get type() { return this._type }
 
+	get mimeType() { return this._mimeType }
+
 	get path() { return this._path }
+
+	get loadStatus() { return this._loadStatus }
 
 	// Used in Slice
 
@@ -16,6 +20,9 @@ export default class CoreResource {
 
 	get fallbacksArray() { return this._fallbacksArray }
 
+	// Used in AudioResource
+	get player() { return this._player }
+
 	// Used in Player
 	get tags() { return this._tags }
 
@@ -24,6 +31,9 @@ export default class CoreResource {
 	get hasNotStartedLoading() { return (this._loadStatus === 0) }
 
 	get hasLoadedSomething() { return (this._loadStatus === -1 || this._loadStatus === 2) }
+
+	// Used in AudioResource
+	set loadStatus(loadStatus) { this._loadStatus = loadStatus }
 
 	static get counter() {
 		CoreResource._counter = (CoreResource._counter === undefined)
@@ -37,10 +47,11 @@ export default class CoreResource {
 		this._player = player
 
 		const {
-			type, path, width, height, fallbacksArray,
+			type, mimeType, path, width, height, fallbacksArray,
 		} = coreResourceData
 
 		this._type = type
+		this._mimeType = mimeType
 		this._path = path
 		if (width) {
 			this._width = width

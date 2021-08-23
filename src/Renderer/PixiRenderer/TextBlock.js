@@ -35,7 +35,7 @@ export default class TextBlock extends Container {
 	}
 
 	destroy() {
-		this._pixiContainer.destroy({ children: true, texture: true, baseTexture: true })
+		this.pixiContainer.destroy({ children: true, texture: true, baseTexture: true })
 		this.removeFromParent()
 	}
 

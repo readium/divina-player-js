@@ -20,7 +20,7 @@ export default class Transition {
 
 		const actualTransition = { type: actualType }
 
-		const actualDuration = Utils.returnValidValue("positive", duration, shouldReturnDefaultValue)
+		const actualDuration = Utils.returnValidValue("duration", duration, shouldReturnDefaultValue)
 		if (actualDuration) {
 			actualTransition.duration = actualDuration
 		}
@@ -66,10 +66,12 @@ export default class Transition {
 				}
 
 				shouldReturnDefaultValue = true
-				sliceProperties.duration = Utils.returnValidValue("positive", duration,
+				sliceProperties.duration = Utils.returnValidValue("duration", duration,
 					shouldReturnDefaultValue)
 
-				const slice = new SequenceSlice(arrayOfResourceInfoArray, sliceProperties, player)
+				const resourceInfoArray = []
+				const slice = new SequenceSlice(resourceInfoArray, arrayOfResourceInfoArray,
+					sliceProperties, player)
 				actualTransition.slice = slice
 			} else {
 				return null
@@ -145,7 +147,7 @@ export default class Transition {
 			return null
 		}
 
-		const actualDuration = Utils.returnValidValue("positive", duration, shouldReturnDefaultValue)
+		const actualDuration = Utils.returnValidValue("duration", duration, shouldReturnDefaultValue)
 
 		const actualEntryOrExit = {
 			type: actualType,

@@ -52,16 +52,25 @@ const getValidValueAndUnit = (value) => {
 // For checking data values
 const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
 	const { type, allowed, defaultValue } = constants.ACCEPTED_VALUES[valueType] || {}
-	if (valueType === "positive") { // Strictly positive, actually!
-		if (value !== undefined && isANumber(value) === true && value > 0) {
+
+	if (type === "number") {
+		if (value !== undefined && isANumber(value) === true) {
 			return value
 		}
 		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
 			? defaultValue
 			: null
 	}
-	if (type === "number") {
-		if (value !== undefined && isANumber(value) === true) {
+	if (type === "positiveNumber") {
+		if (value !== undefined && isANumber(value) === true && value >= 0) {
+			return value
+		}
+		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
+			? defaultValue
+			: null
+	}
+	if (type === "strictlyPositiveNumber") {
+		if (value !== undefined && isANumber(value) === true && value > 0) {
 			return value
 		}
 		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
@@ -78,7 +87,7 @@ const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
 		return (shouldReturnDefaultValue === true) ? defaultValue : null
 	}
 	if (type === "color") {
-		const regExp = new RegExp("#[0-9a-f]{6}", "i")
+		const regExp = new RegExp("^#[0-9a-f]{6}$", "i")
 		if (value && isAString(value) === true && regExp.test(value) === true) {
 			return value
 		}
@@ -125,34 +134,38 @@ const isOfType = (path, acceptableGeneralType, acceptableExtensions) => {
 	return isExtensionAcceptable
 }
 
-const isAVideo = (path) => (
+const hasAVideoExtension = (path) => (
 	isOfType(path, "video", constants.ACCEPTED_VIDEO_EXTENSIONS)
 )
 
-/*const isAnImage = (path) => (
+/*const hasAnImageExtension = (path) => (
 	isOfType(path, "image", constants.ACCEPTED_IMAGE_EXTENSIONS)
 )*/
 
-const getResourceType = (path, type = null) => {
+const getResourceAndMimeTypes = (path, type = null) => {
 	let resourceType = null
+
 	// To assign a general resourceType, first check the specified value for type
 	if (type) {
-		const generalType = type.split("/")[0]
-		if (generalType === "image" || generalType === "video") {
-			resourceType = generalType
+		const possibleType = type.split("/")[0]
+		if (possibleType === "image" || possibleType === "video") {
+			resourceType = possibleType
 		}
 	}
+
 	// If the specified value did not provide a relevant resourceType, check the path's extension
 	if (!resourceType) {
-		resourceType = (isAVideo(path) === true) ? "video" : "image"
+		resourceType = (hasAVideoExtension(path) === true) ? "video" : "image"
 	}
 	// Note that the "image" resourceType is thus favored by default
-	return resourceType
+	// Also note that we do not check that the mime type value is acceptable
+
+	return { resourceType, mimeType: type || constants.DEFAULT_MIME_TYPE }
 }
 
 // For parsing the aspect ratio value written as a string in the divina's viewportRatio property
 const parseAspectRatio = (ratio) => {
-	if (!ratio || typeof ratio !== "string") {
+	if (!ratio || isAString(ratio) === false) {
 		return null
 	}
 	const parts = ratio.split(":")
@@ -315,8 +328,7 @@ export {
 	isAnObject,
 	getValidValueAndUnit,
 	returnValidValue,
-	getResourceType,
-	isAVideo,
+	getResourceAndMimeTypes,
 	parseAspectRatio,
 	getRectWithSize,
 	getPathAndMediaFragment,

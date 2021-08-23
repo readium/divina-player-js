@@ -57,7 +57,7 @@ export default class Player {
 		this._rootElement = rootElement
 
 		// Create the player's renderer
-		this._renderer = new Renderer(rootElement, backgroundColor)
+		this._renderer = new Renderer(rootElement, backgroundColor, this)
 
 		// Size the player for the first time
 		this._viewportRect = {
@@ -80,7 +80,6 @@ export default class Player {
 		this._tagManager = null
 		this._options = {}
 
-		this._startLocator = null
 		this._target = { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 		this._resourceManager = new ResourceManager(this)
 
@@ -104,6 +103,10 @@ export default class Player {
 
 		// Create DivinaParser
 		this._divinaParser = new DivinaParser(this)
+	}
+
+	refreshOnce() {
+		this._renderer.refreshOnce()
 	}
 
 	// The resize function is called on creating the Player, at the end of _setRatioConstraint
@@ -179,8 +182,7 @@ export default class Player {
 
 	// Called above and externally
 	setReadingMode(readingMode) {
-		if (!this._pageNavigator || !readingMode
-			|| readingMode === this._pageNavigator.pageNavType) {
+		if (!this._pageNavigator || !readingMode || readingMode === this._pageNavigator.pageNavType) {
 			return
 		}
 		this._setPageNavigator(readingMode)
@@ -294,7 +296,6 @@ export default class Player {
 	}
 
 	_buildStory(locator = null, options = null, resourceSource, folderPath, pageNavigatorsData) {
-		this._startLocator = locator
 		this._options = options || {}
 
 		// Set allowed story interactions based on options
@@ -309,12 +310,13 @@ export default class Player {
 
 		const doWithLoadPercentChange = (loadPercent) => {
 			if (this._textManager) {
-				this._textManager.showMessage({ type: "loading", data: loadPercent })
+				const { loadingMessage } = this._options
+				this._textManager.showMessage({ type: "loading", data: loadPercent, loadingMessage })
 			}
 		}
 		this._resourceManager.setDoWithLoadPercentChange(doWithLoadPercentChange)
 
-		this._buildStoryFromPageNavigatorsData(pageNavigatorsData)
+		this._buildStoryFromPageNavigatorsData(pageNavigatorsData, locator)
 	}
 
 	// Used in Slice (on creating the Slice)
@@ -322,12 +324,12 @@ export default class Player {
 		this._slices[id] = slice
 	}
 
-	_buildStoryFromPageNavigatorsData(pageNavigatorsData) {
+	_buildStoryFromPageNavigatorsData(pageNavigatorsData, locator) {
 		this._pageNavigatorsData = pageNavigatorsData
 
 		const { metadata } = this._pageNavigatorsData // Common/shared metadata
 		const {
-			direction, spread, viewportRatio, languagesArray,
+			direction, continuous, spread, viewportRatio, languagesArray,
 		} = metadata || {}
 
 		// Set spread (used to check whether the double reading mode is available)
@@ -355,6 +357,7 @@ export default class Player {
 
 		const data = {
 			readingProgression: direction,
+			continuous,
 			readingModesArray: Object.keys(actualReadingModes),
 			languagesArray,
 		}
@@ -362,9 +365,9 @@ export default class Player {
 
 		// Now build (and set) the page navigator to start with
 		if (this._pageNavigatorsData.single) {
-			this._setPageNavigator("single")
+			this._setPageNavigator("single", locator)
 		} else if (this._pageNavigatorsData.scroll) {
-			this._setPageNavigator("scroll")
+			this._setPageNavigator("scroll", locator)
 		}
 	}
 
@@ -410,29 +413,18 @@ export default class Player {
 	}
 
 	// Set the pageNavigator, load its first resources and start playing the story
-	_setPageNavigator(pageNavType) {
+	_setPageNavigator(pageNavType, locator = null) {
 		const oldPageNavigator = this._pageNavigator
 
-		// Get target page and segment indices
-		let { href } = this._startLocator || {}
-		if (this._resourceManager.haveFirstResourcesLoaded === true) {
-			href = (oldPageNavigator) ? oldPageNavigator.getCurrentHref() : null
+		let actualLocator = locator
+		if (!actualLocator && oldPageNavigator) {
+			const href = oldPageNavigator.getCurrentHref()
+			actualLocator = { href }
 		}
-		if (href) {
+		if (actualLocator) {
 			const canUseShortenedHref = true
-			this._target = this._getTargetFromHref(pageNavType, href, canUseShortenedHref)
-		} else if (this._startLocator && this._startLocator.locations) {
-			const { locations, type } = this._startLocator
-			const { position, progression } = locations
-			if (position !== undefined) {
-				const segmentIndex = position
-				if (progression !== undefined) {
-					this._target = this._getTargetFromSegmentIndex(type || "scroll", segmentIndex)
-					this._target.progress = progression
-				} else {
-					this._target = this._getTargetFromSegmentIndex(type || "single", segmentIndex)
-				}
-			}
+			this._setTargetBasedOnLocator(locator, pageNavType, oldPageNavigator,
+				canUseShortenedHref)
 		}
 
 		// Now clean old page navigator
@@ -514,6 +506,37 @@ export default class Player {
 		}
 	}
 
+	_setTargetBasedOnLocator(locator, pageNavType = null, oldPageNavigator = null,
+		canUseShortenedHref = false) {
+		if (!locator) {
+			return
+		}
+
+		// Get target page and segment indices
+
+		let { href } = locator
+		const { locations, text } = locator
+		const readingMode = pageNavType || text
+			|| (locations && locations.progression !== undefined) ? "scroll" : "single"
+		if (this._resourceManager.haveFirstResourcesLoaded === true && oldPageNavigator) {
+			href = oldPageNavigator.getCurrentHref()
+		}
+
+		if (href) {
+			this._target = this._getTargetFromHref(readingMode, href, canUseShortenedHref)
+
+		} else if (locations) {
+			const { position, progression } = locations
+			if (position !== undefined) {
+				const segmentIndex = position
+				this._target = this._getTargetFromSegmentIndex(readingMode, segmentIndex)
+				if (progression !== undefined) {
+					this._target.progress = progression
+				}
+			}
+		}
+	}
+
 	// For reaching a specific resource directly in the story (typically via a table of contents,
 	// however it is also used as the first step into the story navigation)
 	_getTargetFromHref(readingMode, targetHref, canUseShortenedHref = false) {
@@ -532,7 +555,7 @@ export default class Player {
 			const { pageNavInfo } = slice
 			const info = pageNavInfo[readingMode]
 			if (info) {
-				const { href, path } = slice.getHrefAndPath() || {}
+				const { href, path } = slice.getInfo() || {}
 				if (hardTarget === null && targetHref === href) {
 					hardTarget = info
 				} else if (softTarget === null && targetPath === path) {
@@ -590,6 +613,7 @@ export default class Player {
 			if (tagName === "language" && slice.setLanguage) {
 				slice.setLanguage(tagValue)
 			}
+			this.refreshOnce()
 		})
 
 		// For resource slices
@@ -604,7 +628,7 @@ export default class Player {
 	}
 
 	_goToTarget(target) {
-		const { pageIndex, pageSegmentIndex, progress } = target
+		const { pageIndex = 0, pageSegmentIndex = 0, progress = 0 } = target || {}
 		this._target = null
 		const shouldSkipTransition = true
 		this._pageNavigator.goToPageWithIndex(pageIndex, pageSegmentIndex, progress,
@@ -617,14 +641,12 @@ export default class Player {
 
 	}
 
-	// For accessing a resource in the story from the table of contents
-	// (note that this is the only goTo function that can be called before pageNavigator creation)
-	goTo(href, canUseShortenedHref = false) { // T
-		this._target = this._getTargetFromHref(this.readingMode, href, canUseShortenedHref)
+	goTo(locator) {
+		this._setTargetBasedOnLocator(locator)
+
 		if (!this._pageNavigator) {
 			return
 		}
-
 		this._updateLoadTasks(this._target)
 
 		if (this.canConsiderInteractions === true) {
@@ -747,6 +769,7 @@ export default class Player {
 
 		// Remove textures and event listeners from slices
 		Object.values(this._slices).forEach((slice) => {
+			slice.stop()
 			slice.destroy()
 		})
 

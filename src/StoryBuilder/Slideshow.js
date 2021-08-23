@@ -14,7 +14,7 @@ export default class Slideshow extends PageNavigator {
 	_setDirection(direction) {
 		this._direction = direction
 
-		this._layersArray.forEach((layer) => {
+		this.layersArray.forEach((layer) => {
 			const page = layer.content
 			page.setInScrollDirection(direction)
 
@@ -83,16 +83,16 @@ export default class Slideshow extends PageNavigator {
 		} else {
 			switch (way) {
 			case "right":
-				this._interactionManager.goRight()
+				this.interactionManager.goRight()
 				break
 			case "left":
-				this._interactionManager.goLeft()
+				this.interactionManager.goLeft()
 				break
 			case "down":
-				this._interactionManager.goDown()
+				this.interactionManager.goDown()
 				break
 			case "up":
-				this._interactionManager.goUp()
+				this.interactionManager.goUp()
 				break
 			default:
 				break

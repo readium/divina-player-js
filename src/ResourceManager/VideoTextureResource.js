@@ -33,13 +33,13 @@ export default class VideoTextureResource extends TextureResource {
 			const forceFailIfNeeded = false
 			this._clear(forceFailIfNeeded)
 
-			if (doOnVideoLoadFail && this._fallbacksArray.length > 0) {
-				this._loadStatus = -1
+			if (doOnVideoLoadFail && this.fallbacksArray.length > 0) {
+				this.loadStatus = -1
 
 				// Let's create the baseTexture from the appropriate fallback image
 				// (note that we don't care that the type will not be the right one anymore!)
 
-				const { path, fragment } = this._player.getBestMatchForCurrentTags(this._fallbacksArray)
+				const { path, fragment } = this.player.getBestMatchForCurrentTags(this.fallbacksArray)
 				if (fragment) {
 					this._fallbackFragment = fragment
 				}
@@ -48,7 +48,7 @@ export default class VideoTextureResource extends TextureResource {
 				doOnVideoLoadFail(resolve, fallbackPath)
 
 			} else {
-				this._loadStatus = 0
+				this.loadStatus = 0
 				resolve()
 			}
 		}
@@ -96,13 +96,13 @@ export default class VideoTextureResource extends TextureResource {
 	_doOnDurationChange(resolve, doOnVideoLoadSuccess) {
 		const { duration } = this._video || {}
 
-		if (this._loadStatus !== 0 // Loading may indeed have been cancelled
+		if (this.loadStatus !== 0 // Loading may indeed have been cancelled
 			&& duration && doOnVideoLoadSuccess) {
 			this._removeTracesOfVideoLoad() // But keep this._video, so don't clear()!
 
 			const { baseTexture, texture } = Texture.createVideoTexture(this._video)
 			const textureData = {
-				resourceId: this._id,
+				resourceId: this.id,
 				texture: {
 					base: baseTexture,
 					full: texture,
@@ -126,7 +126,7 @@ export default class VideoTextureResource extends TextureResource {
 	_forceDestroy(slices) {
 		const forceFailIfNeeded = true
 		this._clear(forceFailIfNeeded)
-		this._forceDestroyTextures(slices)
+		this.forceDestroyTextures(slices)
 	}
 
 }

@@ -234,7 +234,7 @@ export default class StateHandler {
 			const { entryForward, entryBackward } = layer || {}
 			const entry = (isGoingForward === true) ? entryForward : entryBackward
 			const isExiting = false
-			const layerTransition = new LayerTransition(this, layer, isExiting, entry)
+			const layerTransition = new LayerTransition(this, layer, isExiting, entry, this._player)
 			layerTransitionsArray.push(layerTransition)
 		})
 
@@ -243,7 +243,7 @@ export default class StateHandler {
 			const { exitForward, exitBackward } = layer || {}
 			const exit = (isGoingForward === true) ? exitForward : exitBackward
 			const isExiting = true
-			const layerTransition = new LayerTransition(this, layer, isExiting, exit)
+			const layerTransition = new LayerTransition(this, layer, isExiting, exit, this._player)
 			layerTransitionsArray.push(layerTransition)
 		})
 
@@ -252,13 +252,10 @@ export default class StateHandler {
 
 	notifyTransitionEnd() {
 		const { layerTransitionsArray } = this._currentStateChange
-		let nbOfRunningLayerTransitions = 0
-		layerTransitionsArray.forEach((layerTransition) => {
-			if (layerTransition.isRunning === true) {
-				nbOfRunningLayerTransitions += 1
-			}
-		})
-
+		const runningLayerTransitions = layerTransitionsArray.filter(
+			({ isRunning }) => (isRunning === true),
+		)
+		const nbOfRunningLayerTransitions = runningLayerTransitions.length
 		if (nbOfRunningLayerTransitions === 0) {
 			this._endStateChange()
 		}
@@ -270,6 +267,11 @@ export default class StateHandler {
 		this._stateIndex = newStateIndex
 
 		this._layerPile.finalizeEntry()
+		// Note that, in all rigor, this is not a true entry, since a PageNavigator hasn't
+		// actually achieved an "entry" when a transition has ruled a page change (however the
+		// recursive nature of the function also allows the slices of a multi-layered segments
+		// with a layer transition to play automatically on the transition's end, for instance)
+
 		this._resetStateChange()
 
 		// Run the callback if there was one

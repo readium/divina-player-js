@@ -15,7 +15,8 @@ export default class DivinaParser {
 			DivinaParser.loadJson(path, pathType)
 				.then((json) => {
 					resolve(this._buildStoryFromJson(json))
-				}, (error) => {
+				})
+				.catch((error) => {
 					reject(error)
 				})
 		})
@@ -268,6 +269,7 @@ export default class DivinaParser {
 		// Keep only useful data in the metadata object shared by all page navigators
 		const cleanMetadata = {
 			direction,
+			continuous,
 			fit,
 			clipped,
 			overflow,

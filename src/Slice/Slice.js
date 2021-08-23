@@ -1,10 +1,15 @@
 import { TextureElement } from "../Renderer"
 
+import * as constants from "../constants"
+
 // Note that size is obtained from underlying TextureElement
 
 export default class Slice extends TextureElement {
 
-	// Used in Player (for tags)
+	// Used in Player
+	get id() { return this._id }
+
+	// Used in TagManager
 	get resourceInfoArray() { return this._resourceInfoArray }
 
 	// Used in StoryBuilder and Player
@@ -16,7 +21,7 @@ export default class Slice extends TextureElement {
 	// Used in StateHandler
 	get canPlay() { return (this._duration > 0) }
 
-	// Used in Layer and ResourceManager
+	// Used in SequenceSlice, Layer and ResourceManager
 	get loadStatus() { return this._loadStatus }
 
 	// Used in TextSlice
@@ -27,21 +32,15 @@ export default class Slice extends TextureElement {
 
 	// Used in TextureResource
 	get isActive() {
-		if (!this._parent) {
+		if (!this.parent) {
 			return true
 		}
-		const { pageNavigator } = this._player
+		const { pageNavigator } = this.player
 		const { segmentRange } = pageNavigator
 		const { startIndex, endIndex } = segmentRange
-		const { segmentIndex } = this._parent
+		const { segmentIndex } = this.parent
 		return (segmentIndex >= startIndex && segmentIndex <= endIndex)
 	}
-
-	// Used in Segment
-	get href() { return (this._resource) ? this._resource.href : null }
-
-	// Used in Player
-	get id() { return this._id }
 
 	// Used below
 
@@ -54,7 +53,13 @@ export default class Slice extends TextureElement {
 
 	get _video() { return (this._videoTexture) ? this._videoTexture.video : null }
 
-	get _resourceManager() { return this._player.resourceManager }
+	get _resourceManager() { return this.player.resourceManager }
+
+	// Used in SequenceSlice
+	get properties() { return this._properties }
+
+	// Used in SequenceSlice
+	set loadStatus(loadStatus) { this._loadStatus = loadStatus }
 
 	constructor(resourceInfoArray, properties, player, parentInfo = null) {
 		const { role } = properties
@@ -65,7 +70,7 @@ export default class Slice extends TextureElement {
 		this._resourceInfoArray = resourceInfoArray
 		this._properties = properties
 
-		this._player.addSlice(this._id, this)
+		this.player.addSlice(this._id, this)
 
 		const main = (resourceInfoArray && Array.isArray(resourceInfoArray) === true
 			&& resourceInfoArray.length > 0)
@@ -92,7 +97,7 @@ export default class Slice extends TextureElement {
 		} else if (type === "text") {
 			this._loadStatus = 2
 		} else {
-			this._assignDummyTexture()
+			this.assignDummyTexture()
 			this._loadStatus = 0
 		}
 
@@ -100,25 +105,27 @@ export default class Slice extends TextureElement {
 
 		this._videoTexture = null
 		this._doOnEnd = null
+
+		this._playLoop = null
 	}
 
 	_updateSizeFromReferenceSize() {
 		const { width, height } = this._referenceSize
 		if (width && height) {
-			this._setSize(this._referenceSize)
+			this.setSize(this._referenceSize)
 		} else {
-			const { viewportRect } = this._player
+			const { viewportRect } = this.player
 			const viewportRatio = (viewportRect.height > 0)
 				? (viewportRect.width / viewportRect.height)
 				: 1
 			if (width) {
 				const size = { width, height: width / viewportRatio }
-				this._setSize(size)
+				this.setSize(size)
 			} else if (height) {
 				const size = { height, width: height * viewportRatio }
-				this._setSize(size)
+				this.setSize(size)
 			} else {
-				this._setSize(viewportRect)
+				this.setSize(viewportRect)
 			}
 		}
 	}
@@ -128,20 +135,14 @@ export default class Slice extends TextureElement {
 		this._pageNavInfo[type] = pageNavInfo
 	}
 
-	// Used in StoryBuilder (for transition slices) and Layer
-	setParent(parent) {
-		super.setParent(parent)
-	}
-
 	// Used in Layer (for PageNavigator)
 	getResourceIdsToLoad(force = false) { // force = true on changing tags or reading modes
-		const { role } = this._properties
-		if (role === "empty" || this._type === "textSlice"
+		if (this.role === "empty" || this._type === "textSlice"
 			|| (force === false && (this._loadStatus === 1 || this._loadStatus === 2))) {
 			return []
 		}
 
-		const { id, fragment } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
+		const { id, fragment } = this.getRelevantResourceIdAndFragment(this._resourceInfoArray)
 
 		if (id === null) {
 			this._loadStatus = 0
@@ -151,11 +152,11 @@ export default class Slice extends TextureElement {
 
 		this._loadStatus = 1
 		this._updateParentLoadStatus()
-		this._addAndStartLoadingAnimation()
+		this.addAndStartLoadingAnimation()
 		return [[{ sliceId: this._id, resourceId: id, fragment }]]
 	}
 
-	_getRelevantResourceIdAndFragment(resourceInfoArray) {
+	getRelevantResourceIdAndFragment(resourceInfoArray) {
 		let { id, fragment } = resourceInfoArray[0] || {}
 
 		if (resourceInfoArray.length < 2) {
@@ -171,7 +172,7 @@ export default class Slice extends TextureElement {
 			}
 		})
 
-		const result = this._player.getBestMatchForCurrentTags(reworkedArray)
+		const result = this.player.getBestMatchForCurrentTags(reworkedArray)
 		id = result.id
 		fragment = result.fragment
 
@@ -179,23 +180,23 @@ export default class Slice extends TextureElement {
 	}
 
 	_updateParentLoadStatus() {
-		const { pageNavigator } = this._player
+		const { pageNavigator } = this.player
 		if (!pageNavigator) { // On Player destroy, pageNavigator is already null
 			return
 		}
 		const { pageNavType } = pageNavigator
 		if (!this._pageNavInfo[pageNavType] // If Slice is not in current pageNavigator anymore...
-			|| !this._parent || !this._parent.updateLoadStatus) {
+			|| !this.parent || !this.parent.updateLoadStatus) {
 			return
 		}
-		this._parent.updateLoadStatus()
+		this.parent.updateLoadStatus()
 	}
 
 	// Once the associated texture has been created, it can be applied to the slice
 	updateTextures(texture, isAFallback) {
 		if (!texture) {
 			this._loadStatus = 0
-			this._assignDummyTexture()
+			this.assignDummyTexture()
 
 		} else {
 			this._loadStatus = (isAFallback === true) ? -1 : 2
@@ -206,10 +207,12 @@ export default class Slice extends TextureElement {
 
 				// If the texture is a normal image or fallback image
 				if (!video) {
-					this._setTexture(texture)
+					this.setTexture(texture)
+					this.player.refreshOnce()
+
 					if (this._hasLoadedOnce === false) {
 						// The dimensions are now correct and can be kept
-						this._setSizeFromActualTexture(width, height)
+						this.setSizeFromActualTexture(width, height)
 						this._hasLoadedOnce = true
 					}
 
@@ -221,7 +224,7 @@ export default class Slice extends TextureElement {
 						this._duration = video.duration
 
 						// The dimensions are now correct and can be kept
-						this._setSizeFromActualTexture(width, height)
+						this.setSizeFromActualTexture(width, height)
 
 						this._hasLoadedOnce = true
 					}
@@ -236,15 +239,15 @@ export default class Slice extends TextureElement {
 		}
 
 		this._updateParentLoadStatus()
-		this._stopAndRemoveLoadingAnimation()
+		this.stopAndRemoveLoadingAnimation()
 	}
 
 	// On the first successful loading of the resource's texture
-	_setSizeFromActualTexture(width, height) {
-		if (width === this._width && height === this._height) {
+	setSizeFromActualTexture(width, height) {
+		if (width === this.unscaledSize.width && height === this.unscaledSize.height) {
 			return
 		}
-		this._setSize({ width, height })
+		this.setSize({ width, height })
 
 		// Now only resize the page where this slice appears
 		if (this._parent && this.isActive === true) {
@@ -255,7 +258,7 @@ export default class Slice extends TextureElement {
 	cancelTextureLoad() {
 		this._loadStatus = 0
 		this._updateParentLoadStatus()
-		this._stopAndRemoveLoadingAnimation()
+		this.stopAndRemoveLoadingAnimation()
 	}
 
 	play() {
@@ -263,10 +266,26 @@ export default class Slice extends TextureElement {
 		if (!this._video) {
 			return
 		}
+
+		const shouldUseRaf = (("requestVideoFrameCallback" in HTMLVideoElement.prototype) === false)
+
 		const playPromise = this._video.play()
 		if (playPromise !== undefined) {
 			playPromise.then(() => {
-				this._setVideoTexture(this._videoTexture)
+				this.setVideoTexture(this._videoTexture)
+				this._playLoop = () => {
+					if (this.isInViewport === true) {
+						this.player.refreshOnce()
+					}
+					if (this._playLoop) {
+						if (shouldUseRaf === false) {
+							this._video.requestVideoFrameCallback(this._playLoop)
+						} else {
+							requestAnimationFrame(this._playLoop)
+						}
+					}
+				}
+				this._playLoop()
 			}).catch(() => {
 				// Caught error prevents play (keep the catch to avoid issues with video pause)
 			})
@@ -280,6 +299,7 @@ export default class Slice extends TextureElement {
 			this._video.pause()
 			this._video.currentTime = 0
 			this._video.loop = true
+			this._destroyPlayLoop()
 		}
 		// Since changing pages will force a stop (on reaching the normal end of a transition
 		// or forcing it), now is the appropriate time to remove the "ended" event listener
@@ -287,6 +307,11 @@ export default class Slice extends TextureElement {
 			this._video.removeEventListener("ended", this._doOnEnd)
 			this._doOnEnd = null
 		}
+	}
+
+	_destroyPlayLoop() {
+		cancelAnimationFrame(this._playLoop)
+		this._playLoop = null
 	}
 
 	setDoOnEnd(doOnEnd) {
@@ -309,21 +334,20 @@ export default class Slice extends TextureElement {
 			this._updateSizeFromReferenceSize()
 		}
 
-		const { pageNavigator } = this._player
+		const { pageNavigator } = this.player
+		const { metadata } = pageNavigator
 
-		const fit = pageNavigator.metadata.forcedFit || this._properties.fit
-			|| pageNavigator.metadata.fit
+		const fit = metadata.forcedFit || this._properties.fit || metadata.fit
 
 		let clipped = false
-		if (pageNavigator.metadata.forcedClipped !== undefined
-			&& (pageNavigator.metadata.forcedClipped === true
-				|| pageNavigator.metadata.forcedClipped === false)) {
+		if (metadata.forcedClipped !== undefined
+			&& (metadata.forcedClipped === true || metadata.forcedClipped === false)) {
 			clipped = pageNavigator.metadata.forcedClipped
 		} else if (this._properties !== undefined
 			&& (this._properties.clipped === true || this._properties.clipped === false)) {
 			clipped = this._properties.clipped
 		} else {
-			clipped = pageNavigator.metadata.clipped
+			clipped = metadata.clipped
 		}
 
 		super.resize(fit, clipped)
@@ -345,10 +369,9 @@ export default class Slice extends TextureElement {
 
 	// Used in Layer
 	destroyResourcesIfPossible() {
-		this._stopAndRemoveLoadingAnimation()
+		this.stopAndRemoveLoadingAnimation()
 
-		const { role } = this._properties
-		if (this._loadStatus !== 2 || role === "empty" || this._type === "textSlice") {
+		if (this._loadStatus !== 2 || this.role === "empty" || this._type === "textSlice") {
 			return
 		}
 
@@ -359,51 +382,48 @@ export default class Slice extends TextureElement {
 	}
 
 	_getLoadedIds() {
-		const { id } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
+		const { id } = this.getRelevantResourceIdAndFragment(this._resourceInfoArray)
 		return (id !== null) ? [id] : []
 	}
 
 	// Used in TextureResource
 	removeTexture() {
 		if (this._video) {
-			this._unsetVideoTexture()
+			this.unsetVideoTexture()
 			this._videoTexture = null
 		} else {
-			this._setTexture(null)
+			this.setTexture(null)
 		}
-		this._setAsUnloaded()
+		this.setAsUnloaded()
 	}
 
 	// Used above and in SequenceSlice
-	_setAsUnloaded() {
+	setAsUnloaded() {
 		this._loadStatus = 0
 		this._updateParentLoadStatus()
-		this._stopAndRemoveLoadingAnimation()
+		this.stopAndRemoveLoadingAnimation()
 	}
 
-	// Used in Segment (ultimately for Camera's virtual point)
-	getHref() {
-		const { href } = this.getHrefAndPath()
-		return href
-	}
-
-	// Used above and in Player for target hrefs
-	getHrefAndPath() {
-		if (!this._resourceInfoArray || this._resourceInfoArray.length < 1) {
-			return { href: null, path: null }
+	// Used in LayerPile (for Segment, and ultimately for Camera's virtual point)
+	// ...but also in Player for target hrefs!
+	getInfo() {
+		if (this.role === "empty" || !this._resourceInfoArray || this._resourceInfoArray.length < 1) {
+			return { href: "", path: "", mimeType: constants.DEFAULT_MIME_TYPE }
 		}
-		const { id, fragment } = this._getRelevantResourceIdAndFragment(this._resourceInfoArray)
+		const { id, fragment } = this._resourceInfoArray[0]
 		const resource = this._resourceManager.getResourceWithId(id)
-		const { path } = resource
+		const { path, mimeType } = resource
 		let href = path
 		if (href && fragment) {
 			href += `#${fragment}`
 		}
-		return { href, path }
+		return { href: href || "", path: path || "", type: mimeType || constants.DEFAULT_MIME_TYPE }
 	}
 
 	// Called by Player on final destroy
 	destroy() {
+		this._destroyPlayLoop()
+
 		// Clear textures
 		super.destroy()
 		this._videoTexture = null
@@ -424,7 +444,8 @@ export default class Slice extends TextureElement {
 		return slice
 	}
 
-	// Used where?
+	// Used in TimeAnimationManager
+
 	setVariable(variable, value) {
 		switch (variable) {
 		case "alpha":
@@ -448,7 +469,6 @@ export default class Slice extends TextureElement {
 		}
 	}
 
-	// Used where?
 	getVariable(variable) {
 		switch (variable) {
 		case "alpha":

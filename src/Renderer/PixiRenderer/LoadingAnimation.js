@@ -10,11 +10,14 @@ import * as constants from "../../constants"
 
 export default class LoadingAnimation {
 
-	constructor(parentContainer, parentContainerScale = 1, player, name) {
-		this._parentContainer = parentContainer
+	constructor(textureElement, parentContainerScale = 1, player) {
+		this._textureElement = textureElement
 		this._parentContainerScale = parentContainerScale
-		this._name = name
 		this._player = player
+
+		const { name, pixiContainer } = textureElement
+		this._name = name
+		this._parentContainer = pixiContainer
 
 		this._ticker = new PixiTicker()
 		this._ticker.stop()
@@ -25,6 +28,11 @@ export default class LoadingAnimation {
 				return
 			}
 			this._loadingAnimationGraphics.rotation += constants.ROTATION_BY_TICK
+
+			const { isInViewport } = this._textureElement
+			if (isInViewport === true) {
+				player.refreshOnce()
+			}
 		}
 		this._ticker.add(this._tickerFunction)
 	}

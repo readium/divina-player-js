@@ -406,7 +406,15 @@ export default class InteractionManager {
 				// There is no end to a wheel event, so no viewportPercent information
 				// can be constructed to attempt a sticky page change
 				const isWheelScroll = true
-				this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll)
+				const { direction } = this.pageNavigator
+				// If the story's direction is ltr or rtl, then an "actual" mouse wheel
+				// should prompt the story to move forward/backward
+				if ((direction === "ltr" || direction === "rtl") && e.deltaX === 0) {
+					const sign = (direction === "rtl") ? 1 : -1
+					this._scroll({ deltaX: sign * e.deltaY, deltaY: 0 }, isWheelScroll)
+				} else {
+					this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll)
+				}
 			}
 		})
 	}

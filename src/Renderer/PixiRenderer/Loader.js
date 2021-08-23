@@ -15,8 +15,9 @@ export default class Loader {
 	constructor() {
 		this._loader = new PixiLoader()
 		this._loader.onError.add((error, loader, resource) => {
-			const { id } = resource
-			this._resourceIdsToLoad[id] = false
+			const { name } = resource
+			const resourceId = Number(name)
+			this._resourceIdsToLoad[resourceId] = false
 		})
 		this.reset()
 	}
@@ -42,10 +43,12 @@ export default class Loader {
 		if (!doWithTextureDataArray) {
 			return
 		}
+		// Even if the loader has failed to load the resource, the function below will be executed
+		// (after that in this._loader.onError, hence the check of this._resourceIdsToLoad[resourceId])
 		this._loader.onComplete.add((_, resources) => {
 			const textureDataArray = []
 			Object.values(resources).forEach((resource) => {
-				const { name, texture } = resource // texture here is a PixiJS texture
+				const { name, texture } = resource // The texture here is a PixiJS texture
 				const resourceId = Number(name)
 				if (this._resourceIdsToLoad[resourceId] === true && texture && texture.baseTexture) {
 					const { baseTexture } = texture

@@ -52,7 +52,7 @@ export default class TextureResource extends CoreResource {
 	}
 
 	setActualTexture(textureData) { // textureData = { name, texture }
-		if (this._loadStatus === 0 // If loading was cancelled
+		if (this.loadStatus === 0 // If loading was cancelled
 			|| !textureData || !textureData.texture
 			|| !textureData.texture.base || !textureData.texture.full) {
 			return
@@ -62,7 +62,7 @@ export default class TextureResource extends CoreResource {
 		this._baseTexture = base
 
 		// If loading has failed...
-		if (this._loadStatus === -1) {
+		if (this.loadStatus === -1) {
 
 			// ...then if a fallback was defined, and it is to be cropped,
 			// store the cropped (fragment) texture directly everywhere
@@ -80,7 +80,7 @@ export default class TextureResource extends CoreResource {
 		// ...otherwise loadStatus = 1 and loading has succeeded, so proceed with the full texture
 		} else {
 			this._setFullTextureAndCreateFragmentsIfNeeded(full)
-			this._loadStatus = 2
+			this.loadStatus = 2
 		}
 	}
 
@@ -104,8 +104,8 @@ export default class TextureResource extends CoreResource {
 			sliceIdsSet.forEach((sliceId) => {
 				const slice = slices[sliceId]
 				if (slice) {
-					const sliceTexture = (this._loadStatus === -1) ? fullTexture : texture
-					const isAFallback = (this._loadStatus === -1)
+					const sliceTexture = (this.loadStatus === -1) ? fullTexture : texture
+					const isAFallback = (this.loadStatus === -1)
 					slice.updateTextures(sliceTexture, isAFallback)
 				}
 			})
@@ -114,7 +114,7 @@ export default class TextureResource extends CoreResource {
 
 	// Used for a SequenceSlice only
 	getTextureForFragment(fragment = null) {
-		const actualFragment = (this._loadStatus !== -1 && fragment) ? fragment : "full"
+		const actualFragment = (this.loadStatus !== -1 && fragment) ? fragment : "full"
 		const { texture } = this._textures[actualFragment] || {}
 		if (!texture) {
 			return null
@@ -123,7 +123,7 @@ export default class TextureResource extends CoreResource {
 	}
 
 	destroyIfPossible(forceDestroy = false, slices) {
-		if (this._loadStatus === 0) {
+		if (this.loadStatus === 0) {
 			return
 		}
 		const canBeDestroyed = (forceDestroy === true)
@@ -151,11 +151,11 @@ export default class TextureResource extends CoreResource {
 	}
 
 	_forceDestroy(slices) {
-		this._forceDestroyTextures(slices)
+		this.forceDestroyTextures(slices)
 	}
 
 	// Used above and in VideoTextureResource
-	_forceDestroyTextures(slices) {
+	forceDestroyTextures(slices) {
 		Object.entries(this._textures).forEach(([fragment, fragmentData]) => {
 			const { texture, sliceIdsSet } = fragmentData
 			if (texture) {
@@ -176,7 +176,7 @@ export default class TextureResource extends CoreResource {
 		}
 		this._baseTexture = null
 
-		super.forceDestroy()
+		this.forceDestroy() // CoreResource's function!
 	}
 
 }

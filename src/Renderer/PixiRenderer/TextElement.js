@@ -221,7 +221,7 @@ export default class TextElement {
 
 		this._boundingRect = { width: maxLineWidth, height: lineHeight * styledLines.length }
 
-		// 4. Create and all text blocks
+		// 4. Create all text blocks
 
 		styledLines.forEach((line, i) => {
 			line.forEach((lineItem) => {
