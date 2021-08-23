@@ -269,9 +269,8 @@ export default class ResourceManager {
 				const doOnAudioLoadSuccess = (data) => {
 					this._acknowledgeResourceHandling([data], resolve)
 				}
-				const doOnAudioLoadFail = null
-				firstResource.attemptToLoadAudio(src, doOnAudioLoadSuccess, doOnAudioLoadFail,
-					this._videoLoadTimeout, this._allowsParallel, resolve)
+				firstResource.attemptToLoadAudio(src, doOnAudioLoadSuccess, this._videoLoadTimeout,
+					this._allowsParallel, resolve)
 
 			} else if (firstResource.type === "video") {
 				const doOnVideoLoadSuccess = (resolve2, textureData) => {

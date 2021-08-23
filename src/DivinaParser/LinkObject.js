@@ -1,8 +1,9 @@
-import { Slice, TextSlice } from "../Slice"
+import { Slice, SequenceSlice, TextSlice } from "../Slice"
 import ResourceBuilder from "./ResourceBuilder"
 import Transition from "./Transition"
 
 import * as Utils from "../utils"
+import * as constants from "../constants"
 
 export default class LinkObject {
 
@@ -71,6 +72,7 @@ export default class LinkObject {
 			lineHeight,
 			letterSpacing,
 			rect,
+			sequence,
 		} = properties || {}
 
 		let role = forcedRole || "standard"
@@ -80,7 +82,7 @@ export default class LinkObject {
 			role = "layersParent" // Will give its dimensions as reference (but won't be displayed)
 		}
 
-		const shouldReturnDefaultValue = false
+		let shouldReturnDefaultValue = false
 
 		let sliceFit = null
 		if (parentInfo) { // If a layersChild (i.e. the slice in a child layer)
@@ -111,12 +113,35 @@ export default class LinkObject {
 			pageSide,
 		}
 
-		let textOptions = {}
-		const result = ResourceBuilder.createResourceInfoArray(divinaObject, player)
-		if (result.type === "resource") {
-			this._slice = new Slice(result.resourceInfoArray, sliceProperties, player, parentInfo)
+		let result = ResourceBuilder.createResourceInfoArray(divinaObject, player)
+		const { resourceInfoArray } = result
+
+		// If the link object is that for a sequence
+		if (sequence) {
+			const { files, duration } = sequence
+
+			result = LinkObject.buildArrayOfResourceInfoArray(files, player)
+			if (result.fit) {
+				sliceProperties.fit = result.fit
+			}
+			if (result.clipped) {
+				sliceProperties.clipped = result.clipped
+			}
+			const { arrayOfResourceInfoArray } = result
+
+			shouldReturnDefaultValue = true
+			sliceProperties.duration = Utils.returnValidValue("duration", duration,
+				shouldReturnDefaultValue)
+
+			this._slice = new SequenceSlice(resourceInfoArray, arrayOfResourceInfoArray, sliceProperties,
+				player, parentInfo)
+
+		// Otherwise the link object has a non-sequence slice: either resource (image or video) or text
+		} else if (result.type === "resource") {
+			this._slice = new Slice(resourceInfoArray, sliceProperties, player, parentInfo)
+
 		} else {
-			textOptions = {
+			const textOptions = {
 				backgroundColor: Utils.returnValidValue("backgroundColor", backgroundColor,
 					shouldReturnDefaultValue) || this._textOptions.backgroundColor,
 				fillColor: Utils.returnValidValue("fillColor", fillColor, shouldReturnDefaultValue)
@@ -143,7 +168,7 @@ export default class LinkObject {
 			sliceProperties.height = result.height
 			sliceProperties.type = "text"
 
-			this._slice = new TextSlice(result.resourceInfoArray, textOptions, sliceProperties, player,
+			this._slice = new TextSlice(resourceInfoArray, textOptions, sliceProperties, player,
 				parentInfo)
 		}
 
@@ -228,7 +253,10 @@ export default class LinkObject {
 					}
 				}
 
-				const fullObject = { ...sequenceImage, type: "image" }
+				const fullObject = {
+					...sequenceImage,
+					type: sequenceImage.type || constants.DEFAULT_MIME_TYPE,
+				}
 				const { resourceInfoArray } = ResourceBuilder.createResourceInfoArray(fullObject, player)
 				result.arrayOfResourceInfoArray.push(resourceInfoArray)
 			}
@@ -282,9 +310,9 @@ export default class LinkObject {
 		}
 
 		const { path } = Utils.getPathAndMediaFragment(href)
-		const coreResourceData = {
-			type: "audio",
-			path,
+		const coreResourceData = { path, type: "audio" }
+		if (sound.type) {
+			coreResourceData.mimeType = sound.type
 		}
 		const shouldReturnDefaultValue = true
 		coreResourceData.looping = Utils.returnValidValue("looping", looping,
@@ -311,7 +339,8 @@ export default class LinkObject {
 		const { type, start, end } = animation
 		const actualType = Utils.returnValidValue("animationType", type, shouldReturnDefaultValue)
 		const actualStart = LinkObject._processSoundStartOrEnd(actualType, start)
-		if (!actualStart) {
+
+		if (actualStart === null) {
 			return null
 		}
 		soundAnimation = {

@@ -48,8 +48,8 @@ export default class ResourceBuilder {
 			const pathAndMediaFragment = Utils.getPathAndMediaFragment(href)
 			const { path } = pathAndMediaFragment
 			mediaFragment = pathAndMediaFragment.mediaFragment
-			const resourceType = Utils.getResourceType(path, type)
-			main = { type: resourceType, path }
+			const { resourceType, mimeType } = Utils.getResourceAndMimeTypes(path, type)
+			main = { type: resourceType, mimeType, path }
 			if (actualWidth) {
 				main.width = actualWidth
 			}
@@ -133,13 +133,12 @@ export default class ResourceBuilder {
 
 				if (sliceType === "resource") {
 					const { path, mediaFragment } = Utils.getPathAndMediaFragment(alternateObject.href)
-					let { type } = alternateObject
-					if (!type) {
-						type = Utils.getResourceType(path)
-					}
-					newAlt.type = type
+					const { type } = alternateObject
+					const { resourceType, mimeType } = Utils.getResourceAndMimeTypes(path, type)
+					newAlt.type = resourceType
+					newAlt.mimeType = mimeType
 					newAlt.path = path
-					if (type === "video") {
+					if (resourceType === "video") {
 						newAlt.fallbacksArray = []
 					}
 					if (mediaFragment) {
@@ -152,8 +151,8 @@ export default class ResourceBuilder {
 				if (hasAtLeastOneTagChange === true
 					|| (sliceType === "resource" && parentResource.type !== newAlt.type)) {
 					// If the move was from video to image
-					if (sliceType === "resource"
-						&& parentResource.type === "video" && newAlt.type === "image") {
+					if (sliceType === "resource" && parentResource.type === "video"
+						&& newAlt.type === "image") {
 						parentResource.fallbacksArray.push(newAlt)
 						if (hasAtLeastOneTagChange === true) {
 							alternatesArray.push(newAlt)

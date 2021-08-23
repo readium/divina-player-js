@@ -252,6 +252,8 @@ and limitations under the License.
 
 /*! ./LoadingAnimation */
 
+/*! ./Loop */
+
 /*! ./OverflowHandler */
 
 /*! ./Page */
@@ -575,6 +577,10 @@ and limitations under the License.
 
 /*!*******************************************!*\
   !*** ./node_modules/querystring/index.js ***!
+  \*******************************************/
+
+/*!*******************************************!*\
+  !*** ./src/Renderer/PixiRenderer/Loop.js ***!
   \*******************************************/
 
 /*!*******************************************!*\

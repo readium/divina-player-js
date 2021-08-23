@@ -1,8 +1,16 @@
-import { Application as PixiApplication, utils as PixiUtils } from "pixi.js-legacy"
+import {
+	autoDetectRenderer,
+	Application as PixiApplication,
+	Container as PixiContainer,
+	utils as PixiUtils,
+} from "pixi.js-legacy"
 
+import Loop from "./Loop"
 import Container from "./Container"
 
 import * as Utils from "../../utils"
+
+const RENDERING_MODE = "renderer" // Possibilities; "app" | renderer"
 
 export default class Renderer {
 
@@ -11,43 +19,70 @@ export default class Renderer {
 	get mainContainer() { return this._contentContainer }
 
 	get size() {
-		const { width, height } = this._app.renderer
+		const { width, height } = this._renderer
 		return { width: width / this._pixelRatio, height: height / this._pixelRatio }
 	}
 
-	constructor(rootElement, backgroundColor = null) {
+	constructor(rootElement, backgroundColor = null, player) {
+		this._player = player
 
 		this._pixelRatio = (window.devicePixelRatio || 1)
 
 		// Create the Pixi application with a default background color
 		const options = {
-			transparent: (backgroundColor === "transparent"),
+			transparent: (backgroundColor === "transparent"), // The PixiJS documentation is wrong!
 			resolution: this._pixelRatio,
 			autoDensity: true,
 			antialias: true,
 		}
 
-		if (options.transparent !== true) {
+		if (backgroundColor !== "transparent") {
 			const shouldReturnDefaultValue = true
-			const defaultBackgroundColor = Utils.returnValidValue("backgroundColor", backgroundColor,
+			let color = Utils.returnValidValue("backgroundColor", backgroundColor,
 				shouldReturnDefaultValue)
-			const defaultColor = Utils.convertColorStringToNumber(defaultBackgroundColor)
-			options.backgroundColor = backgroundColor || defaultColor
+			color = Utils.convertColorStringToNumber(color)
+			options.backgroundColor = color
 		}
-		this._app = new PixiApplication(options)
+		if (RENDERING_MODE === "app") {
+			this._app = new PixiApplication(options)
+			this._renderer = this._app.renderer
+			this._stage = this._app.stage
+		} else {
+			this._renderer = autoDetectRenderer(options)
+
+			this._stage = new PixiContainer()
+			this._stage.interactive = false
+			this._stage.interactiveChildren = false
+
+			// Create the renderer's loop
+			this._renderFunction = () => {
+				if (!this._renderer) {
+					return
+				}
+				this._renderer.render(this._stage)
+			}
+			this._loop = new Loop(this._renderFunction)
+		}
 
 		// Add the Pixi app's canvas to the DOM
-		rootElement.appendChild(this._app.view)
+		rootElement.appendChild(this._renderer.view)
 
 		// Create the root container
 		const parent = null
-		this._rootContainer = new Container("root", "root", parent, this._app.stage)
+		this._rootContainer = new Container("root", "root", parent, this._stage)
 
 		// Create the container that will hold content (i.e. the current pageNavigator's pages)
 		this._contentContainer = new Container("content", "content", this._rootContainer)
 
 		this._zoomFactor = 1
 		this._viewportRect = {}
+	}
+
+	refreshOnce() {
+		if (!this._loop) {
+			return
+		}
+		this._loop.setDirty(true)
 	}
 
 	// Used in Player on a resize
@@ -57,8 +92,12 @@ export default class Renderer {
 		}
 
 		// Resize the canvas using Pixi's built-in function
-		this._app.renderer.resize(width, height)
-		this._app.render() // To avoid flickering
+		this._renderer.resize(width, height)
+		if (RENDERING_MODE === "app") {
+			this._app.render() // To avoid flickering
+		} else {
+			this._renderFunction() // To avoid flickering (better than calling the Loop)
+		}
 	}
 
 	// Used in Player as a consequence of a zoomFactor change or on a resize
@@ -110,14 +149,28 @@ export default class Renderer {
 
 	// Used in Player
 	destroy() {
+		if (this._loop) {
+			this._loop.destroy()
+			this._loop = null
+		}
+
+		if (RENDERING_MODE === "app") {
+			this._app.view.remove()
+
+			const shouldRemoveView = true
+			this._app.destroy(shouldRemoveView)
+			this._app = null
+
+		} else {
+			this._stage.destroy(true)
+
+			const shouldRemoveView = true
+			this._renderer.destroy(shouldRemoveView)
+			this._renderer = null
+		}
+
 		this._rootContainer = null
 		this._contentContainer = null
-
-		this._app.view.remove()
-
-		const shouldRemoveView = true
-		this._app.destroy(shouldRemoveView)
-		this._app = null
 
 		PixiUtils.clearTextureCache()
 	}

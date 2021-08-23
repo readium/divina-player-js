@@ -10,8 +10,7 @@ export default class SequenceSlice extends Slice {
 	// Used in LayerTransition
 	get canPlay() { return (this._duration > 0 && this._texturesArray.length > 0) }
 
-	constructor(arrayOfResourceInfoArray, properties, player, parentInfo = null) {
-		const resourceInfoArray = null
+	constructor(resourceInfoArray, arrayOfResourceInfoArray, properties, player, parentInfo = null) {
 		super(resourceInfoArray, properties, player, parentInfo)
 
 		this._arrayOfResourceInfoArray = arrayOfResourceInfoArray
@@ -24,24 +23,26 @@ export default class SequenceSlice extends Slice {
 		this._texturesArray = []
 		this._nbOfFrames = 0
 		this._nbOfLoadedFrameTextures = 0
+
+		this._stepDuration = null
 	}
 
 	getResourceIdsToLoad(force = false) {
-		if (force === false && (this._loadStatus === 1 || this._loadStatus === 2)) {
+		if (force === false && (this.loadStatus === 1 || this.loadStatus === 2)) {
 			return []
 		}
 
 		const resourceDataArray = []
 		this._arrayOfResourceInfoArray.forEach((resourceInfoArray) => {
-			const { id, fragment } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+			const { id, fragment } = this.getRelevantResourceIdAndFragment(resourceInfoArray)
 			if (id !== null) {
 				resourceDataArray.push({ sliceId: this._id, resourceId: id, fragment })
 			}
 		})
 
-		this._loadStatus = 1
+		this.loadStatus = 1
 		this._updateParentLoadStatus()
-		this._addAndStartLoadingAnimation()
+		this.addAndStartLoadingAnimation()
 		return [resourceDataArray]
 	}
 
@@ -52,15 +53,16 @@ export default class SequenceSlice extends Slice {
 
 		this._texturesArray = this._createTexturesArray()
 		if (this._texturesArray.length === 0) {
-			this._loadStatus = 0
+			this.loadStatus = 0
 			return
 		}
 
-		this._loadStatus = (this._texturesArray.length < this._arrayOfResourceInfoArray.length) ? -1 : 2
+		this.loadStatus = (this._texturesArray.length < this._arrayOfResourceInfoArray.length) ? -1 : 2
 
-		this._stopAndRemoveLoadingAnimation()
+		this.stopAndRemoveLoadingAnimation()
 
 		this.setTexturesArray(this._texturesArray)
+		// Note: No need to refresh the player (Slice's setVisibility will deal with it)
 	}
 
 	_createTexturesArray() {
@@ -78,7 +80,7 @@ export default class SequenceSlice extends Slice {
 					if (this._hasLoadedOnce === false) {
 						const { size } = texture
 						const { width, height } = size
-						this._setSizeFromActualTexture(width, height)
+						this.setSizeFromActualTexture(width, height)
 						this._hasLoadedOnce = true
 					}
 					texturesList.push(texture)
@@ -92,8 +94,8 @@ export default class SequenceSlice extends Slice {
 				// Note that the textures that have not been created are skipped,
 				// meaning that the total number of textures may be less than planned,
 				// and thus the time spent on each actual texture longer than expected
-				const time = this._duration / texturesList.length
-				texturesArray = texturesList.map((texture) => ({ texture, time }))
+				this._stepDuration = this._duration / texturesList.length
+				texturesArray = texturesList.map((texture) => ({ texture, time: this._stepDuration }))
 			}
 
 		}
@@ -102,37 +104,49 @@ export default class SequenceSlice extends Slice {
 
 	// The associated texture can either come from an image or fallback image
 	_getLoadedTexture(resourceInfoArray) {
-		const { resourceManager } = this._player
-		const { id, fragment } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+		const { resourceManager } = this.player
+		const { id, fragment } = this.getRelevantResourceIdAndFragment(resourceInfoArray)
 		const texture = resourceManager.getTextureWithId(id, fragment)
 		return texture
 	}
 
 	play() {
-		if (!this._playableSprite) {
+		if (!this.goToFrameAndPlay) {
 			return
 		}
-		this._playableSprite.gotoAndPlay(0)
+		this.goToFrameAndPlay(0)
+		this._playLoop = setInterval(() => {
+			if (this.isInViewport === true) {
+				this.player.refreshOnce()
+			}
+		}, this._stepDuration)
 	}
 
 	stop() {
-		if (!this._playableSprite) {
+		if (!this.goToFrameAndStop) {
 			return
 		}
-		this._playableSprite.gotoAndStop(0)
+		this.goToFrameAndStop(0)
+		this._destroyPlayLoop()
+	}
+
+	_destroyPlayLoop() {
+		clearInterval(this._playLoop)
+		this._playLoop = null
 	}
 
 	pauseAtPercent(percent) {
-		if (!this._playableSprite || this._nbOfFrames < 1) {
+		if (!this.goToFrameAndStop || this._nbOfFrames < 1) {
 			return
 		}
 		const frameIndex = Math.min(Math.floor(percent * this._nbOfFrames), this._nbOfFrames - 1)
-		this._playableSprite.gotoAndStop(frameIndex)
+		this.goToFrameAndStop(frameIndex)
+		this._destroyPlayLoop()
 	}
 
 	resize() {
-		const { pageNavigator } = this._player
-		const fit = pageNavigator.metadata.forcedFit || this._properties.fit
+		const { pageNavigator } = this.player
+		const fit = pageNavigator.metadata.forcedFit || this.properties.fit
 			|| pageNavigator.metadata.fit
 		super.resize(fit)
 	}
@@ -141,7 +155,7 @@ export default class SequenceSlice extends Slice {
 	_getLoadedIds() {
 		const idsArray = []
 		this._arrayOfResourceInfoArray.forEach((resourceInfoArray) => {
-			const { id } = this._getRelevantResourceIdAndFragment(resourceInfoArray)
+			const { id } = this.getRelevantResourceIdAndFragment(resourceInfoArray)
 			if (id !== null) {
 				idsArray.push(id)
 			}
@@ -152,7 +166,12 @@ export default class SequenceSlice extends Slice {
 	// Used in TextureResource
 	removeTexture() {
 		this.setTexturesArray(null)
-		this._setAsUnloaded()
+		this.setAsUnloaded()
+	}
+
+	destroy() {
+		this._destroyPlayLoop()
+		super.destroy()
 	}
 
 }

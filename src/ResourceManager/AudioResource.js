@@ -22,8 +22,7 @@ export default class AudioResource extends CoreResource {
 		this._hasPlayedOnceInPage = false
 	}
 
-	attemptToLoadAudio(src, doOnAudioLoadSuccess, doOnAudioLoadFail, audioLoadTimeout,
-		allowsParallel, resolve) {
+	attemptToLoadAudio(src, doOnAudioLoadSuccess, audioLoadTimeout, allowsParallel, resolve) {
 
 		this._hasPlayedOnceInPage = false
 
@@ -39,14 +38,8 @@ export default class AudioResource extends CoreResource {
 
 		const doOnLoadFail = () => {
 			this._clear()
-
-			if (this._fallback && doOnAudioLoadFail) {
-				this._loadStatus = -1
-				doOnAudioLoadFail(this._path, this._fallback.path)
-			} else {
-				this._loadStatus = 0
-				resolve()
-			}
+			this.loadStatus = 0
+			resolve()
 		}
 		this._doOnLoadFail = doOnLoadFail
 		audio.addEventListener("error", doOnLoadFail)
@@ -89,7 +82,7 @@ export default class AudioResource extends CoreResource {
 
 		// Deal with volume
 		if (shouldCheckVolume === true) {
-			const { isMuted } = this._player
+			const { isMuted } = this.player
 			this._audio.volume = (isMuted === true) ? 0 : 0.2
 		}
 
@@ -126,7 +119,7 @@ export default class AudioResource extends CoreResource {
 
 	// Once an audio's duration is different from zero, get useful information
 	_doOnDurationChange(doOnAudioLoadSuccess) {
-		if (this._loadStatus === 0) { // If loading was cancelled
+		if (this.loadStatus === 0) { // If loading was cancelled
 			this._clear()
 			return
 		}

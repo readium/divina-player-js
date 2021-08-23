@@ -14,7 +14,7 @@ export default class TextSlice extends Slice {
 
 		const { backgroundColor } = textOptions
 		if (backgroundColor) {
-			this._setBackgroundColor(backgroundColor)
+			this.setBackgroundColor(backgroundColor)
 		}
 
 		this._text = null
@@ -24,7 +24,7 @@ export default class TextSlice extends Slice {
 	resize() {
 		const oldSize = this.size
 		super.resize()
-		this._applySizeClip()
+		this.applySizeClip()
 		if (!this._textElement || (this.hasVariableSize === true // At least one dimension is not fixed
 			&& (this.size.width !== oldSize.width || this.size.height !== oldSize.height))) {
 			this._createAndPositionTextElement()
@@ -44,8 +44,8 @@ export default class TextSlice extends Slice {
 		const { boundingRect } = this._textElement
 		const { width, height } = boundingRect
 		const position = {
-			x: (width - this._width) / 2,
-			y: (height - this._height) / 2,
+			x: (width - this.unscaledSize.width) / 2,
+			y: (height - this.unscaledSize.height) / 2,
 		}
 
 		const { rect, hAlign, vAlign } = this._textOptions
@@ -79,21 +79,21 @@ export default class TextSlice extends Slice {
 			if (hAlign === "center") {
 				position.x = 0
 			} else if (hAlign === "right") {
-				position.x = (this._width - width) / 2
+				position.x = (this.unscaledSize.width - width) / 2
 			}
 			if (vAlign === "center") {
 				position.y = 0
 			} else if (vAlign === "bottom") {
-				position.y = (this._height - height) / 2
+				position.y = (this.unscaledSize.height - height) / 2
 			}
 		}
 
 		// Layer child slices need to be offset
-		if (this._role === "layersChild" && this._parentInfo) {
-			const parentSlice = this._parentInfo.slice
+		if (this.role === "layersChild" && this.parentInfo) {
+			const parentSlice = this.parentInfo.slice
 			const { unscaledSize } = parentSlice
-			position.x -= (this._width / 2) * (unscaledSize.width / this._width - 1)
-			position.y -= (this._height / 2) * (unscaledSize.height / this._height - 1)
+			position.x -= (unscaledSize.width - this.unscaledSize.width) / 2
+			position.x -= (unscaledSize.height - this.unscaledSize.height) / 2
 		}
 
 		this._textElement.setPosition(position)
@@ -109,16 +109,24 @@ export default class TextSlice extends Slice {
 	}
 
 	_getRelevantText(language) {
-		let { text } = this._resourceInfoArray[0]
 		if (!this._resourceInfoArray || this._resourceInfoArray.length < 1) {
-			return text
+			return ""
 		}
+		let { text } = this._resourceInfoArray[0]
 		this._resourceInfoArray.forEach((textVersion) => {
 			if (textVersion.language === language) {
 				text = textVersion.text
 			}
 		})
 		return text
+	}
+
+	getInfo() {
+		if (!this._resourceInfoArray || this._resourceInfoArray.length < 1) {
+			return { href: "", path: "", type: "text/plain" }
+		}
+		const { text } = this._resourceInfoArray[0]
+		return { href: text, path: text, type: "text/plain" }
 	}
 
 	destroy() {

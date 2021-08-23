@@ -27,7 +27,7 @@ export default class Camera {
 	}
 
 	constructor(scene, overflow, hAlign, vAlign, player) {
-		// A scene is just a layerPile (in the divina case, can only be a page)
+		// A scene is just a layerPile (in the Divina case, can only be a page)
 		this._scene = scene
 		this._overflow = overflow
 		this._hAlign = hAlign
@@ -620,15 +620,19 @@ export default class Camera {
 			const segment = segmentLayer.content
 			const { segmentIndex, unscaledSize } = segment
 
+			const { href, type } = segmentLayer.getInfo()
 			let segmentInfo = {
 				segmentIndex,
-				href: segmentLayer.getHref(),
+				href,
+				type,
 				unscaledSize,
+				segment,
 			}
 
 			if (this._distanceToCover) {
 				const coveredDistance = positionInSegmentLine - viewportRect[this._referenceDimension] / 2
-				const progress = Math.min(Math.max(coveredDistance / this._distanceToCover, 0), 1)
+				const progress = coveredDistance / this._distanceToCover
+				// Note that we don't bound progress between 0 and 1 to allow for correct virtual points
 				const { size } = segmentLayer
 				const referenceLength = size[this._referenceDimension]
 				segmentInfo = {
@@ -653,32 +657,31 @@ export default class Camera {
 			const startPosition = this._getStartPosition()
 			this._setPosition(startPosition)
 			const shouldUpdatePosition = true
-			const shouldUpdateVirtualPoint = true
-			this.setProgress(null, shouldUpdatePosition, shouldUpdateVirtualPoint)
+			this.setProgress(null, shouldUpdatePosition)
 
-		} else if (this._virtualPoint) {
-			// Note that progress may indeed have been null before (hence no virtual point yet)
-
-			// Keep virtual point fixed
-
-			const progress = this._getProgressForVirtualPoint(this._virtualPoint)
-
-			const shouldUpdateVirtualPoint = false
+		} else {
+			// Keep virtual point fixed (if there is one, otherwise progress was null before)
+			const progress = (this._virtualPoint)
+				? this._getProgressForVirtualPoint(this._virtualPoint)
+				: 0
 
 			if (this._overflow === "paginated" && this.isAutoScrolling === false) {
 				const shouldUpdatePosition = false
-				this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+				this.setProgress(progress, shouldUpdatePosition)
 				const isTheResultOfADragEnd = false
 				this._moveToClosestSnapPoint(isTheResultOfADragEnd)
 
 			} else {
 				const shouldUpdatePosition = true
-				this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+				this.setProgress(progress, shouldUpdatePosition)
 			}
 		}
 	}
 
 	_getProgressForVirtualPoint(virtualPoint) {
+		if (!virtualPoint) {
+			return 0
+		}
 		const { pageSegmentIndex, percent } = virtualPoint
 		const point = {
 			pageSegmentIndex,
@@ -735,8 +738,7 @@ export default class Camera {
 		}
 		const progress = this._getProgressForPosition(position)
 		const shouldUpdatePosition = false
-		const shouldUpdateVirtualPoint = true // SHOULD BE FALSE EVENTUALLY
-		this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+		this.setProgress(progress, shouldUpdatePosition)
 	}
 
 	_getProgressForPosition(position) {
@@ -759,10 +761,11 @@ export default class Camera {
 	}
 
 	// Position the scene container to conform to the specified progress value
-	setProgress(p = null, shouldUpdatePosition = true, shouldUpdateVirtualPoint = false) {
+	setProgress(p = null, shouldUpdatePosition = true) {
+		const hasProgressChanged = (p !== this._progress)
 		this._progress = p
 
-		if (p !== null && shouldUpdateVirtualPoint === true) {
+		if (p !== null) {
 			this._virtualPoint = this._getVirtualPoint()
 
 			const { pageNavigator } = this._player
@@ -772,18 +775,12 @@ export default class Camera {
 					const { segmentIndex } = this._virtualPoint
 					pageNavigator.updateSegmentLoadTasks(segmentIndex, forceUpdate)
 				} else if (this._segmentsInfoArray.length > 0 && this._segmentsInfoArray[0]) {
-					pageNavigator.updateSegmentLoadTasks(this._segmentsInfoArray[0].segmentIndex, forceUpdate)
+					pageNavigator.updateSegmentLoadTasks(this._segmentsInfoArray[0].segmentIndex,
+						forceUpdate)
 				}
 			}
-		}
 
-		// Process progress animations
-		if (p !== null) {
-			const { segmentIndex = 0 } = this._virtualPoint || {}
-			const locations = { position: segmentIndex, progression: this._progress }
-			const data = { percent: this._progress, locator: { locations, title: "scroll" } }
-			this._eventEmitter.emit("inpagescroll", data)
-
+			// Process progress animations
 			if (this._sliceAnimationsArray) {
 				this._sliceAnimationsArray.forEach((animationData) => {
 					this._playSliceAnimation(animationData)
@@ -794,17 +791,47 @@ export default class Camera {
 					this._playSoundAnimation(soundAnimation)
 				})
 			}
+		} else {
+			this._virtualPoint = null
+		}
+
+		if (hasProgressChanged === true) {
+			const { pageNavigator } = this._player
+			const { pageIndex, nbOfSegments, pageNavType } = pageNavigator
+			let locator = null
+			if (this._virtualPoint) {
+				const {
+					href, type, segmentIndex = 0, percent,
+				} = this._virtualPoint || {}
+				const totalProgression = Math.min((segmentIndex + 1 + percent) / nbOfSegments, 1)
+				const locations = {
+					position: pageIndex || 0,
+					progression: this._progress,
+					totalProgression,
+				}
+				locator = {
+					href, type, locations, text: pageNavType,
+				}
+			} else {
+				locator = pageNavigator.getLocator()
+			}
+			const data = { locator }
+			this._eventEmitter.emit("inpagescroll", data)
 		}
 
 		if (shouldUpdatePosition === false) {
+			if (hasProgressChanged === true) {
+				this._player.refreshOnce()
+			}
 			return
 		}
 
 		if (p === null) {
 			const startPosition = this._getStartPosition()
 			this._setPosition(startPosition)
+			this._player.refreshOnce()
 
-		} else {
+		} else if (hasProgressChanged === true || this._progress === 0 || this._progress === 1) {
 			let position = this._currentPosition
 			if (this._inScrollDirection === "ltr") {
 				position = {
@@ -828,6 +855,7 @@ export default class Camera {
 				}
 			}
 			this._setPosition(position)
+			this._player.refreshOnce()
 		}
 	}
 
@@ -852,20 +880,22 @@ export default class Camera {
 		const previousValue = keyframesArray[i].value
 
 		if (i === keyframesArray.length - 1) {
-			const { value } = keyframesArray[i]
+			const value = previousValue
 			slice.setVariable(variable, value)
 
 		} else if (keyframesArray[i + 1].progress !== null) {
 			const nextProgress = keyframesArray[i + 1].progress
 			const nextValue = keyframesArray[i + 1].value
-
-			let value = nextValue
-			if (nextProgress !== previousProgress) { // Linear easing is assumed
-				value = (this._progress - previousProgress) / (nextProgress - previousProgress)
-				value *= (nextValue - previousValue)
-				value += previousValue
+			if (nextValue !== previousValue) {
+				let value = nextValue
+				if (nextProgress !== previousProgress) { // Linear easing is assumed
+					value = (this._progress - previousProgress) / (nextProgress - previousProgress)
+					value *= (nextValue - previousValue)
+					value += previousValue
+				}
+				slice.setVariable(variable, value)
 			}
-			slice.setVariable(variable, value)
+
 		}
 	}
 
@@ -893,15 +923,37 @@ export default class Camera {
 			return null
 		}
 
-		let i = 1
+		let indexOfFirstSegmentInViewport = null
+		let indexOfSegmentAtCenterOfViewport = null
+		let indexOfLastSegmentInViewport = 1
 		let segmentInfo = this._segmentsInfoArray[1]
-		while (i < this._segmentsInfoArray.length
-			&& segmentInfo.progress <= this._progress) { // No this._possibleError taken into account here
-			i += 1
-			segmentInfo = this._segmentsInfoArray[i]
-		}
+		const halfViewportProgress = this._paginationProgressStep / 2
 
-		const { positionInSegmentLine, length, href } = this._segmentsInfoArray[i - 1]
+		while (indexOfLastSegmentInViewport < this._segmentsInfoArray.length
+			&& segmentInfo.progress <= this._progress + halfViewportProgress) {
+			// Note that this._possibleError is not taken into account here
+			if (indexOfFirstSegmentInViewport === null
+				&& segmentInfo.progress > this._progress - halfViewportProgress) {
+				indexOfFirstSegmentInViewport = indexOfLastSegmentInViewport
+			}
+			if (indexOfSegmentAtCenterOfViewport === null
+				&& segmentInfo.progress > this._progress) {
+				indexOfSegmentAtCenterOfViewport = indexOfLastSegmentInViewport
+			}
+			indexOfLastSegmentInViewport += 1
+			segmentInfo = this._segmentsInfoArray[indexOfLastSegmentInViewport]
+		}
+		indexOfLastSegmentInViewport -= 1
+		indexOfSegmentAtCenterOfViewport = (indexOfSegmentAtCenterOfViewport === null)
+			? indexOfLastSegmentInViewport
+			: indexOfSegmentAtCenterOfViewport - 1
+		indexOfFirstSegmentInViewport = (indexOfFirstSegmentInViewport === null)
+			? indexOfLastSegmentInViewport
+			: indexOfFirstSegmentInViewport - 1
+
+		const {
+			positionInSegmentLine, length, href, type,
+		} = this._segmentsInfoArray[indexOfSegmentAtCenterOfViewport]
 		const { viewportRect } = this._player
 		const viewportLength = viewportRect[this._referenceDimension]
 
@@ -909,13 +961,21 @@ export default class Camera {
 		let percent = (coveredDistance - positionInSegmentLine + viewportLength / 2) / length
 		percent = Math.min(Math.max(percent, 0), 1)
 
-		const { segmentIndex } = this._segmentsInfoArray[i - 1]
+		const { segmentIndex } = this._segmentsInfoArray[indexOfSegmentAtCenterOfViewport]
 		const virtualPoint = {
 			segmentIndex,
-			pageSegmentIndex: i - 1,
+			pageSegmentIndex: indexOfSegmentAtCenterOfViewport,
 			href,
-			percent, // percent in segment
+			type,
+			percent, // percent in segment (not in page!)
+			indexOfFirstSegmentInViewport,
+			indexOfLastSegmentInViewport,
 		}
+
+		this._segmentsInfoArray.forEach(({ segment }, k) => {
+			const isVisible = (k >= indexOfFirstSegmentInViewport && k <= indexOfLastSegmentInViewport)
+			segment.setIsInViewport(isVisible)
+		})
 
 		return virtualPoint
 	}
@@ -925,8 +985,7 @@ export default class Camera {
 			return
 		}
 		const shouldUpdatePosition = true
-		const shouldUpdateVirtualPoint = true
-		this.setProgress(percent, shouldUpdatePosition, shouldUpdateVirtualPoint)
+		this.setProgress(percent, shouldUpdatePosition)
 	}
 
 	_moveToClosestSnapPoint(isTheResultOfADragEnd = true) {
@@ -972,8 +1031,7 @@ export default class Camera {
 
 		} else { // Move instantly
 			const shouldUpdatePosition = true
-			const shouldUpdateVirtualPoint = true
-			this.setProgress(targetProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+			this.setProgress(targetProgress, shouldUpdatePosition)
 		}
 		this._lastNonTemporaryProgress = null
 	}
@@ -1252,10 +1310,9 @@ export default class Camera {
 		const percent = (Date.now() - startDate) / (duration || 1)
 
 		const shouldUpdatePosition = true
-		const shouldUpdateVirtualPoint = true
 
 		if (duration === 0 || percent >= 1 || shouldForceToEnd === true) {
-			this.setProgress(targetProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+			this.setProgress(targetProgress, shouldUpdatePosition)
 			this._reset()
 			if (endCallback) {
 				endCallback()
@@ -1264,7 +1321,7 @@ export default class Camera {
 		} else {
 			let forcedProgress = startProgress + (targetProgress - startProgress) * percent
 			forcedProgress = Math.min(Math.max(forcedProgress, 0), 1)
-			this.setProgress(forcedProgress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+			this.setProgress(forcedProgress, shouldUpdatePosition)
 			requestAnimationFrame(this._autoProgress.bind(this))
 		}
 	}
@@ -1367,8 +1424,7 @@ export default class Camera {
 		if (pageSegmentIndex !== null && this._progress !== null) {
 			const progress = this._getProgressForSegmentIndex(pageSegmentIndex)
 			const shouldUpdatePosition = true
-			const shouldUpdateVirtualPoint = true
-			this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+			this.setProgress(progress, shouldUpdatePosition)
 
 		// Otherwise just go to the start or end of the scene
 		} else {
@@ -1398,8 +1454,7 @@ export default class Camera {
 		this._reset()
 		const progress = (isGoingForward === true) ? 0 : 1
 		const shouldUpdatePosition = true
-		const shouldUpdateVirtualPoint = true
-		this.setProgress(progress, shouldUpdatePosition, shouldUpdateVirtualPoint)
+		this.setProgress(progress, shouldUpdatePosition)
 
 		if (isGoingForward === true) {
 			this._signedPercent = 0

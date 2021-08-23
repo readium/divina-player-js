@@ -117,7 +117,7 @@ let createBottomBar = function (menuAndPlayerObject) {
 		pageTextDiv = createAndAddDivElement(bottomBar, { class: "bottom-bar-text" });
 
 		window.document.addEventListener("pagechange", function (e) {
-			let pageIndex = e.detail.pageIndex;
+			let pageIndex = e.detail.locator.locations.position;
 			let nbOfPages = e.detail.nbOfPages;
 			let text = String(pageIndex + 1) + " / " + String(nbOfPages);
 			pageTextDiv.innerHTML = text;
@@ -192,7 +192,10 @@ let createBottomBar = function (menuAndPlayerObject) {
 				slider.style.visibility = "hidden";
 			} else {
 				slider.style.visibility = "visible";
-				var percent = detail.percent || 0 
+				var percent = (detail.locator && detail.locator.locations
+					&& detail.locator.locations.progression)
+					? detail.locator.locations.progression
+					: 0
 				if (readingProgression === "rtl") {
 					percent = 1 - percent;
 				}

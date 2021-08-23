@@ -42,9 +42,19 @@ export default class TextureElement extends Container {
 	}
 
 	// Used in TextSlice and TextElement
-	get unscaledSize() {
-		return { width: this._width, height: this._height }
-	}
+	get unscaledSize() { return { width: this._width, height: this._height } }
+
+	// Used in Slice and LoadingAnimation
+	get isInViewport() { return this._isInViewport }
+
+	// Used in Slice and SequenceSlice
+	get player() { return this._player }
+
+	// Used in Slice and TextSlice
+
+	get role() { return this._role }
+
+	get parentInfo() { return this._parentInfo }
 
 	constructor(role, player, parentInfo = null) {
 		super()
@@ -59,6 +69,9 @@ export default class TextureElement extends Container {
 		this._sprite.anchor.set(0.5)
 		this._pixiContainer.addChild(this._sprite)
 
+		this._isInViewport = false
+		this._sprite.visible = false
+
 		this._playableSprite = null
 		this._namePrefix = null
 
@@ -66,7 +79,10 @@ export default class TextureElement extends Container {
 		this._height = 1
 		this._scale = 1
 
+		this._fit = null
 		this._clipped = false
+
+		this._neighbor = null
 
 		this._duration = 0
 
@@ -82,23 +98,22 @@ export default class TextureElement extends Container {
 		this._neighbor = neighborSlice
 	}
 
-	_addAndStartLoadingAnimation() {
+	addAndStartLoadingAnimation() {
 		if (this._loadingAnimation) {
 			return
 		}
-		this._loadingAnimation = new LoadingAnimation(this._pixiContainer, this._scale, this._player,
-			this._name)
+		this._loadingAnimation = new LoadingAnimation(this, this._scale, this._player)
 		this._loadingAnimation.addAndStart()
 	}
 
-	_stopAndRemoveLoadingAnimation() {
+	stopAndRemoveLoadingAnimation() {
 		if (!this._loadingAnimation) {
 			return
 		}
 		this._loadingAnimation.stopAndRemove()
 	}
 
-	_setSize(size) {
+	setSize(size) {
 		const { width, height } = size
 
 		// Canvases cannot draw content less than 1 pixel wide and high
@@ -114,25 +129,25 @@ export default class TextureElement extends Container {
 		}
 	}
 
-	_assignDummyTexture() {
-		this._setTexture(null)
+	assignDummyTexture() {
+		this.setTexture(null)
 	}
 
-	_setTexture(texture) {
+	setTexture(texture) {
 		// No need to add a texture to a parent slice
 		if (this._role === "layersParent") {
 			return
 		}
 		this._texture = texture
 		if (!texture) {
-			this._setBackgroundColor(constants.DEFAULT_DUMMY_COLOR)
+			this.setBackgroundColor(constants.DEFAULT_DUMMY_COLOR)
 		} else {
 			this._sprite.texture = texture.pixiTexture
 			this._setTint(0xFFFFFF)
 		}
 	}
 
-	_setBackgroundColor(color) {
+	setBackgroundColor(color) {
 		this._sprite.texture = PixiTexture.WHITE
 		const tint = Utils.convertColorStringToNumber(color)
 		this._setTint(tint)
@@ -143,14 +158,16 @@ export default class TextureElement extends Container {
 	}
 
 	// Used in Slice
-	_setVideoTexture(videoTexture) {
+	setVideoTexture(videoTexture) {
 		this._sprite.texture = null
 
 		if (this._playableSprite) {
-			this._pixiContainer.removeChild(this._playableSprite)
+			this.pixiContainer.removeChild(this._playableSprite)
 		}
 		this._playableSprite = PixiSprite.from(videoTexture.pixiTexture)
 		this._addPlayableSprite()
+
+		this._playableSprite.visible = this._isInViewport
 
 		this._playableSprite.position = this._sprite.position
 	}
@@ -163,15 +180,15 @@ export default class TextureElement extends Container {
 		this._playableSprite.anchor.set(0.5)
 
 		// Since a playableSprite for a SequenceSlice has a different way of computing size,
-		// the dimensions are applied for a video playableSprite only via _setVideoTexture
+		// the dimensions are applied for a video playableSprite only via setVideoTexture
 
-		const spriteName = `${this._name}PlayableSprite`
+		const spriteName = `${this.name}PlayableSprite`
 		this._playableSprite.name = spriteName
 
-		this._pixiContainer.addChild(this._playableSprite)
+		this.pixiContainer.addChild(this._playableSprite)
 
-		if (this._maskingPixiContainer) {
-			this._pixiContainer.addChild(this._maskingPixiContainer)
+		if (this.maskingPixiContainer) {
+			this.pixiContainer.addChild(this._maskingPixiContainer)
 		}
 	}
 
@@ -182,7 +199,7 @@ export default class TextureElement extends Container {
 		// PixiJS does not allow for a direct assignement (playableSprite.textures = texturesArray),
 		// so remove the sequence sprite before recreating it
 		if (this._playableSprite) {
-			this._pixiContainer.removeChild(this._playableSprite)
+			this.pixiContainer.removeChild(this._playableSprite)
 		}
 		if (!texturesArray || texturesArray.length === 0) {
 			return
@@ -194,11 +211,11 @@ export default class TextureElement extends Container {
 		this._addPlayableSprite()
 	}
 
-	_unsetVideoTexture() {
+	unsetVideoTexture() {
 		if (!this._playableSprite) {
 			return
 		}
-		this._pixiContainer.removeChild(this._playableSprite)
+		this.pixiContainer.removeChild(this._playableSprite)
 		this._playableSprite.texture = null
 	}
 
@@ -208,7 +225,7 @@ export default class TextureElement extends Container {
 		super.setParent(parent)
 
 		// Keep the existing name for a transition slice
-		if (!parent || (this._name && this._role === "transition")) {
+		if (!parent || (this.name && this._role === "transition")) {
 			return
 		}
 
@@ -221,10 +238,11 @@ export default class TextureElement extends Container {
 		}
 		this._sprite.name = `${name}Sprite`
 		const suffix = "Slice"
-		this._setName(name, suffix)
+		this.setName(name, suffix)
 	}
 
 	resize(fit, clipped) {
+		this._fit = fit
 		this._clipped = clipped
 
 		this._applyFit(fit)
@@ -244,8 +262,8 @@ export default class TextureElement extends Container {
 			if (this._playableSprite) {
 				this._playableSprite.position = this._sprite.position
 			}
-			if (this._maskingPixiContainer) {
-				this._maskingPixiContainer.position = this._sprite.position
+			if (this.maskingPixiContainer) {
+				this.maskingPixiContainer.position = this._sprite.position
 			}
 		}
 
@@ -302,8 +320,8 @@ export default class TextureElement extends Container {
 		if (this._role === "layersParent") {
 			if (this._scale !== scale) { // So as not to trigger an infinite loop
 				this.setScale(scale)
-				if (this._parent) {
-					this._parent.resizePage()
+				if (this.parent) {
+					this.parent.resizePage()
 				}
 			}
 		} else {
@@ -334,20 +352,54 @@ export default class TextureElement extends Container {
 
 	// Size the clipping mask based on viewport size if the resource needs to be clipped
 	_applyClip() {
-		if (!this._maskingPixiContainer) {
-			this.addMask()
-		}
 		const { viewportRect } = this._player
 		const { width, height } = viewportRect
+		// Only add a mask if it's absolutely necessary (since masks do have a cost in performance)
+		if (this._fit === "contain"
+			|| (this._width / this._height) <= ((width + constants.POSSIBLE_PIXEL_ERROR) / height)) {
+			return
+		}
+		if (!this.maskingPixiContainer) {
+			this.addMask()
+		}
+
 		this.setMaskRect((-width / this._scale) / 2, (-height / this._scale) / 2,
 			width / this._scale, height / this._scale)
 	}
 
-	_applySizeClip() {
-		if (!this._maskingPixiContainer) {
+	// Used in TextSlice
+	applySizeClip() {
+		if (!this.maskingPixiContainer) {
 			this.addMask()
 		}
 		this.setMaskRect(-this._width / 2, -this._height / 2, this._width, this._height)
+	}
+
+	// Used in Layer
+	setIsInViewport(isInViewport) {
+		if (isInViewport !== this._isInViewport) {
+			this._sprite.visible = isInViewport
+			if (this._playableSprite) {
+				this._playableSprite.visible = isInViewport
+			}
+		}
+		this._isInViewport = isInViewport
+	}
+
+	// Used in SequenceSlice
+
+	goToFrameAndPlay(frameIndex) {
+		if (!this._playableSprite) {
+			return
+		}
+		this._playableSprite.gotoAndPlay(frameIndex)
+	}
+
+	goToFrameAndStop(frameIndex) {
+		if (!this._playableSprite) {
+			return
+		}
+		this._playableSprite.gotoAndStop(frameIndex)
 	}
 
 	// Used in Slice on final destroy
