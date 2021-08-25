@@ -61,7 +61,7 @@
 		// of the form { position, progression, totalProgression }, where position is the page index
 		// (and progression is the percent in the page, which is only defined for an overflowing page)
 		let locator = null;
-		
+
 		// Options for the Divina Player
 		let options = {
 			maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
@@ -189,8 +189,6 @@
 				let eventEmitter = menuAndPlayerObject.player.eventEmitter;
 				let dispatchCustomEvent = function (event, data) {
 					//console.log(event, data);
-					//if (event == "inpagescroll" || event == "pagechange")
-						//console.log(event, data.locator)
 					var event = new CustomEvent(event, { detail: data });
 					window.document.dispatchEvent(event);
 				}
