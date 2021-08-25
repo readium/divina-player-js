@@ -106,6 +106,9 @@ export default class Player {
 	}
 
 	refreshOnce() {
+		if (!this._renderer) {
+			return
+		}
 		this._renderer.refreshOnce()
 	}
 
@@ -516,8 +519,10 @@ export default class Player {
 
 		let { href } = locator
 		const { locations, text } = locator
-		const readingMode = pageNavType || text
-			|| (locations && locations.progression !== undefined) ? "scroll" : "single"
+		let readingMode = pageNavType || text
+		if (!readingMode) {
+			readingMode = (locations && locations.progression !== undefined) ? "scroll" : "single"
+		}
 		if (this._resourceManager.haveFirstResourcesLoaded === true && oldPageNavigator) {
 			href = oldPageNavigator.getCurrentHref()
 		}

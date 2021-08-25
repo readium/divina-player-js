@@ -1,7 +1,8 @@
 {
     "@context": "http://readium.org/webpub-manifest/context.jsonld",
-    "@type": "https://schema.org/VisualArtwork",
     "metadata": {
+        "@type": "https://schema.org/ComicStory",
+        "conformsTo": "https://readium.org/webpub-manifest/profiles/divina",
         "identifier": "turbomedia2",
         "title": "Turbomedia 2",
         "readingProgression": "ltr",
