@@ -4,8 +4,14 @@ import OverflowHandler from "./OverflowHandler"
 
 export default class LayerPile extends Container {
 
-	// Used in PageNavigator and below
+	// Used in Slideshow, PageNavigator and below
 	get layersArray() { return this._layersArray }
+
+	// Used in Page
+	get handler() { return this._handler }
+
+	// Used in Page and Layer
+	get loadStatus() { return this._loadStatus }
 
 	// Used below
 
@@ -43,21 +49,15 @@ export default class LayerPile extends Container {
 		return { width: 0, height: 0 }
 	}
 
-	// Used in Layer
-	get loadStatus() { return this._loadStatus }
-
 	constructor(type, name, parent = null, layersArray = [], isFirstSliceAParentSlice = false) {
 		super(type, name, parent)
-
-		this._name = name
-		this._parent = parent
 
 		// Build layers
 		this._layersArray = []
 		// Note that the parent slice is added too, although its texture will be hidden
 		if (layersArray) {
 			layersArray.forEach((layer) => {
-				this._addLayer(layer)
+				this.addLayer(layer)
 				layer.setParent(this)
 			})
 		}
@@ -72,15 +72,11 @@ export default class LayerPile extends Container {
 		this._handler = null
 	}
 
-	_addLayer(layer) {
+	addLayer(layer) {
 		this._layersArray.push(layer)
 	}
 
-	getDepthOfNewLayer() {
-		return this._depth
-	}
-
-	_addStateHandler(shouldStateLayersCoexistOutsideTransitions, player) {
+	addStateHandler(shouldStateLayersCoexistOutsideTransitions, player) {
 		this._handler = new StateHandler(this, shouldStateLayersCoexistOutsideTransitions,
 			player)
 	}
@@ -96,6 +92,11 @@ export default class LayerPile extends Container {
 		}
 		const layer = this._layersArray[layerIndex]
 		return layer
+	}
+
+	// Used in StateHandler
+	getDepthOfNewLayer() {
+		return this._layersArray.length
 	}
 
 	// Following a discontinuous gesture
@@ -234,6 +235,12 @@ export default class LayerPile extends Container {
 		}
 	}
 
+	setIsInViewport(isInViewport) {
+		this._layersArray.forEach((layer) => {
+			layer.setIsInViewport(isInViewport)
+		})
+	}
+
 	getResourceIdsToLoad(recursive, force) {
 		const resourceIdsArray = []
 		this._layersArray.forEach((layer) => {
@@ -248,20 +255,20 @@ export default class LayerPile extends Container {
 	}
 
 	// Used in Layer (in a Segment, the first layer only will be considered)
-	getHref() {
-		if (this._layersArray.length < 1 || !this._layersArray[0].getHref) {
+	getInfo() {
+		if (this._layersArray.length < 1 || !this._layersArray[0].getInfo) {
 			return null
 		}
-		return this._layersArray[0].getHref()
+		return this._layersArray[0].getInfo()
 	}
 
 	// Slice functions
 
 	resizePage() {
-		if (!this._parent || !this._parent.resizePage) {
+		if (!this.parent || !this.parent.resizePage) {
 			return
 		}
-		this._parent.resizePage()
+		this.parent.resizePage()
 	}
 
 	updateLoadStatus() {
@@ -301,9 +308,8 @@ export default class LayerPile extends Container {
 			this._loadStatus = 0
 		}
 
-		if (this._loadStatus !== oldLoadStatus && this._parent
-			&& this._parent.updateLoadStatus) {
-			this._parent.updateLoadStatus()
+		if (this._loadStatus !== oldLoadStatus && this.parent && this.parent.updateLoadStatus) {
+			this.parent.updateLoadStatus()
 		}
 	}
 

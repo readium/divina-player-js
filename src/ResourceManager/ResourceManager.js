@@ -134,10 +134,10 @@ export default class ResourceManager {
 	_buildAsyncTaskQueue(priorityFactor) {
 		const { slices } = this._player
 		const nbOfSlices = Object.keys(slices).length
-		const maxPriority = this._maxNbOfUnitsToLoadAfter || nbOfSlices // i.e. if _maxNbOfUnitsToLoadAfter explicitly null, nbOfSlices, otherwise
+		const maxPriority = this._maxNbOfUnitsToLoadAfter || nbOfSlices
 
-		this._taskQueue = new ResourceLoadTaskQueue(this._loadingMode, maxPriority, this._allowsParallel,
-			priorityFactor)
+		this._taskQueue = new ResourceLoadTaskQueue(this._loadingMode, maxPriority,
+			this._allowsParallel, priorityFactor)
 	}
 
 	setDoWithLoadPercentChange(doWithLoadPercentChange) {
@@ -163,7 +163,7 @@ export default class ResourceManager {
 		this._taskQueue.updatePriorities(targetPageIndex, targetSegmentIndex)
 	}
 
-	// Used in PageNavigator (idsArray.length=1 except for a sequence)
+	// Used in PageNavigator (sliceResourceDataArray.length=1 except for a sequence)
 	loadResources(sliceResourceDataArray, pageIndex, segmentIndex) {
 		let taskId = null
 
@@ -269,9 +269,8 @@ export default class ResourceManager {
 				const doOnAudioLoadSuccess = (data) => {
 					this._acknowledgeResourceHandling([data], resolve)
 				}
-				const doOnAudioLoadFail = null
-				firstResource.attemptToLoadAudio(src, doOnAudioLoadSuccess, doOnAudioLoadFail,
-					this._videoLoadTimeout, this._allowsParallel, resolve)
+				firstResource.attemptToLoadAudio(src, doOnAudioLoadSuccess, this._videoLoadTimeout,
+					this._allowsParallel, resolve)
 
 			} else if (firstResource.type === "video") {
 				const doOnVideoLoadSuccess = (resolve2, textureData) => {

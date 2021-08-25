@@ -1,18 +1,18 @@
 // General
 export const DEFAULT_MANIFEST_FILENAME = "manifest.json" // Title of the JSON file in a Divina folder
-export const POSSIBLE_TAG_NAMES = ["language"] // List of allowed tags ("type" can also have variations) // IF YOU ADD ANY, WILL NEED TO BE ADDED TO SLICERESOURCE (props and getters) TOO, for SLICERESOURCE!!!
-export const DEFAULT_BACKGROUND_COLOR = "#000000" // Black, to ensure the loading message is visible
+export const POSSIBLE_TAG_NAMES = ["language"] // List of allowed tags (note that "type" can also have variations)
 export const DEFAULT_DUMMY_COLOR = "#333333" // Dark gray
 
 // Loading message
-export const DEFAULT_LOADING_MESSAGE = "Loading"
-export const TEXT_FONT_FAMILY = "Arial"
-export const TEXT_FONT_SIZE = 24
-export const TEXT_FILL_COLOR = "#FFFFFF" // White, to ensure the message is visible
-export const WORD_WRAP_WIDTH = 275 // Maximum line width
+export const LOADING_FILL_COLOR = "#FFFFFF" // White
+export const LOADING_FONT_FAMILY = "Arial"
+export const LOADING_FONT_SIZE = { value: 30, unit: "px" } // Do not use the "%" unit here
 
-// Resources
-// export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used
+// Text and resources
+export const MAX_FONT_SIZE = 1000 // In pixels (also, percent values cannot be larger than 100%)
+export const MAX_LETTER_SPACING = 1000
+export const DEFAULT_MIME_TYPE = "image/png"
+// export const ACCEPTED_IMAGE_EXTENSIONS = ["png", "jpg"] // Not used (see utils.js)
 export const ACCEPTED_VIDEO_EXTENSIONS = ["mp4"]
 
 // Loading parameters
@@ -34,6 +34,10 @@ export const DEFAULT_DURATION = 250 // In milliseconds (used for transitions and
 export const POSSIBLE_PIXEL_ERROR = 0.5 // Margin of error for pixel computations
 
 export const ACCEPTED_VALUES = {
+	loadingMessage: {
+		type: "string",
+		defaultValue: "Loading",
+	},
 	loadingMode: {
 		type: "string",
 		allowed: ["page", "segment"],
@@ -126,6 +130,18 @@ export const ACCEPTED_VALUES = {
 		allowed: ["left", "center", "right"],
 		defaultValue: "center",
 	},
+	duration: {
+		type: "strictlyPositiveNumber",
+		defaultValue: DEFAULT_DURATION,
+	},
+	positive: {
+		type: "positiveNumber",
+		defaultValue: 0,
+	},
+	strictlyPositive: {
+		type: "strictlyPositiveNumber",
+		// No defaultValue
+	},
 	looping: {
 		type: "boolean",
 		defaultValue: false,
@@ -158,6 +174,31 @@ export const ACCEPTED_VALUES = {
 		type: "string",
 		allowed: ["alpha", "x", "y", "scale", "rotation"],
 		// No default value!
+	},
+	backgroundColor: {
+		type: "color",
+		defaultValue: "#000000", // Black
+	},
+	fillColor: {
+		type: "color",
+		defaultValue: "#000000", // Black
+	},
+	fontFamily: {
+		type: "string",
+		// No allowed array means that all values are allowed!
+		defaultValue: "Arial",
+	},
+	fontSize: {
+		type: "value&Unit",
+		defaultValue: { value: 20, unit: "%" },
+	},
+	lineHeight: {
+		type: "value&Unit",
+		// No default value (though should be "28px" for a "24px" Arial)
+	},
+	letterSpacing: {
+		type: "number",
+		defaultValue: 0,
 	},
 }
 

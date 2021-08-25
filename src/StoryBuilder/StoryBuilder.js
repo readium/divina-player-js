@@ -65,8 +65,6 @@ export default class StoryBuilder {
 		const { pagesDataArray } = pageNavData
 		const { overflow, hAlign, vAlign } = metadata
 
-		const isADoublePage = (pageNavType === "double")
-
 		const pagesArray = []
 		let segmentIndex = 0
 
@@ -79,7 +77,7 @@ export default class StoryBuilder {
 			const actualHAlign = pageData.hAlign || hAlign
 			const actualVAlign = pageData.vAlign || vAlign
 
-			const page = new Page(i, isADoublePage, overflow, actualHAlign, actualVAlign, player)
+			const page = new Page(i, overflow, actualHAlign, actualVAlign, player)
 
 			const { segmentsDataArray } = pageData
 			segmentsDataArray.forEach((segmentData, j) => {
@@ -160,7 +158,7 @@ export default class StoryBuilder {
 						})
 					}
 
-					const segment = new Segment(0, segmentIndex, page, sliceLayersArray, player)
+					const segment = new Segment(j, segmentIndex, page, sliceLayersArray, player)
 					page.addSegment(segment)
 
 					if (soundAnimationsArray) { // Non-global sounds are linked to a page

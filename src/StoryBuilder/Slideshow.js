@@ -14,7 +14,7 @@ export default class Slideshow extends PageNavigator {
 	_setDirection(direction) {
 		this._direction = direction
 
-		this._layersArray.forEach((layer) => {
+		this.layersArray.forEach((layer) => {
 			const page = layer.content
 			page.setInScrollDirection(direction)
 
@@ -64,28 +64,35 @@ export default class Slideshow extends PageNavigator {
 				targetPageIndex = this.nbOfPages - 1
 				targetPageSegmentIndex = this.getLastPageSegmentIndexForPage(targetPageIndex)
 			}
-			if (targetPageIndex !== null) {
+			if (targetPageIndex >= 0) {
 				let targetSegmentIndex = this.getIndexOfFirstSegmentInPage(targetPageIndex)
 				targetSegmentIndex += targetPageSegmentIndex
-				this.updateLoadTasks(targetSegmentIndex)
+				this.updateLoadTasks(targetPageIndex, targetSegmentIndex)
 
 				const shouldSkipTransition = true
-				this.goToPageWithIndex(targetPageIndex, targetPageSegmentIndex, shouldSkipTransition)
+				const progress = ((way === "right" && this._direction === "ltr")
+					|| (way === "left" && this._direction === "rtl")
+					|| (way === "down" && this._direction === "ttb")
+					|| (way === "up" && this._direction === "btt"))
+					? 1
+					: 0
+				this.goToPageWithIndex(targetPageIndex, targetPageSegmentIndex, progress,
+					shouldSkipTransition)
 			}
 
 		} else {
 			switch (way) {
 			case "right":
-				this._interactionManager.goRight()
+				this.interactionManager.goRight()
 				break
 			case "left":
-				this._interactionManager.goLeft()
+				this.interactionManager.goLeft()
 				break
 			case "down":
-				this._interactionManager.goDown()
+				this.interactionManager.goDown()
 				break
 			case "up":
-				this._interactionManager.goUp()
+				this.interactionManager.goUp()
 				break
 			default:
 				break

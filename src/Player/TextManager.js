@@ -1,13 +1,28 @@
 import { TextElement, Container } from "../Renderer"
 
+import * as Utils from "../utils"
 import * as constants from "../constants"
+
+const {
+	LOADING_FILL_COLOR,
+	LOADING_FONT_FAMILY,
+	LOADING_FONT_SIZE,
+} = constants
 
 export default class TextManager extends Container {
 
-	constructor(mainContainer) {
+	constructor(mainContainer, player) {
 		super("textManager", "textManager", mainContainer)
 
-		this._textElement = new TextElement("textElement", this)
+		this._player = player
+
+		const textOptions = {
+			fillColor: LOADING_FILL_COLOR,
+			fontFamily: LOADING_FONT_FAMILY,
+			fontSize: LOADING_FONT_SIZE,
+			hAlign: "center",
+		}
+		this._textElement = new TextElement("loadingText", this, textOptions)
 	}
 
 	showMessage(message) { // Where message should be = { type, data }
@@ -17,11 +32,12 @@ export default class TextManager extends Container {
 		}
 
 		// Write full text based on message type
-		const { type, data } = message
-		let text = null
+		const { type, data, loadingMessage } = message
+		const shouldReturnDefaultValue = true
+		let text = Utils.returnValidValue("loadingMessage", loadingMessage, shouldReturnDefaultValue)
 		switch (type) {
 		case "loading":
-			text = `${constants.DEFAULT_LOADING_MESSAGE}... ${data}%`
+			text += `... ${data}%`
 			break
 		case "error":
 			text = `ERROR!\n${data}`
@@ -34,6 +50,9 @@ export default class TextManager extends Container {
 			return
 		}
 		this._textElement.setText(text)
+
+		// Refresh display
+		this._player.refreshOnce()
 	}
 
 	destroy() {

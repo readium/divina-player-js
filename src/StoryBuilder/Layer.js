@@ -117,10 +117,18 @@ export default class Layer {
 
 	setupForEntry(isGoingForward) {
 		this._isActive = true
+		this.setIsInViewport(true)
 		if (!this._content) {
 			return
 		}
 		this._content.setupForEntry(isGoingForward)
+	}
+
+	setIsInViewport(isInViewport) {
+		if (!this._content) {
+			return
+		}
+		this._content.setIsInViewport(isInViewport)
 	}
 
 	finalizeEntry() {
@@ -132,6 +140,7 @@ export default class Layer {
 
 	finalizeExit() {
 		this._isActive = false
+		this.setIsInViewport(false)
 		if (!this._content) {
 			return
 		}
@@ -217,11 +226,11 @@ export default class Layer {
 	}
 
 	// Used in Camera for virtual points
-	getHref() {
-		if (!this._content || !this._content.getHref) {
+	getInfo() {
+		if (!this._content || !this._content.getInfo) {
 			return null
 		}
-		return this._content.getHref()
+		return this._content.getInfo()
 	}
 
 }

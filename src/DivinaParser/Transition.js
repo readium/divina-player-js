@@ -6,7 +6,7 @@ import * as constants from "../constants"
 
 export default class Transition {
 
-	static createTransition(transition, player) {
+	static createTransition(transition, player, textOptions) {
 		const {
 			type, duration, direction, file, sequence,
 		} = transition || {}
@@ -20,7 +20,7 @@ export default class Transition {
 
 		const actualTransition = { type: actualType }
 
-		const actualDuration = Utils.returnValidValue("positive", duration, shouldReturnDefaultValue)
+		const actualDuration = Utils.returnValidValue("duration", duration, shouldReturnDefaultValue)
 		if (actualDuration) {
 			actualTransition.duration = actualDuration
 		}
@@ -45,7 +45,7 @@ export default class Transition {
 				}
 				const parentInfo = null
 				const forcedRole = "transition"
-				const linkObject = new LinkObject(fullObject, player, parentInfo, forcedRole)
+				const linkObject = new LinkObject(fullObject, player, textOptions, parentInfo, forcedRole)
 				const { slice } = linkObject
 				actualTransition.slice = slice
 
@@ -66,10 +66,12 @@ export default class Transition {
 				}
 
 				shouldReturnDefaultValue = true
-				sliceProperties.duration = Utils.returnValidValue("positive", duration,
+				sliceProperties.duration = Utils.returnValidValue("duration", duration,
 					shouldReturnDefaultValue)
 
-				const slice = new SequenceSlice(arrayOfResourceInfoArray, sliceProperties, player)
+				const resourceInfoArray = []
+				const slice = new SequenceSlice(resourceInfoArray, arrayOfResourceInfoArray,
+					sliceProperties, player)
 				actualTransition.slice = slice
 			} else {
 				return null
@@ -145,7 +147,7 @@ export default class Transition {
 			return null
 		}
 
-		const actualDuration = Utils.returnValidValue("positive", duration, shouldReturnDefaultValue)
+		const actualDuration = Utils.returnValidValue("duration", duration, shouldReturnDefaultValue)
 
 		const actualEntryOrExit = {
 			type: actualType,

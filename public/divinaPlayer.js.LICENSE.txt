@@ -252,6 +252,8 @@ and limitations under the License.
 
 /*! ./LoadingAnimation */
 
+/*! ./Loop */
+
 /*! ./OverflowHandler */
 
 /*! ./Page */
@@ -286,9 +288,13 @@ and limitations under the License.
 
 /*! ./Task */
 
+/*! ./TextBlock */
+
 /*! ./TextElement */
 
 /*! ./TextManager */
+
+/*! ./TextSlice */
 
 /*! ./Texture */
 
@@ -473,6 +479,10 @@ and limitations under the License.
   !*** ./src/Renderer/index.js ***!
   \*******************************/
 
+/*!********************************!*\
+  !*** ./src/Slice/TextSlice.js ***!
+  \********************************/
+
 /*!*********************************!*\
   !*** ./node_modules/url/url.js ***!
   \*********************************/
@@ -570,6 +580,10 @@ and limitations under the License.
   \*******************************************/
 
 /*!*******************************************!*\
+  !*** ./src/Renderer/PixiRenderer/Loop.js ***!
+  \*******************************************/
+
+/*!*******************************************!*\
   !*** ./src/StoryBuilder/PageNavigator.js ***!
   \*******************************************/
 
@@ -655,6 +669,10 @@ and limitations under the License.
 
 /*!************************************************!*\
   !*** ./src/Renderer/PixiRenderer/Container.js ***!
+  \************************************************/
+
+/*!************************************************!*\
+  !*** ./src/Renderer/PixiRenderer/TextBlock.js ***!
   \************************************************/
 
 /*!************************************************!*\

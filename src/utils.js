@@ -25,14 +25,73 @@ const isAnObject = (value) => ( // Excluding the array case
 	(value !== null && typeof value === "object" && Array.isArray(value) === false)
 )
 
+const getValidValueAndUnit = (value) => {
+	const validValueAndUnit = {}
+	if (value.slice(-1) === "%") {
+		let validValue = value.substring(0, value.length - 1)
+		validValue = Number(validValue)
+		if (isANumber(validValue) === true && validValue >= 0
+			&& validValue <= 100) { // Percent values should be between 0 and 100
+			validValueAndUnit.value = validValue
+			validValueAndUnit.unit = "%"
+		}
+	} else if (value.length > 1 && value.slice(-2) === "px") {
+		let validValue = value.substring(0, value.length - 2)
+		validValue = Number(validValue)
+		if (isANumber(validValue) === true && validValue >= 0) { // Pixel values should be positive
+			validValueAndUnit.value = validValue
+			validValueAndUnit.unit = "px"
+		}
+	}
+	if (validValueAndUnit.unit) {
+		return validValueAndUnit
+	}
+	return null
+}
+
 // For checking data values
 const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
 	const { type, allowed, defaultValue } = constants.ACCEPTED_VALUES[valueType] || {}
-	if (valueType === "positive") {
+
+	if (type === "number") {
+		if (value !== undefined && isANumber(value) === true) {
+			return value
+		}
+		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
+			? defaultValue
+			: null
+	}
+	if (type === "positiveNumber") {
+		if (value !== undefined && isANumber(value) === true && value >= 0) {
+			return value
+		}
+		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
+			? defaultValue
+			: null
+	}
+	if (type === "strictlyPositiveNumber") {
 		if (value !== undefined && isANumber(value) === true && value > 0) {
 			return value
 		}
-		return null
+		return (shouldReturnDefaultValue === true && defaultValue !== undefined)
+			? defaultValue
+			: null
+	}
+	if (type === "value&Unit") {
+		if (value !== undefined && isAString(value) === true) {
+			const validValueAndUnit = getValidValueAndUnit(value)
+			if (validValueAndUnit) {
+				return validValueAndUnit
+			}
+		}
+		return (shouldReturnDefaultValue === true) ? defaultValue : null
+	}
+	if (type === "color") {
+		const regExp = new RegExp("^#[0-9a-f]{6}$", "i")
+		if (value && isAString(value) === true && regExp.test(value) === true) {
+			return value
+		}
+		return (shouldReturnDefaultValue === true) ? defaultValue : null
 	}
 	if (type === "boolean") {
 		if (value !== undefined && typeof value === "boolean") {
@@ -41,7 +100,8 @@ const returnValidValue = (valueType, value, shouldReturnDefaultValue) => {
 		return (shouldReturnDefaultValue === true) ? defaultValue : null
 	}
 	if (type === "string") {
-		if (isAString(value) === true && allowed.includes(value) === true) {
+		if (value && isAString(value) === true
+			&& (allowed === undefined || allowed.includes(value) === true)) {
 			return value
 		}
 		return (shouldReturnDefaultValue === true) ? defaultValue : null
@@ -74,34 +134,38 @@ const isOfType = (path, acceptableGeneralType, acceptableExtensions) => {
 	return isExtensionAcceptable
 }
 
-const isAVideo = (path) => (
+const hasAVideoExtension = (path) => (
 	isOfType(path, "video", constants.ACCEPTED_VIDEO_EXTENSIONS)
 )
 
-/*const isAnImage = (path) => (
+/*const hasAnImageExtension = (path) => (
 	isOfType(path, "image", constants.ACCEPTED_IMAGE_EXTENSIONS)
 )*/
 
-const getResourceType = (path, type = null) => {
+const getResourceAndMimeTypes = (path, type = null) => {
 	let resourceType = null
+
 	// To assign a general resourceType, first check the specified value for type
 	if (type) {
-		const generalType = type.split("/")[0]
-		if (generalType === "image" || generalType === "video") {
-			resourceType = generalType
+		const possibleType = type.split("/")[0]
+		if (possibleType === "image" || possibleType === "video") {
+			resourceType = possibleType
 		}
 	}
+
 	// If the specified value did not provide a relevant resourceType, check the path's extension
 	if (!resourceType) {
-		resourceType = (isAVideo(path) === true) ? "video" : "image"
+		resourceType = (hasAVideoExtension(path) === true) ? "video" : "image"
 	}
 	// Note that the "image" resourceType is thus favored by default
-	return resourceType
+	// Also note that we do not check that the mime type value is acceptable
+
+	return { resourceType, mimeType: type || constants.DEFAULT_MIME_TYPE }
 }
 
 // For parsing the aspect ratio value written as a string in the divina's viewportRatio property
 const parseAspectRatio = (ratio) => {
-	if (!ratio || typeof ratio !== "string") {
+	if (!ratio || isAString(ratio) === false) {
 		return null
 	}
 	const parts = ratio.split(":")
@@ -130,19 +194,10 @@ const getPathAndMediaFragment = (href) => {
 	return { path, mediaFragment }
 }
 
-// For parsing a media fragment string
-const parseMediaFragment = (mediaFragment) => {
-	if (!mediaFragment) {
-		return null
-	}
-	const mediaFragmentParts = mediaFragment.split("=")
-	if (mediaFragmentParts.length !== 2 || mediaFragmentParts[0] !== "xywh") {
-		return null
-	}
-
+const parseStringRect = (stringRect) => {
 	let unit = "pixel"
 	let xywh = null
-	let fragmentInfo = mediaFragmentParts[1]
+	let fragmentInfo = stringRect
 	fragmentInfo = fragmentInfo.split(":")
 	if (fragmentInfo.length === 1) {
 		[xywh] = fragmentInfo
@@ -173,25 +228,19 @@ const parseMediaFragment = (mediaFragment) => {
 	}
 
 	return {
-		unit, x, y, w, h,
+		x, y, w, h, unit: (unit === "percent") ? "%" : "px",
 	}
 }
 
-const getRectForMediaFragmentAndSize = (mediaFragment, { width, height }) => {
-	if (!mediaFragment) {
-		return null
-	}
-	const parsedString = parseMediaFragment(mediaFragment)
-
-	if (!parsedString
-		|| (parsedString.unit !== "percent" && parsedString.unit !== "pixel")) {
+const getRectWithSize = (rectWithUnit, { width, height }, shouldLimitSize = false) => {
+	if (!rectWithUnit
+		|| (rectWithUnit.unit !== "%" && rectWithUnit.unit !== "px")) {
 		return null
 	}
 
-	const { unit } = parsedString
 	let {
 		x, y, w, h,
-	} = parsedString
+	} = rectWithUnit
 	if (isANumber(x) === false
 		|| isANumber(y) === false
 		|| isANumber(w) === false
@@ -199,19 +248,47 @@ const getRectForMediaFragmentAndSize = (mediaFragment, { width, height }) => {
 		return null
 	}
 
-	if (unit === "percent") {
+	if (rectWithUnit.unit === "%") {
 		x *= width / 100
 		y *= height / 100
 		w *= width / 100
 		h *= height / 100
 	}
 
-	// Correct potential mistakes in the way the media fragment was written
+	// Correct potential mistakes in the way a media fragment was written
 	// by limiting the fragment to the natural dimensions of the resource
-	x = Math.min(Math.max(x, 0), width)
-	y = Math.min(Math.max(y, 0), height)
-	w = Math.min(Math.max(w, 0), width - x)
-	h = Math.min(Math.max(h, 0), height - y)
+	if (shouldLimitSize === true) {
+		x = Math.min(Math.max(x, 0), width)
+		y = Math.min(Math.max(y, 0), height)
+		w = Math.min(Math.max(w, 0), width - x)
+		h = Math.min(Math.max(h, 0), height - y)
+	}
+
+	return {
+		x, y, w, h,
+	}
+}
+
+// For parsing a media fragment string
+
+const getRectForMediaFragmentAndSize = (mediaFragment, size) => {
+	if (!mediaFragment) {
+		return null
+	}
+	const mediaFragmentParts = mediaFragment.split("=")
+	if (mediaFragmentParts.length !== 2 || mediaFragmentParts[0] !== "xywh") {
+		return null
+	}
+	const rectWithUnit = parseStringRect(mediaFragmentParts[1])
+
+	const shouldLimitSize = true
+	const rect = getRectWithSize(rectWithUnit, size, shouldLimitSize)
+	if (!rect) {
+		return null
+	}
+	const {
+		x, y, w, h,
+	} = rect
 
 	return {
 		x, y, width: w, height: h,
@@ -249,11 +326,13 @@ export {
 	isAString,
 	isANumber,
 	isAnObject,
+	getValidValueAndUnit,
 	returnValidValue,
-	getResourceType,
-	isAVideo,
+	getResourceAndMimeTypes,
 	parseAspectRatio,
+	getRectWithSize,
 	getPathAndMediaFragment,
+	parseStringRect,
 	getRectForMediaFragmentAndSize,
 	getShortenedHref,
 	getDistance,

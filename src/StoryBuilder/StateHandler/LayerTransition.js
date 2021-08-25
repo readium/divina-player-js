@@ -8,10 +8,12 @@ export default class LayerTransition {
 
 	get isRunning() { return this._isRunning }
 
-	constructor(handler, layer, isExiting, entryOrExit) {
+	constructor(handler, layer, isExiting, entryOrExit, player) {
 		this._handler = handler
 		this._layer = layer
 		this._isExiting = isExiting
+		this._player = player
+
 		this._type = "cut"
 		this._controlled = false
 
@@ -60,6 +62,7 @@ export default class LayerTransition {
 		} else {
 
 			if (this._slice) {
+				this._slice.setIsInViewport(true)
 				this._slice.finalizeEntry() // Start playing the transition sequence or video
 
 			} else if (this._type === "slide-in" || this._type === "slide-out") {
@@ -79,6 +82,8 @@ export default class LayerTransition {
 
 	// The function will below shall loop if layerTransitionPercent !== null
 	_run(layerTransitionPercent = null) {
+		this._player.refreshOnce()
+
 		if (this._isRunning === false) {
 			return
 		}
@@ -167,6 +172,7 @@ export default class LayerTransition {
 	}
 
 	end() {
+		this._player.refreshOnce()
 		this._isRunning = false
 
 		const { content } = this._layer || {}

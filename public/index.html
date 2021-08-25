@@ -8,7 +8,7 @@
 			margin: 0;
 			padding: 0;
 			overflow: hidden;
-			background-color: #444444;
+			background-color: #000000;
 		}
 		#stage {
 			position: fixed;
@@ -56,19 +56,19 @@
 		// (value should be null or <= 0 to prevent the menu from opening automatically)
 		let durationOfOpeningAtStart = 1500;
 		
-		// Locator can be { href }, where href is the URL of the specific page/resource to access directly
-		// or { locations: { position, progression } }, where position is the absolute segment index
+		// Locator is of the form { href, locations, text }, where href is the URL of the specific
+		// page/resource to access directly, text is the readingMode, and locations is an object
+		// of the form { position, progression, totalProgression }, where position is the page index
 		// (and progression is the percent in the page, which is only defined for an overflowing page)
-		//let locator = null;
 		let locator = null;
 		
 		// Options for the Divina Player
 		let options = {
-			//maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
-			initialNbOfResourcesToLoad: 1000,//null, // If 0 or null, the normal nb of initial resources will load
-			allowsDestroy: true,
+			maxNbOfUnitsToLoadAfter: null, // Forcing null for this value will load all units
+			initialNbOfResourcesToLoad: null, // If 0 or null, the normal nb of initial resources will load
+			allowsDestroy: false,
 			allowsParallel: true,
-			allowsZoomOnDoubleTap: true,
+			allowsZoomOnDoubleTap: true, // false makes the single tap more reactive
 			allowsZoomOnCtrlOrAltScroll: true,
 			allowsSwipe: true,
 			allowsWheelScroll: true,
@@ -76,6 +76,7 @@
 			isPaginationGridBased: true,
 			isPaginationSticky: true,
 			videoLoadTimeout: 2000,
+			//loadingMessage: "Loading",
 		};
 
 
@@ -188,6 +189,8 @@
 				let eventEmitter = menuAndPlayerObject.player.eventEmitter;
 				let dispatchCustomEvent = function (event, data) {
 					//console.log(event, data);
+					//if (event == "inpagescroll" || event == "pagechange")
+						//console.log(event, data.locator)
 					var event = new CustomEvent(event, { detail: data });
 					window.document.dispatchEvent(event);
 				}
@@ -246,9 +249,9 @@
 				}
 			});
 
-			// Mute/unmute button
-
 			window.document.addEventListener("readingmodechange", function (e) {
+
+				// Mute/unmute button
 
 				if (e.detail.hasSounds === true) {
 

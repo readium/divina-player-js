@@ -61,7 +61,7 @@ export default class TimeAnimationManager {
 			if (soundAnimations) {
 				soundAnimations.forEach((animation) => {
 					const { resourceId, start } = animation
-					if (audioResourcesToStopSet.has(resourceId) === true && start.time === 0) {
+					if (audioResourcesToStopSet.has(resourceId) === true && start === 0) {
 						audioResourcesToStopSet.delete(resourceId)
 					}
 					this._runSoundAnimation(pageIndex, animation, initialDate)
@@ -136,7 +136,7 @@ export default class TimeAnimationManager {
 				return
 			}
 			const date = Date.now()
-			if (date < initialDate + start.time) { // Before start
+			if (date < initialDate + start) { // Before start
 				animation.raf = requestAnimationFrame(loop)
 			} else if (!end) {
 				if (isFirstPlayInPage === true) {
@@ -144,7 +144,7 @@ export default class TimeAnimationManager {
 					isFirstPlayInPage = false
 				}
 				animation.raf = requestAnimationFrame(loop)
-			} else if (date < initialDate + end.time) {
+			} else if (date < initialDate + end) {
 				if (isFirstPlayInPage === true) {
 					resource.playIfNeeded()
 					isFirstPlayInPage = false
@@ -194,11 +194,14 @@ export default class TimeAnimationManager {
 					} else {
 						slice.setVariable(variable, value)
 					}
+					this._player.refreshOnce()
 					animation.raf = requestAnimationFrame(loop)
 				}
 
 			} else { // Go to next keyframe (if possible)
 				slice.setVariable(variable, value)
+				this._player.refreshOnce()
+
 				keyframeIndex += 1
 				if (keyframeIndex >= keyframesArray.length) {
 					return
@@ -207,6 +210,7 @@ export default class TimeAnimationManager {
 				keyframe = keyframesArray[keyframeIndex]
 				key = keyframe.key
 				value = keyframe.value
+
 				animation.raf = requestAnimationFrame(loop)
 			}
 		}

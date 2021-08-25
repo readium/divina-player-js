@@ -15,7 +15,8 @@ export default class DivinaParser {
 			DivinaParser.loadJson(path, pathType)
 				.then((json) => {
 					resolve(this._buildStoryFromJson(json))
-				}, (error) => {
+				})
+				.catch((error) => {
 					reject(error)
 				})
 		})
@@ -128,6 +129,12 @@ export default class DivinaParser {
 			viewportRatio,
 			// orientation,
 			sounds,
+			backgroundColor,
+			fillColor,
+			fontFamily,
+			fontSize,
+			lineHeight,
+			letterSpacing,
 		} = presentation || {}
 
 		const storyContinuous = Utils.returnValidValue("continuous", continuous, shouldReturnDefaultValue)
@@ -156,7 +163,7 @@ export default class DivinaParser {
 			}
 		}
 
-		// Create a soundsArray with valid (global) sounds only (global => no start or end values)
+		// Create a soundsArray with valid (global) sounds only (global => no start or end values!)
 		const soundsArray = []
 		if (sounds && Array.isArray(sounds) === true && sounds.length > 0) {
 			sounds.forEach((sound) => {
@@ -167,6 +174,28 @@ export default class DivinaParser {
 					soundsArray.push(soundAnimation)
 				}
 			})
+		}
+
+		// Create text options
+
+		const storyBackgroundColor = Utils.returnValidValue("backgroundColor", backgroundColor,
+			shouldReturnDefaultValue)
+		const storyFillColor = Utils.returnValidValue("fillColor", fillColor, shouldReturnDefaultValue)
+		const storyFontFamily = Utils.returnValidValue("fontFamily", fontFamily, shouldReturnDefaultValue)
+		const storyFontSize = Utils.returnValidValue("fontSize", fontSize, shouldReturnDefaultValue)
+		const storyLineHeight = Utils.returnValidValue("lineHeight", lineHeight, shouldReturnDefaultValue)
+		const storyLetterSpacing = Utils.returnValidValue("letterSpacing", letterSpacing,
+			shouldReturnDefaultValue)
+
+		this._textOptions = {
+			hAlign: storyHAlign,
+			vAlign: storyVAlign,
+			backgroundColor: storyBackgroundColor,
+			fillColor: storyFillColor,
+			fontFamily: storyFontFamily,
+			fontSize: storyFontSize,
+			lineHeight: storyLineHeight,
+			letterSpacing: storyLetterSpacing,
 		}
 
 		return {
@@ -208,18 +237,18 @@ export default class DivinaParser {
 		return { constraint: storyConstraint, aspectRatio }
 	}
 
-	_parseObjectsList(divinaLinkObjectsList) {
-		if (!divinaLinkObjectsList || Array.isArray(divinaLinkObjectsList) === false) {
+	_parseObjectsList(divinaObjectsList) {
+		if (!divinaObjectsList || Array.isArray(divinaObjectsList) === false) {
 			return []
 		}
-		const linkObjectsArray = []
-		divinaLinkObjectsList.forEach((divinaLinkObject) => {
-			if (divinaLinkObject) {
-				const linkObject = new LinkObject(divinaLinkObject, this._player)
-				linkObjectsArray.push(linkObject)
+		const objectsArray = []
+		divinaObjectsList.forEach((divinaObject) => {
+			if (divinaObject) {
+				const linkObject = new LinkObject(divinaObject, this._player, this._textOptions)
+				objectsArray.push(linkObject)
 			}
 		})
-		return linkObjectsArray
+		return objectsArray
 	}
 
 	_createPageNavigatorsData() {
@@ -240,6 +269,7 @@ export default class DivinaParser {
 		// Keep only useful data in the metadata object shared by all page navigators
 		const cleanMetadata = {
 			direction,
+			continuous,
 			fit,
 			clipped,
 			overflow,
@@ -367,7 +397,8 @@ export default class DivinaParser {
 				// Only consider transitions on the first segment of a page
 				if (transitionForward && pageSegmentIndex === 0) {
 					const isForward = true
-					const { entry, exit } = Transition.getEntryAndExitTransitions(transitionForward, isForward)
+					const { entry, exit } = Transition.getEntryAndExitTransitions(transitionForward,
+						isForward)
 					if (pageIndex > 0 && exit) {
 						pageNavData.pagesDataArray[pageIndex - 1].exitForward = exit
 					}
@@ -381,7 +412,8 @@ export default class DivinaParser {
 				}
 				if (transitionBackward && pageSegmentIndex === 0) {
 					const isForward = false
-					const { entry, exit } = Transition.getEntryAndExitTransitions(transitionBackward, isForward)
+					const { entry, exit } = Transition.getEntryAndExitTransitions(transitionBackward,
+						isForward)
 					if (pageIndex > 0 && entry) {
 						pageNavData.pagesDataArray[pageIndex - 1].entryBackward = entry
 					}

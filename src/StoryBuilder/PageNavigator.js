@@ -2,7 +2,7 @@ import LayerPile from "./LayerPile"
 
 export default class PageNavigator extends LayerPile {
 
-	// Used in Player and Slice
+	// Used in Player, Page and Slice
 	get pageNavType() { return this._pageNavType }
 
 	// Used below and in Camera
@@ -13,19 +13,22 @@ export default class PageNavigator extends LayerPile {
 
 	// Used in StateHandler
 	get doOnStateChangeStartOrCancel() {
-		return (stateIndex, isGoingForward) => this.updatePageLoadTasks(stateIndex, isGoingForward)
+		return (stateIndex, isGoingForward) => this._updatePageLoadTasks(stateIndex, isGoingForward)
 	}
 
 	// Used below, in Player and in ResourceManager
 	get pageIndex() {
-		const pageIndex = (this._handler && this._handler.type === "stateHandler")
-			? this._handler.stateIndex
+		const pageIndex = (this.handler && this.handler.type === "stateHandler")
+			? this.handler.stateIndex
 			: 0
 		return pageIndex
 	}
 
-	// Used in InteractionManager
+	// Used in InteractionManager and Camera
 	get currentPage() { return this._currentPage }
+
+	// Used in InteractionManager
+	get direction() { return this._direction }
 
 	// Used in Slice
 
@@ -34,7 +37,13 @@ export default class PageNavigator extends LayerPile {
 	get segmentRange() { return this._segmentRange }
 
 	// Used below and in Slideshow
-	get nbOfPages() { return this._layersArray.length }
+	get nbOfPages() { return this.layersArray.length }
+
+	// Used in Slideshow
+	get interactionManager() { return this._interactionManager }
+
+	// Used in Camera
+	get nbOfSegments() { return this._allSegmentLayersArray.length }
 
 	constructor(pageNavType, metadata, pageLayersArray, player) {
 		const name = `${pageNavType}PageNav`
@@ -43,6 +52,9 @@ export default class PageNavigator extends LayerPile {
 
 		this._pageNavType = pageNavType
 		this._metadata = metadata
+		this._player = player
+
+		this._direction = null
 
 		const {
 			eventEmitter, interactionManager, resourceManager, timeAnimationManager,
@@ -53,11 +65,11 @@ export default class PageNavigator extends LayerPile {
 		this._timeAnimationManager = timeAnimationManager
 
 		const shouldStateLayersCoexistOutsideTransitions = false
-		this._addStateHandler(shouldStateLayersCoexistOutsideTransitions, player)
+		this.addStateHandler(shouldStateLayersCoexistOutsideTransitions, player)
 
 		// Pages and segments have been fully populated by the time we create the PageNavigator
 		const allSegmentLayersArray = []
-		this._layersArray.forEach((layer) => {
+		this.layersArray.forEach((layer) => {
 			const page = layer.content
 			const { layersArray } = page || {}
 			if (layersArray) {
@@ -78,6 +90,8 @@ export default class PageNavigator extends LayerPile {
 		}
 
 		this._pageDeltaForTransitionControl = null
+
+		this._soundsDataArray = null
 	}
 
 	// Used in StoryBuilder
@@ -88,20 +102,41 @@ export default class PageNavigator extends LayerPile {
 		this._soundsDataArray.push(soundData)
 	}
 
-	// Used in Player (targetSegmentIndex can be null in the case of a tag change)
-	updateLoadTasks(targetSegmentIndex) {
+	// Used in Slideshow and Player (targetSegmentIndex can be null in the case of a tag change)
+	updateLoadTasks(targetPageIndex, targetSegmentIndex) {
 		// Kill tasks in the async task queue
 		this._resourceManager.killPendingLoads()
 
-		// Create async tasks for destroying and loading resources
-		// (force an update of teh load tasks within the segment range
-		// even if its start and end indices have not changed)
+		// Create async tasks for destroying and loading resources (i.e. force an update of load tasks
+		// within the segment range even if the range's start and end indices have not changed)
 		const forceUpdate = true
-		this.updateSegmentLoadTasks(targetSegmentIndex, forceUpdate)
+		if (this.loadingMode === "segment") {
+			this.updateSegmentLoadTasks(targetSegmentIndex, forceUpdate)
+		} else {
+			const pageIndex = (targetPageIndex !== null) ? targetPageIndex : (this.pageIndex || 0)
+			const isGoingForward = ((pageIndex - (this.pageIndex || 0)) >= 0)
+			this._updatePageLoadTasks(pageIndex, isGoingForward, forceUpdate)
+		}
 	}
 
-	// Used above (on starting a page change)
-	updatePageLoadTasks(targetPageIndex, isGoingForward) {
+	// Used just above and in Camera
+	updateSegmentLoadTasks(segmentIndex, forceUpdate) {
+		if (segmentIndex === null) { // In the case of a tag change, keep current segmentRange
+			this._updateLoadTasksForSegmentRange(this.pageIndex, this._segmentRange.segmentIndex,
+				this._segmentRange, forceUpdate)
+
+		} else {
+			const segmentRange = this._getPageOrSegmentRange("segment", segmentIndex)
+			segmentRange.segmentIndex = segmentIndex
+
+			// Note that pageIndex is not affected by a scroll (and is initially null)
+			this._updateLoadTasksForSegmentRange(this.pageIndex || 0, segmentIndex, segmentRange,
+				forceUpdate)
+		}
+	}
+
+	// Used above (on starting a page change or after a goTo or tag change in page loading mode)
+	_updatePageLoadTasks(targetPageIndex, isGoingForward, forceUpdate = false) {
 		const targetSegmentIndex = (isGoingForward === true)
 			? this.getIndexOfFirstSegmentInPage(targetPageIndex)
 			: this.getIndexOfFirstSegmentInPage(targetPageIndex + 1) - 1
@@ -115,23 +150,8 @@ export default class PageNavigator extends LayerPile {
 		}
 		segmentRange.segmentIndex = targetSegmentIndex
 
-		const forceUpdate = false
 		this._updateLoadTasksForSegmentRange(targetPageIndex, targetSegmentIndex, segmentRange,
 			forceUpdate)
-	}
-
-	// Used in Camera
-	updateSegmentLoadTasks(segmentIndex, forceUpdate) { // Which is an absolute segment index
-		if (segmentIndex === null) { // In the case of a tag change, keep current segmentRange
-			this._updateLoadTasksForSegmentRange(this.pageIndex, this._segmentRange.segmentIndex,
-				this._segmentRange, forceUpdate)
-
-		} else {
-			const segmentRange = this._getPageOrSegmentRange("segment", segmentIndex)
-			segmentRange.segmentIndex = segmentIndex
-			// Note that pageIndex is not affected by a scroll - HOWEVER = null THE FIRST TIME!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-			this._updateLoadTasksForSegmentRange(this.pageIndex || 0, segmentIndex, segmentRange, forceUpdate)
-		}
 	}
 
 	_updateLoadTasksForSegmentRange(targetPageIndex = 0, targetSegmentIndex, segmentRange,
@@ -181,8 +201,8 @@ export default class PageNavigator extends LayerPile {
 				// Get ids for resources in transitions (which are stored at page layer level)
 				const segment = segmentLayer.content
 				const { pageSegmentIndex, pageIndex } = segment
-				if (pageSegmentIndex === 0 && pageIndex < this._layersArray.length) {
-					const pageLayer = this._layersArray[pageIndex]
+				if (pageSegmentIndex === 0 && pageIndex < this.layersArray.length) {
+					const pageLayer = this.layersArray[pageIndex]
 					const recursive = false
 					const array = pageLayer.getResourceIdsToLoad(recursive, forceUpdate)
 					arrayOfSliceResourceDataArray.push(...array)
@@ -214,8 +234,8 @@ export default class PageNavigator extends LayerPile {
 									result = true
 								}
 							})
-							if (result === true) { // SHOULD ONLY BE TRIGGERED ON A PAGE CHANGE, IDEALLY!
-								this._resourceManager.loadResources([{ resourceId }], pageIndex, segmentIndex) // SAME AS ABOVE!
+							if (result === true) {
+								this._resourceManager.loadResources([{ resourceId }], pageIndex, segmentIndex)
 								newResourceIdsSet.add(resourceId)
 							}
 						}
@@ -243,8 +263,8 @@ export default class PageNavigator extends LayerPile {
 					// (which are stored at page layer level)
 					const segment = segmentLayer.content
 					const { pageSegmentIndex, pageIndex } = segment
-					if (pageSegmentIndex === 0 && pageIndex < this._layersArray.length) {
-						const pageLayer = this._layersArray[pageIndex]
+					if (pageSegmentIndex === 0 && pageIndex < this.layersArray.length) {
+						const pageLayer = this.layersArray[pageIndex]
 						pageLayer.destroyResourcesIfPossible()
 					}
 					segmentLayer.destroyResourcesIfPossible()
@@ -255,7 +275,7 @@ export default class PageNavigator extends LayerPile {
 
 	// Used in Slideshow
 	getLastPageSegmentIndexForPage(pageIndex) {
-		const page = this._layersArray[pageIndex].content
+		const page = this.layersArray[pageIndex].content
 		const pageSegmentIndex = page.getLastPageSegmentIndex()
 		return pageSegmentIndex
 	}
@@ -265,7 +285,7 @@ export default class PageNavigator extends LayerPile {
 		let i = 0
 		let nbOfSegments = 0
 		while (i < this.nbOfPages && i !== targetPageIndex) {
-			const layer = this._layersArray[i]
+			const layer = this.layersArray[i]
 			const page = layer.content
 			const { layersArray } = page
 			nbOfSegments += layersArray.length
@@ -317,7 +337,7 @@ export default class PageNavigator extends LayerPile {
 			if (i === pageRange.startIndex) {
 				startIndex = currentNbOfSegments
 			}
-			const layer = this._layersArray[i]
+			const layer = this.layersArray[i]
 			const page = layer.content
 			const { layersArray } = page
 			const nbOfSegmentsInPage = layersArray.length
@@ -347,9 +367,11 @@ export default class PageNavigator extends LayerPile {
 	}
 
 	// On a successful page change (post-transition), when this.pageIndex (= stateIndex) has changed
+	// (note that it's not the page navigator itself that has achieved an entry, but this function
+	// is triggered by StateHandler's _endStateChange on a page transition's end nonetheless)
 	finalizeEntry() {
 		if (this.pageIndex < this.nbOfPages) {
-			const pageLayer = this._layersArray[this.pageIndex]
+			const pageLayer = this.layersArray[this.pageIndex]
 			this._currentPage = pageLayer.content
 		} else {
 			return
@@ -359,13 +381,8 @@ export default class PageNavigator extends LayerPile {
 		}
 
 		// Signal the page change (to be done before goToSegmentIndex for better event management)
-		const segmentIndex = this.getIndexOfFirstSegmentInPage(this.pageIndex)
-		const locations = { position: segmentIndex }
-		const data = {
-			pageIndex: this.pageIndex,
-			nbOfPages: this.nbOfPages,
-			locator: { locations, title: this._pageNavType },
-		}
+		const locator = this.getLocator()
+		const data = { locator, nbOfPages: this.nbOfPages }
 		this._eventEmitter.emit("pagechange", data)
 
 		// If the pageNavigator has sounds to play, and they haven't started playing yet, do it
@@ -381,13 +398,27 @@ export default class PageNavigator extends LayerPile {
 		}
 	}
 
+	getLocator() {
+		const { href, type } = this._currentPage.getInfo() // Will get info from first slice in page
+		const segmentIndex = this.getIndexOfFirstSegmentInPage(this.pageIndex)
+		const totalProgression = (segmentIndex + 1) / this.nbOfSegments
+		const locations = {
+			position: this.pageIndex,
+			totalProgression,
+		}
+		const locator = {
+			href, type, locations, text: this._pageNavType,
+		}
+		return locator
+	}
+
 	// Used in StateHandler
 	getDepthOfNewLayer(oldPageIndex, isGoingForward) {
-		if (oldPageIndex < 0 || oldPageIndex >= this._layersArray.length
-			|| !this._layersArray[oldPageIndex]) {
+		if (oldPageIndex < 0 || oldPageIndex >= this.layersArray.length
+			|| !this.layersArray[oldPageIndex]) {
 			return 1
 		}
-		const { exitForward, exitBackward } = this._layersArray[oldPageIndex]
+		const { exitForward, exitBackward } = this.layersArray[oldPageIndex]
 		if ((isGoingForward === true && exitForward && exitForward.type === "slide-out")
 			|| (isGoingForward === false && exitBackward
 				&& (exitBackward.type === "fade-out" || exitBackward.type === "slide-out"))) {
@@ -413,15 +444,16 @@ export default class PageNavigator extends LayerPile {
 
 	// Player functions
 
-	goToPageWithIndex(pageIndex, pageSegmentIndex, progress, shouldSkipTransition = false,
+	// Also called in Slideshow
+	goToPageWithIndex(pageIndex, pageSegmentIndex, progress = 0, shouldSkipTransition = false,
 		isChangeControlled = false) {
 		let isGoingForward = true
 		this._targetPageSegmentIndex = pageSegmentIndex
 		if (pageSegmentIndex === null) {
-			const targetPage = this._layersArray[pageIndex].content
+			const targetPage = this.layersArray[pageIndex].content
 			this._targetPageSegmentIndex = targetPage.layersArray.length - 1
 		}
-		if (!this._handler || this._handler.type !== "stateHandler") {
+		if (!this.handler || this.handler.type !== "stateHandler") {
 			return
 		}
 
@@ -431,8 +463,7 @@ export default class PageNavigator extends LayerPile {
 				if (this.pageIndex !== null) { // isGoingForward remains true otherwise
 					isGoingForward = (pageIndex - this.pageIndex > 0)
 				}
-				this._isInAGoTo = true
-				this._handler.goToState(pageIndex, isGoingForward, shouldSkipTransition, isChangeControlled)
+				this.handler.goToState(pageIndex, isGoingForward, shouldSkipTransition, isChangeControlled)
 				// And then the finalizeEntry above will ensure that
 				// we go to _targetPageSegmentIndex directly via goToSegmentIndex
 
@@ -449,8 +480,8 @@ export default class PageNavigator extends LayerPile {
 		}
 
 		// If forcing a page change (e.g. via ToC while a transition is running)
-		if (this._handler.isUndergoingChanges === true) {
-			this._handler.forceChangesToEnd(callback)
+		if (this.handler.isUndergoingChanges === true) {
+			this.handler.forceChangesToEnd(callback)
 		} else {
 			callback()
 		}

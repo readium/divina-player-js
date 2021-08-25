@@ -1,8 +1,9 @@
-import { Slice, SequenceSlice } from "../Slice"
+import { Slice, SequenceSlice, TextSlice } from "../Slice"
 import ResourceBuilder from "./ResourceBuilder"
 import Transition from "./Transition"
 
 import * as Utils from "../utils"
+import * as constants from "../constants"
 
 export default class LinkObject {
 
@@ -24,7 +25,9 @@ export default class LinkObject {
 
 	get visualAnimationsArray() { return this._visualAnimationsArray }
 
-	constructor(divinaLinkObject, player, parentInfo = null, forcedRole = null) {
+	constructor(divinaObject, player, textOptions, parentInfo = null, forcedRole = null) {
+		this._textOptions = textOptions
+
 		this._slice = null
 
 		this._hAlign = null
@@ -45,11 +48,11 @@ export default class LinkObject {
 
 		// Now build the slice associated to the link object (by default),
 		// and also child link objects (and their slices) and transitions (and slices) as needed
-		this._buildSlicesAndTransitions(divinaLinkObject, player, parentInfo, forcedRole)
+		this._buildSlicesAndTransitions(divinaObject, player, parentInfo, forcedRole)
 	}
 
-	_buildSlicesAndTransitions(divinaLinkObject, player, parentInfo = null, forcedRole = null) {
-		const { properties } = divinaLinkObject || {}
+	_buildSlicesAndTransitions(divinaObject, player, parentInfo = null, forcedRole = null) {
+		const { properties } = divinaObject || {}
 		const {
 			fit,
 			clipped,
@@ -62,6 +65,14 @@ export default class LinkObject {
 			sounds,
 			layers,
 			animations,
+			backgroundColor,
+			fillColor,
+			fontFamily,
+			fontSize,
+			lineHeight,
+			letterSpacing,
+			rect,
+			sequence,
 		} = properties || {}
 
 		let role = forcedRole || "standard"
@@ -102,26 +113,74 @@ export default class LinkObject {
 			pageSide,
 		}
 
-		let resourceInfoArray = []
-		const result = ResourceBuilder.createResourceInfoArray(divinaLinkObject, player)
-		if (result.isValid === true) {
-			resourceInfoArray = result.resourceInfoArray
+		let result = ResourceBuilder.createResourceInfoArray(divinaObject, player)
+		const { resourceInfoArray } = result
+
+		// If the link object is that for a sequence
+		if (sequence) {
+			const { files, duration } = sequence
+
+			result = LinkObject.buildArrayOfResourceInfoArray(files, player)
+			if (result.fit) {
+				sliceProperties.fit = result.fit
+			}
+			if (result.clipped) {
+				sliceProperties.clipped = result.clipped
+			}
+			const { arrayOfResourceInfoArray } = result
+
+			shouldReturnDefaultValue = true
+			sliceProperties.duration = Utils.returnValidValue("duration", duration,
+				shouldReturnDefaultValue)
+
+			this._slice = new SequenceSlice(resourceInfoArray, arrayOfResourceInfoArray, sliceProperties,
+				player, parentInfo)
+
+		// Otherwise the link object has a non-sequence slice: either resource (image or video) or text
+		} else if (result.type === "resource") {
+			this._slice = new Slice(resourceInfoArray, sliceProperties, player, parentInfo)
+
 		} else {
-			const { width, height } = result
-			sliceProperties.width = width
-			sliceProperties.height = height
+			const textOptions = {
+				backgroundColor: Utils.returnValidValue("backgroundColor", backgroundColor,
+					shouldReturnDefaultValue) || this._textOptions.backgroundColor,
+				fillColor: Utils.returnValidValue("fillColor", fillColor, shouldReturnDefaultValue)
+					|| this._textOptions.fillColor,
+				fontFamily: Utils.returnValidValue("fontFamily", fontFamily, shouldReturnDefaultValue)
+					|| this._textOptions.fontFamily,
+				fontSize: Utils.returnValidValue("fontSize", fontSize, shouldReturnDefaultValue)
+					|| this._textOptions.fontSize,
+				lineHeight: Utils.returnValidValue("lineHeight", lineHeight, shouldReturnDefaultValue)
+					|| this._textOptions.lineHeight,
+				letterSpacing: Utils.returnValidValue("letterSpacing", letterSpacing,
+					shouldReturnDefaultValue) || this._textOptions.letterSpacing,
+				hAlign: sliceHAlign || this._textOptions.hAlign,
+				vAlign: sliceVAlign || this._textOptions.vAlign,
+			}
+			if (rect) {
+				const actualRect = Utils.parseStringRect(rect)
+				if (actualRect) {
+					textOptions.rect = actualRect
+				}
+			}
+
+			sliceProperties.width = result.width
+			sliceProperties.height = result.height
+			sliceProperties.type = "text"
+
+			this._slice = new TextSlice(resourceInfoArray, textOptions, sliceProperties, player,
+				parentInfo)
 		}
-		this._slice = new Slice(resourceInfoArray, sliceProperties, player, parentInfo)
 
 		// Handle detailed transition data
 		if (transitionForward) {
-			const transition = Transition.createTransition(transitionForward, player)
+			const transition = Transition.createTransition(transitionForward, player, this._textOptions)
 			if (transition) {
 				this._transitionForward = transition
 			}
 		}
 		if (transitionBackward) {
-			const transition = Transition.createTransition(transitionBackward, player)
+			const transition = Transition.createTransition(transitionBackward, player, this._textOptions)
 			if (transition) { // An invalid transition has a type forced as null
 				this._transitionBackward = transition
 			}
@@ -153,7 +212,7 @@ export default class LinkObject {
 
 		// Handle layers (note that we do not consider layers for a child layer object)
 		if (!parentInfo && layers && Array.isArray(layers) === true) {
-			this._childrenArray = LinkObject._getChildrenArray(layers, this._slice, player)
+			this._childrenArray = this._getChildrenArray(layers, this._slice, player)
 		}
 
 		// Handle animations
@@ -194,13 +253,12 @@ export default class LinkObject {
 					}
 				}
 
-				const fullObject = { ...sequenceImage, type: "image" }
-				const {
-					isValid, resourceInfoArray,
-				} = ResourceBuilder.createResourceInfoArray(fullObject, player)
-				if (isValid === true) {
-					result.arrayOfResourceInfoArray.push(resourceInfoArray)
+				const fullObject = {
+					...sequenceImage,
+					type: sequenceImage.type || constants.DEFAULT_MIME_TYPE,
 				}
+				const { resourceInfoArray } = ResourceBuilder.createResourceInfoArray(fullObject, player)
+				result.arrayOfResourceInfoArray.push(resourceInfoArray)
 			}
 		})
 		return result
@@ -221,7 +279,7 @@ export default class LinkObject {
 		validPoint = { viewport: actualViewport }
 
 		if (x !== undefined && x.length > 0) {
-			const validValueAndUnit = LinkObject._getValidValueAndUnit(x)
+			const validValueAndUnit = Utils.getValidValueAndUnit(x)
 			if (validValueAndUnit) {
 				const { value, unit } = validValueAndUnit
 				validPoint.x = value
@@ -229,7 +287,7 @@ export default class LinkObject {
 			}
 		}
 		if (y !== undefined && y.length > 0) {
-			const validValueAndUnit = LinkObject._getValidValueAndUnit(y)
+			const validValueAndUnit = Utils.getValidValueAndUnit(y)
 			if (validValueAndUnit) {
 				const { value, unit } = validValueAndUnit
 				validPoint.y = value
@@ -243,31 +301,6 @@ export default class LinkObject {
 		return null
 	}
 
-	static _getValidValueAndUnit(value) {
-		const validValueAndUnit = {}
-		if (value.slice(-1) === "%") {
-			let validValue = value.substring(0, value.length - 1)
-			validValue = Number(validValue)
-			if (Utils.isANumber(validValue) === true && validValue >= 0
-				&& validValue <= 100) { // Percent values should be between 0 and 100
-				validValueAndUnit.value = validValue
-				validValueAndUnit.unit = "%"
-			}
-		} else if (value.length > 1 && value.slice(-2) === "px") {
-			let validValue = value.substring(0, value.length - 2)
-			validValue = Number(validValue)
-			if (Utils.isANumber(validValue) === true
-				&& validValue >= 0) { // Pixel values should be positive
-				validValueAndUnit.value = validValue
-				validValueAndUnit.unit = "px"
-			}
-		}
-		if (validValueAndUnit.unit) {
-			return validValueAndUnit
-		}
-		return null
-	}
-
 	// Used above and in DivinaParser
 	static getValidSoundAnimation(sound, player, shouldConsiderStartAndEnd = false) {
 		const { href, properties } = sound || {}
@@ -277,9 +310,9 @@ export default class LinkObject {
 		}
 
 		const { path } = Utils.getPathAndMediaFragment(href)
-		const coreResourceData = {
-			type: "audio",
-			path,
+		const coreResourceData = { path, type: "audio" }
+		if (sound.type) {
+			coreResourceData.mimeType = sound.type
 		}
 		const shouldReturnDefaultValue = true
 		coreResourceData.looping = Utils.returnValidValue("looping", looping,
@@ -306,7 +339,8 @@ export default class LinkObject {
 		const { type, start, end } = animation
 		const actualType = Utils.returnValidValue("animationType", type, shouldReturnDefaultValue)
 		const actualStart = LinkObject._processSoundStartOrEnd(actualType, start)
-		if (!actualStart) {
+
+		if (actualStart === null) {
 			return null
 		}
 		soundAnimation = {
@@ -346,7 +380,7 @@ export default class LinkObject {
 		return actualValue
 	}
 
-	static _getChildrenArray(layers, slice, player) {
+	_getChildrenArray(layers, slice, player) {
 		const childrenArray = []
 		layers.forEach((layerObject) => {
 			if (layerObject) {
@@ -360,7 +394,8 @@ export default class LinkObject {
 					slice,
 					layerIndex: childrenArray.length,
 				}
-				const linkObject = new LinkObject(layerObject, player, parentInformation)
+				const linkObject = new LinkObject(layerObject, player, this._textOptions,
+					parentInformation)
 
 				const child = { linkObject }
 				let actualHalfTransition = null
@@ -386,14 +421,14 @@ export default class LinkObject {
 				// Handle transitions - which shall take precedence over half transitions
 				if (layerProperties.transitionForward) {
 					const transition = Transition.createTransition(layerProperties.transitionForward,
-						player)
+						player, this._textOptions)
 					if (transition) {
 						child.transitionForward = transition
 					}
 				}
 				if (layerProperties.transitionBackward) {
 					const transition = Transition.createTransition(layerProperties.transitionBackward,
-						player)
+						player, this._textOptions)
 					if (transition) {
 						child.transitionBackward = transition
 					}

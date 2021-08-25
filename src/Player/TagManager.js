@@ -28,21 +28,31 @@ export default class TagManager {
 
 	_populateTagsForResourceInfoArray(resourceInfoArray, resourceManager) {
 		resourceInfoArray.forEach((mainOrAlt) => {
+
 			const { id } = mainOrAlt
-			const resource = resourceManager.getResourceWithId(id)
-			const { tags = {} } = resource || {}
-			Object.entries(tags).forEach(([tagName, tagValue]) => {
-				if (constants.POSSIBLE_TAG_NAMES.includes(tagName) === true) {
-					if (!this._tags[tagName]) {
-						this._tags[tagName] = {
-							array: [tagValue],
-							index: null,
-						}
-					} else if (this._tags[tagName].array.includes(tagValue) === false) {
-						this._tags[tagName].array.push(tagValue)
-					}
+
+			if (id === undefined && mainOrAlt.language) { // For a text version
+				const languagesArray = this._tags.language.array
+				if (languagesArray.includes(mainOrAlt.language) === false) {
+					languagesArray.push(mainOrAlt.language)
 				}
-			})
+
+			} else { // For a resource version
+				const resource = resourceManager.getResourceWithId(id)
+				const { tags = {} } = resource || {}
+				Object.entries(tags).forEach(([tagName, tagValue]) => {
+					if (constants.POSSIBLE_TAG_NAMES.includes(tagName) === true) {
+						if (!this._tags[tagName]) {
+							this._tags[tagName] = {
+								array: [tagValue],
+								index: null,
+							}
+						} else if (this._tags[tagName].array.includes(tagValue) === false) {
+							this._tags[tagName].array.push(tagValue)
+						}
+					}
+				})
+			}
 		})
 	}
 

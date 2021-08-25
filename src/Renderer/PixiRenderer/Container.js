@@ -2,19 +2,22 @@ import { Container as PixiContainer, Graphics as PixiGraphics } from "pixi.js-le
 
 export default class Container {
 
-	// Used in TextureElement
+	// Used in TextElement, TextureElement and LoadingAnimation
 	get name() { return this._name }
 
-	// Used in LayerPile (note that parent is a Container, not a PixiContainer)
+	// Used in TextElement, TextureElement and LayerPile (parent is a Container, not a PixiContainer!)
 	get parent() { return this._parent }
 
-	// Used below
+	// Used below and in LoadingAnimation
 	get pixiContainer() { return this._pixiContainer }
+
+	// Used in TextureElement
+	get maskingPixiContainer() { return this._maskingPixiContainer }
 
 	constructor(type = null, name = null, parent = null, pixiContainer = null) {
 		this._type = type
 		this._pixiContainer = pixiContainer || new PixiContainer()
-		this._setName(name)
+		this.setName(name)
 		if (parent) {
 			parent.addChild(this)
 		}
@@ -31,7 +34,7 @@ export default class Container {
 		this._isYPositionUpdating = false
 	}
 
-	_setName(name, suffix = null) {
+	setName(name, suffix = null) {
 		this._name = name
 		if (this._pixiContainer) {
 			this._pixiContainer.name = name
@@ -176,7 +179,7 @@ export default class Container {
 		this._pixiContainer.scale.set(actualScale)
 	}
 
-	// Beware: rotations should apply to sprites, not to their enclosing pixiContainer
+	// Beware: rotations apply to sprites, not to their enclosing pixiContainer
 	setRotation(rotation) {
 		if (this._playableSprite) {
 			this._playableSprite.rotation = rotation
@@ -197,8 +200,8 @@ export default class Container {
 		return this._pixiContainer.position.y
 	}
 
-	getScale() {
-		return this._scale
+	getScaleFactor() {
+		return this._scaleFactor
 	}
 
 	// Beware: rotations should apply to sprites, not to their enclosing pixiContainer
@@ -258,6 +261,15 @@ export default class Container {
 		this._scale = scale
 		const actualScale = this._scale * this._scaleFactor
 		this._pixiContainer.scale.set(actualScale)
+	}
+
+	// Used in Segment
+	clipToSize(size) {
+		if (!this._maskingPixiContainer) {
+			this.addMask()
+		}
+		const { width, height } = size
+		this.setMaskRect(-width / 2, -height / 2, width, height)
 	}
 
 }

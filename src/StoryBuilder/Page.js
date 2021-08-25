@@ -4,14 +4,17 @@ import Layer from "./Layer"
 export default class Page extends LayerPile {
 
 	get isAtStart() {
-		return (this._handler && this._handler.type === "overflowHandler"
-			&& this._handler.isAtStart === true)
+		return (this.handler && this.handler.type === "overflowHandler"
+			&& this.handler.isAtStart === true)
 	}
 
 	get isAtEnd() {
-		return (this._handler && this._handler.type === "overflowHandler"
-			&& this._handler.isAtEnd === true)
+		return (this.handler && this.handler.type === "overflowHandler"
+			&& this.handler.isAtEnd === true)
 	}
+
+	// Used in PageNavigator
+	get doesOverflow() { return (this.isAtStart === false || this.isAtEnd === false) }
 
 	// Used in Segment
 	get pageIndex() { return this._pageIndex }
@@ -30,7 +33,7 @@ export default class Page extends LayerPile {
 		let width = 0
 		let height = 0
 		// The size is derived from the sizes of all segments
-		this._layersArray.forEach((layer) => {
+		this.layersArray.forEach((layer) => {
 			const segment = layer.content
 			const { size } = segment
 			if (this._inScrollDirection === "ltr" || this._inScrollDirection === "rtl") {
@@ -54,12 +57,11 @@ export default class Page extends LayerPile {
 		return { width, height }
 	}
 
-	constructor(pageIndex, isADoublePage, overflow, hAlign, vAlign, player) {
+	constructor(pageIndex, overflow, hAlign, vAlign, player) {
 		const name = `page${pageIndex}`
 		super("page", name)
 
 		this._pageIndex = pageIndex
-		this._isADoublePage = isADoublePage
 		this._player = player
 
 		this._hitZoneToPrevious = null
@@ -71,26 +73,22 @@ export default class Page extends LayerPile {
 		this._timeAnimationsArray = []
 	}
 
-	// Used in Slideshow
 	setInScrollDirection(inScrollDirection) {
 		this._inScrollDirection = inScrollDirection
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.setInScrollDirection(inScrollDirection)
+		this.handler.setInScrollDirection(inScrollDirection)
 	}
 
-	// Used in Slideshow
 	setHitZoneToPrevious(quadrant) {
 		this._hitZoneToPrevious = quadrant
 	}
 
-	// Used in Slideshow
 	setHitZoneToNext(quadrant) {
 		this._hitZoneToNext = quadrant
 	}
 
-	// Used in Slideshow
 	setSecondaryAxis(axis) {
 		this._secondaryAxis = axis
 	}
@@ -98,93 +96,111 @@ export default class Page extends LayerPile {
 	addSegment(segment) {
 		// Add the segment to the layer pile
 		const segmentLayer = new Layer("segment", segment)
-		this._addLayer(segmentLayer)
+		this.addLayer(segmentLayer)
 	}
 
 	addSnapPoints(pageSegmentIndex, snapPointsArray) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.addSnapPoints(pageSegmentIndex, snapPointsArray)
+		this.handler.addSnapPoints(pageSegmentIndex, snapPointsArray)
 	}
 
 	addSliceAnimation(pageSegmentIndex, slice, animation) {
-		if (this._handler && this._handler.type === "overflowHandler") {
-			this._handler.addSliceAnimation(pageSegmentIndex, slice, animation)
+		if (this.handler && this.handler.type === "overflowHandler") {
+			this.handler.addSliceAnimation(pageSegmentIndex, slice, animation)
 		}
 	}
 
 	addSoundAnimation(pageSegmentIndex, animation) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.addSoundAnimation(pageSegmentIndex, animation)
+		this.handler.addSoundAnimation(pageSegmentIndex, animation)
 	}
 
 	// Used in PageNavigator
 	goToSegmentIndex(pageSegmentIndex, isGoingForward = true) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.goToSegmentIndex(pageSegmentIndex, isGoingForward)
+		this.handler.goToSegmentIndex(pageSegmentIndex, isGoingForward)
 	}
 
 	// Used in PageNavigator
 	getLastPageSegmentIndex() {
-		return (this._layersArray.length - 1)
+		return (this.layersArray.length - 1)
 	}
 
 	attemptStickyStep() {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return false
 		}
-		return this._handler.attemptStickyStep()
+		return this.handler.attemptStickyStep()
 	}
 
 	zoom(zoomData) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.zoom(zoomData)
+		this.handler.zoom(zoomData)
 	}
 
 	setPercent(percent) {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return
 		}
-		this._handler.setPercent(percent)
+		this.handler.setPercent(percent)
 	}
 
 	// Used in PageNavigator
 	getCurrentHref() {
-		if (!this._handler || this._handler.type !== "overflowHandler") {
+		if (!this.handler || this.handler.type !== "overflowHandler") {
 			return null
 		}
-		return this._handler.getCurrentHref()
+		return this.handler.getCurrentHref()
 	}
 
 	resizePage() {
-		const pageNavigator = this._parent
-		if (pageNavigator) {
-			pageNavigator.layersArray.forEach((layer) => {
-				const { content, isActive } = layer // content is a Page
-				if (content === this && isActive === true) {
-					this.resize()
-				}
-			})
+		const pageNavigator = this.parent
+		if (!pageNavigator) {
+			return
 		}
+		pageNavigator.layersArray.forEach((layer) => {
+			const { content, isActive } = layer // content is a Page
+			if (content === this && isActive === true) {
+				this.resize()
+			}
+		})
 	}
 
 	updateLoadStatus() {
-		const oldStatus = this._loadStatus
+		const oldStatus = this.loadStatus
 
 		super.updateLoadStatus()
 
-		if (this._loadStatus !== oldStatus) {
+		if (this.loadStatus !== oldStatus) {
 			const { eventEmitter } = this._player
-			const data = { pageIndex: this._pageIndex, loadStatus: this._loadStatus }
+			const data = { pageIndex: this._pageIndex, loadStatus: this.loadStatus }
 			eventEmitter.emit("pageloadstatusupdate", data)
 		}
+	}
+
+	getInfo() {
+		const pageNavigator = this.parent
+		if (!pageNavigator) {
+			return {}
+		}
+		const { pageNavType } = pageNavigator
+		if (pageNavType !== "double") {
+			return super.getInfo()
+		}
+		// For a double page, if the first (half) page is empty, then the second one may be considered
+		const result = this.layersArray[0].getInfo()
+		if (result.href === "" && this.layersArray.length === 2) {
+			return this.layersArray[1].getInfo()
+		}
+		return result
 	}
 
 }

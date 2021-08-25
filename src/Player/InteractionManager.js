@@ -143,11 +143,14 @@ export default class InteractionManager {
 		this._mc.on("pinch", this._handlePinch)
 
 		if (this._allowsZoomOnDoubleTap === true) {
-			// Implement double tap detection
+
+			// Implement single and double tap detection
 			const doubleTap = new Hammer.Tap({ event: "doubletap", taps: 2 })
-			this._mc.add(doubleTap)
+			this._mc.add([doubleTap, this._singleTap])
 			this._singleTap.requireFailure(doubleTap)
 			doubleTap.recognizeWith(this._singleTap)
+
+			// Only finalize the implementation of single tap detection at this stage
 			this._handleDoubleTap = this._handleDoubleTap.bind(this)
 			this._mc.on("doubletap", this._handleDoubleTap)
 		}
@@ -403,7 +406,15 @@ export default class InteractionManager {
 				// There is no end to a wheel event, so no viewportPercent information
 				// can be constructed to attempt a sticky page change
 				const isWheelScroll = true
-				this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll)
+				const { direction } = this.pageNavigator
+				// If the story's direction is ltr or rtl, then an "actual" mouse wheel
+				// should prompt the story to move forward/backward
+				if ((direction === "ltr" || direction === "rtl") && e.deltaX === 0) {
+					const sign = (direction === "rtl") ? 1 : -1
+					this._scroll({ deltaX: sign * e.deltaY, deltaY: 0 }, isWheelScroll)
+				} else {
+					this._scroll({ deltaX: -e.deltaX, deltaY: -e.deltaY }, isWheelScroll)
+				}
 			}
 		})
 	}
