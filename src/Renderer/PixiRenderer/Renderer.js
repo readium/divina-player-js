@@ -1,5 +1,6 @@
 import {
 	autoDetectRenderer,
+	CanvasRenderer as PixiCanvasRenderer,
 	Application as PixiApplication,
 	Container as PixiContainer,
 	utils as PixiUtils,
@@ -48,7 +49,8 @@ export default class Renderer {
 			this._renderer = this._app.renderer
 			this._stage = this._app.stage
 		} else {
-			this._renderer = autoDetectRenderer(options)
+			//this._renderer = autoDetectRenderer(options)
+			this._renderer = new PixiCanvasRenderer(options)
 
 			this._stage = new PixiContainer()
 			this._stage.interactive = false
