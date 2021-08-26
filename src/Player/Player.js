@@ -497,7 +497,8 @@ export default class Player {
 
 			const { initialNbOfResourcesToLoad } = this._options
 			const forcedNb = (initialNbOfResourcesToLoad !== undefined
-				&& Utils.isANumber(initialNbOfResourcesToLoad) && initialNbOfResourcesToLoad > 0)
+				&& Utils.isANumber(initialNbOfResourcesToLoad) === true
+				&& initialNbOfResourcesToLoad > 0)
 				? initialNbOfResourcesToLoad
 				: null
 			this._resourceManager.runInitialTasks(doAfterRunningInitialLoadTasks, forcedNb)
@@ -519,10 +520,12 @@ export default class Player {
 
 		let { href } = locator
 		const { locations, text } = locator
+
 		let readingMode = pageNavType || text
 		if (!readingMode) {
 			readingMode = (locations && locations.progression !== undefined) ? "scroll" : "single"
 		}
+
 		if (this._resourceManager.haveFirstResourcesLoaded === true && oldPageNavigator) {
 			href = oldPageNavigator.getCurrentHref()
 		}
@@ -545,7 +548,7 @@ export default class Player {
 	// For reaching a specific resource directly in the story (typically via a table of contents,
 	// however it is also used as the first step into the story navigation)
 	_getTargetFromHref(readingMode, targetHref, canUseShortenedHref = false) {
-		if (!targetHref) {
+		if (!targetHref || Utils.isAString(targetHref) === false) {
 			return { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 		}
 
