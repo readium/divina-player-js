@@ -13,10 +13,50 @@ object-assign
  */
 
 /*!
+ * @pixi/canvas-extract - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/canvas-extract is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
+ * @pixi/canvas-graphics - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/canvas-graphics is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
+ * @pixi/canvas-mesh - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/canvas-mesh is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
  * @pixi/canvas-particles - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
  * @pixi/canvas-particles is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
+ * @pixi/canvas-prepare - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/canvas-prepare is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
+ * @pixi/canvas-sprite - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/canvas-sprite is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
@@ -37,14 +77,6 @@ object-assign
  */
 
 /*!
- * @pixi/constants - v5.3.9
- * Compiled Wed, 24 Mar 2021 19:54:16 UTC
- *
- * @pixi/constants is licensed under the MIT License.
- * http://www.opensource.org/licenses/mit-license
- */
-
-/*!
  * @pixi/core - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
@@ -61,34 +93,26 @@ object-assign
  */
 
 /*!
- * @pixi/filter-alpha - v5.3.9
+ * @pixi/extract - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
- * @pixi/filter-alpha is licensed under the MIT License.
+ * @pixi/extract is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
 /*!
- * @pixi/filter-color-matrix - v5.3.9
+ * @pixi/filter-displacement - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
- * @pixi/filter-color-matrix is licensed under the MIT License.
+ * @pixi/filter-displacement is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
 /*!
- * @pixi/filter-fxaa - v5.3.9
+ * @pixi/loaders - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
- * @pixi/filter-fxaa is licensed under the MIT License.
- * http://www.opensource.org/licenses/mit-license
- */
-
-/*!
- * @pixi/filter-noise - v5.3.9
- * Compiled Wed, 24 Mar 2021 19:54:16 UTC
- *
- * @pixi/filter-noise is licensed under the MIT License.
+ * @pixi/loaders is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
@@ -97,6 +121,14 @@ object-assign
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
  * @pixi/math is licensed under the MIT License.
+ * http://www.opensource.org/licenses/mit-license
+ */
+
+/*!
+ * @pixi/mesh-extras - v5.3.9
+ * Compiled Wed, 24 Mar 2021 19:54:16 UTC
+ *
+ * @pixi/mesh-extras is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
@@ -133,22 +165,6 @@ object-assign
  */
 
 /*!
- * @pixi/runner - v5.3.9
- * Compiled Wed, 24 Mar 2021 19:54:16 UTC
- *
- * @pixi/runner is licensed under the MIT License.
- * http://www.opensource.org/licenses/mit-license
- */
-
-/*!
- * @pixi/settings - v5.3.9
- * Compiled Wed, 24 Mar 2021 19:54:16 UTC
- *
- * @pixi/settings is licensed under the MIT License.
- * http://www.opensource.org/licenses/mit-license
- */
-
-/*!
  * @pixi/ticker - v5.3.9
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
@@ -161,14 +177,6 @@ object-assign
  * Compiled Wed, 24 Mar 2021 19:54:16 UTC
  *
  * @pixi/utils is licensed under the MIT License.
- * http://www.opensource.org/licenses/mit-license
- */
-
-/*!
- * divinaPlayer - v0.3.0
- * Compiled Thu, 3 oct 2019 16:04:36 UTC
- *
- * divinaPlayer is licensed under the MIT License.
  * http://www.opensource.org/licenses/mit-license
  */
 
@@ -204,709 +212,10 @@ See the Apache Version 2.0 License for specific language governing permissions
 and limitations under the License.
 ***************************************************************************** */
 
-/*! ../../constants */
-
-/*! ../../utils */
-
-/*! ../DivinaParser */
-
-/*! ../Renderer */
-
-/*! ../ResourceManager */
-
-/*! ../Slice */
-
-/*! ../StoryBuilder */
-
-/*! ../constants */
-
-/*! ../utils */
-
-/*! ./AsyncTaskQueue */
-
-/*! ./AudioResource */
-
-/*! ./BaseTexture */
-
-/*! ./Camera */
-
-/*! ./Container */
-
-/*! ./CoreResource */
-
-/*! ./DivinaParser */
-
-/*! ./EventEmitter */
-
-/*! ./InteractionManager */
-
-/*! ./Layer */
-
-/*! ./LayerPile */
-
-/*! ./LayerTransition */
-
-/*! ./LinkObject */
-
-/*! ./Loader */
-
-/*! ./LoadingAnimation */
-
-/*! ./Loop */
-
-/*! ./OverflowHandler */
-
-/*! ./Page */
-
-/*! ./PageNavigator */
-
-/*! ./PixiRenderer */
-
-/*! ./Player */
-
-/*! ./Renderer */
-
-/*! ./ResourceBuilder */
-
-/*! ./ResourceLoadTaskQueue */
-
-/*! ./ResourceManager */
-
-/*! ./Segment */
-
-/*! ./SequenceSlice */
-
-/*! ./Slice */
-
-/*! ./Slideshow */
-
-/*! ./StateHandler */
-
-/*! ./StoryBuilder */
-
-/*! ./TagManager */
-
-/*! ./Task */
-
-/*! ./TextBlock */
-
-/*! ./TextElement */
-
-/*! ./TextManager */
-
-/*! ./TextSlice */
-
-/*! ./Texture */
-
-/*! ./TextureElement */
-
-/*! ./TextureResource */
-
-/*! ./TimeAnimationManager */
-
-/*! ./Transition */
-
-/*! ./VideoTextureResource */
-
-/*! ./constants */
-
-/*! ./decode */
-
-/*! ./encode */
-
-/*! ./isMobile */
-
-/*! ./util */
-
-/*! @pixi/accessibility */
-
-/*! @pixi/app */
-
-/*! @pixi/canvas-display */
-
-/*! @pixi/canvas-extract */
-
-/*! @pixi/canvas-graphics */
-
-/*! @pixi/canvas-mesh */
-
-/*! @pixi/canvas-particles */
-
-/*! @pixi/canvas-prepare */
-
-/*! @pixi/canvas-renderer */
-
-/*! @pixi/canvas-sprite */
-
-/*! @pixi/canvas-sprite-tiling */
-
-/*! @pixi/canvas-text */
-
-/*! @pixi/constants */
-
-/*! @pixi/core */
-
-/*! @pixi/display */
-
-/*! @pixi/extract */
-
-/*! @pixi/filter-alpha */
-
-/*! @pixi/filter-blur */
-
-/*! @pixi/filter-color-matrix */
-
-/*! @pixi/filter-displacement */
-
-/*! @pixi/filter-fxaa */
-
-/*! @pixi/filter-noise */
-
-/*! @pixi/graphics */
-
-/*! @pixi/interaction */
-
-/*! @pixi/loaders */
-
-/*! @pixi/math */
-
-/*! @pixi/mesh */
-
-/*! @pixi/mesh-extras */
-
-/*! @pixi/mixin-cache-as-bitmap */
-
-/*! @pixi/mixin-get-child-by-name */
-
-/*! @pixi/mixin-get-global-position */
-
-/*! @pixi/particles */
-
-/*! @pixi/polyfill */
-
-/*! @pixi/prepare */
-
-/*! @pixi/runner */
-
-/*! @pixi/settings */
-
-/*! @pixi/sprite */
-
-/*! @pixi/sprite-animated */
-
-/*! @pixi/sprite-tiling */
-
-/*! @pixi/spritesheet */
-
-/*! @pixi/text */
-
-/*! @pixi/text-bitmap */
-
-/*! @pixi/ticker */
-
-/*! @pixi/utils */
-
 /*! Hammer.JS - v2.0.7 - 2016-04-22
  * http://hammerjs.github.io/
  *
  * Copyright (c) 2016 Jorik Tangelder;
  * Licensed under the MIT license */
 
-/*! divinaPlayer
- *
- * Copyright (c) 2021 Florian Dupas (Kwalia);
- * Licensed under the MIT license */
-
-/*! earcut */
-
-/*! es6-promise-polyfill */
-
-/*! eventemitter3 */
-
-/*! hammerjs */
-
 /*! https://mths.be/punycode v1.3.2 by @mathias */
-
-/*! ismobilejs */
-
-/*! mini-signals */
-
-/*! object-assign */
-
-/*! parse-uri */
-
-/*! pixi.js */
-
-/*! pixi.js-legacy */
-
-/*! punycode */
-
-/*! querystring */
-
-/*! resource-loader */
-
-/*! url */
-
-/*!**********************!*\
-  !*** ./src/index.js ***!
-  \**********************/
-
-/*!**********************!*\
-  !*** ./src/utils.js ***!
-  \**********************/
-
-/*!**************************!*\
-  !*** ./src/constants.js ***!
-  \**************************/
-
-/*!****************************!*\
-  !*** ./src/Slice/Slice.js ***!
-  \****************************/
-
-/*!****************************!*\
-  !*** ./src/Slice/index.js ***!
-  \****************************/
-
-/*!*****************************!*\
-  !*** ./src/Player/index.js ***!
-  \*****************************/
-
-/*!******************************!*\
-  !*** ./src/Player/Player.js ***!
-  \******************************/
-
-/*!*******************************!*\
-  !*** ./src/Renderer/index.js ***!
-  \*******************************/
-
-/*!********************************!*\
-  !*** ./src/Slice/TextSlice.js ***!
-  \********************************/
-
-/*!*********************************!*\
-  !*** ./node_modules/url/url.js ***!
-  \*********************************/
-
-/*!**********************************!*\
-  !*** ./node_modules/url/util.js ***!
-  \**********************************/
-
-/*!**********************************!*\
-  !*** ./src/Player/TagManager.js ***!
-  \**********************************/
-
-/*!**********************************!*\
-  !*** ./src/StoryBuilder/Page.js ***!
-  \**********************************/
-
-/*!***********************************!*\
-  !*** ./src/DivinaParser/index.js ***!
-  \***********************************/
-
-/*!***********************************!*\
-  !*** ./src/Player/TextManager.js ***!
-  \***********************************/
-
-/*!***********************************!*\
-  !*** ./src/StoryBuilder/Layer.js ***!
-  \***********************************/
-
-/*!***********************************!*\
-  !*** ./src/StoryBuilder/index.js ***!
-  \***********************************/
-
-/*!************************************!*\
-  !*** ./src/Player/EventEmitter.js ***!
-  \************************************/
-
-/*!************************************!*\
-  !*** ./src/Slice/SequenceSlice.js ***!
-  \************************************/
-
-/*!*************************************!*\
-  !*** ./src/ResourceManager/Task.js ***!
-  \*************************************/
-
-/*!*************************************!*\
-  !*** ./src/StoryBuilder/Segment.js ***!
-  \*************************************/
-
-/*!**************************************!*\
-  !*** ./src/ResourceManager/index.js ***!
-  \**************************************/
-
-/*!***************************************!*\
-  !*** ./src/StoryBuilder/LayerPile.js ***!
-  \***************************************/
-
-/*!***************************************!*\
-  !*** ./src/StoryBuilder/Slideshow.js ***!
-  \***************************************/
-
-/*!****************************************!*\
-  !*** ./src/DivinaParser/LinkObject.js ***!
-  \****************************************/
-
-/*!****************************************!*\
-  !*** ./src/DivinaParser/Transition.js ***!
-  \****************************************/
-
-/*!*****************************************!*\
-  !*** ./node_modules/hammerjs/hammer.js ***!
-  \*****************************************/
-
-/*!*****************************************!*\
-  !*** ./node_modules/parse-uri/index.js ***!
-  \*****************************************/
-
-/*!******************************************!*\
-  !*** ./src/DivinaParser/DivinaParser.js ***!
-  \******************************************/
-
-/*!******************************************!*\
-  !*** ./src/Player/InteractionManager.js ***!
-  \******************************************/
-
-/*!******************************************!*\
-  !*** ./src/StoryBuilder/StoryBuilder.js ***!
-  \******************************************/
-
-/*!*******************************************!*\
-  !*** ./node_modules/earcut/src/earcut.js ***!
-  \*******************************************/
-
-/*!*******************************************!*\
-  !*** ./node_modules/querystring/index.js ***!
-  \*******************************************/
-
-/*!*******************************************!*\
-  !*** ./src/Renderer/PixiRenderer/Loop.js ***!
-  \*******************************************/
-
-/*!*******************************************!*\
-  !*** ./src/StoryBuilder/PageNavigator.js ***!
-  \*******************************************/
-
-/*!********************************************!*\
-  !*** ./node_modules/querystring/decode.js ***!
-  \********************************************/
-
-/*!********************************************!*\
-  !*** ./node_modules/querystring/encode.js ***!
-  \********************************************/
-
-/*!********************************************!*\
-  !*** ./src/Player/TimeAnimationManager.js ***!
-  \********************************************/
-
-/*!********************************************!*\
-  !*** ./src/Renderer/PixiRenderer/index.js ***!
-  \********************************************/
-
-/*!*********************************************!*\
-  !*** ./node_modules/eventemitter3/index.js ***!
-  \*********************************************/
-
-/*!*********************************************!*\
-  !*** ./node_modules/object-assign/index.js ***!
-  \*********************************************/
-
-/*!*********************************************!*\
-  !*** ./node_modules/pixi.js/lib/pixi.es.js ***!
-  \*********************************************/
-
-/*!*********************************************!*\
-  !*** ./src/DivinaParser/ResourceBuilder.js ***!
-  \*********************************************/
-
-/*!*********************************************!*\
-  !*** ./src/Renderer/PixiRenderer/Loader.js ***!
-  \*********************************************/
-
-/*!*********************************************!*\
-  !*** ./src/ResourceManager/CoreResource.js ***!
-  \*********************************************/
-
-/*!**********************************************!*\
-  !*** ./node_modules/@pixi/app/lib/app.es.js ***!
-  \**********************************************/
-
-/*!**********************************************!*\
-  !*** ./node_modules/ismobilejs/esm/index.js ***!
-  \**********************************************/
-
-/*!**********************************************!*\
-  !*** ./src/Renderer/PixiRenderer/Texture.js ***!
-  \**********************************************/
-
-/*!**********************************************!*\
-  !*** ./src/ResourceManager/AudioResource.js ***!
-  \**********************************************/
-
-/*!***********************************************!*\
-  !*** ./src/Renderer/PixiRenderer/Renderer.js ***!
-  \***********************************************/
-
-/*!***********************************************!*\
-  !*** ./src/ResourceManager/AsyncTaskQueue.js ***!
-  \***********************************************/
-
-/*!************************************************!*\
-  !*** ./node_modules/@pixi/core/lib/core.es.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./node_modules/@pixi/math/lib/math.es.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./node_modules/@pixi/mesh/lib/mesh.es.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./node_modules/@pixi/text/lib/text.es.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/Container.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/TextBlock.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./src/ResourceManager/ResourceManager.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./src/ResourceManager/TextureResource.js ***!
-  \************************************************/
-
-/*!************************************************!*\
-  !*** ./src/StoryBuilder/StateHandler/index.js ***!
-  \************************************************/
-
-/*!*************************************************!*\
-  !*** ./node_modules/ismobilejs/esm/isMobile.js ***!
-  \*************************************************/
-
-/*!**************************************************!*\
-  !*** ./node_modules/@pixi/utils/lib/utils.es.js ***!
-  \**************************************************/
-
-/*!**************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/BaseTexture.js ***!
-  \**************************************************/
-
-/*!**************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/TextElement.js ***!
-  \**************************************************/
-
-/*!***************************************************!*\
-  !*** ./src/StoryBuilder/OverflowHandler/index.js ***!
-  \***************************************************/
-
-/*!****************************************************!*\
-  !*** ./node_modules/@pixi/runner/lib/runner.es.js ***!
-  \****************************************************/
-
-/*!****************************************************!*\
-  !*** ./node_modules/@pixi/sprite/lib/sprite.es.js ***!
-  \****************************************************/
-
-/*!****************************************************!*\
-  !*** ./node_modules/@pixi/ticker/lib/ticker.es.js ***!
-  \****************************************************/
-
-/*!****************************************************!*\
-  !*** ./src/StoryBuilder/OverflowHandler/Camera.js ***!
-  \****************************************************/
-
-/*!*****************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/TextureElement.js ***!
-  \*****************************************************/
-
-/*!*****************************************************!*\
-  !*** ./src/ResourceManager/VideoTextureResource.js ***!
-  \*****************************************************/
-
-/*!******************************************************!*\
-  !*** ./node_modules/@pixi/display/lib/display.es.js ***!
-  \******************************************************/
-
-/*!******************************************************!*\
-  !*** ./node_modules/@pixi/extract/lib/extract.es.js ***!
-  \******************************************************/
-
-/*!******************************************************!*\
-  !*** ./node_modules/@pixi/loaders/lib/loaders.es.js ***!
-  \******************************************************/
-
-/*!******************************************************!*\
-  !*** ./node_modules/@pixi/prepare/lib/prepare.es.js ***!
-  \******************************************************/
-
-/*!******************************************************!*\
-  !*** ./node_modules/es6-promise-polyfill/promise.js ***!
-  \******************************************************/
-
-/*!******************************************************!*\
-  !*** ./src/ResourceManager/ResourceLoadTaskQueue.js ***!
-  \******************************************************/
-
-/*!*******************************************************!*\
-  !*** ./node_modules/mini-signals/lib/mini-signals.js ***!
-  \*******************************************************/
-
-/*!*******************************************************!*\
-  !*** ./src/Renderer/PixiRenderer/LoadingAnimation.js ***!
-  \*******************************************************/
-
-/*!*******************************************************!*\
-  !*** ./src/StoryBuilder/StateHandler/StateHandler.js ***!
-  \*******************************************************/
-
-/*!********************************************************!*\
-  !*** ./node_modules/@pixi/graphics/lib/graphics.es.js ***!
-  \********************************************************/
-
-/*!********************************************************!*\
-  !*** ./node_modules/@pixi/polyfill/lib/polyfill.es.js ***!
-  \********************************************************/
-
-/*!********************************************************!*\
-  !*** ./node_modules/@pixi/settings/lib/settings.es.js ***!
-  \********************************************************/
-
-/*!**********************************************************!*\
-  !*** ./node_modules/@pixi/constants/lib/constants.es.js ***!
-  \**********************************************************/
-
-/*!**********************************************************!*\
-  !*** ./node_modules/@pixi/particles/lib/particles.es.js ***!
-  \**********************************************************/
-
-/*!**********************************************************!*\
-  !*** ./src/StoryBuilder/StateHandler/LayerTransition.js ***!
-  \**********************************************************/
-
-/*!***********************************************************!*\
-  !*** ./node_modules/pixi.js-legacy/lib/pixi-legacy.es.js ***!
-  \***********************************************************/
-
-/*!************************************************************!*\
-  !*** ./node_modules/url/node_modules/punycode/punycode.js ***!
-  \************************************************************/
-
-/*!*************************************************************!*\
-  !*** ./src/StoryBuilder/OverflowHandler/OverflowHandler.js ***!
-  \*************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-mesh/lib/canvas-mesh.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-text/lib/canvas-text.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/filter-blur/lib/filter-blur.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/filter-fxaa/lib/filter-fxaa.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/interaction/lib/interaction.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/mesh-extras/lib/mesh-extras.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/spritesheet/lib/spritesheet.es.js ***!
-  \**************************************************************/
-
-/*!**************************************************************!*\
-  !*** ./node_modules/@pixi/text-bitmap/lib/text-bitmap.es.js ***!
-  \**************************************************************/
-
-/*!****************************************************************!*\
-  !*** ./node_modules/@pixi/filter-alpha/lib/filter-alpha.es.js ***!
-  \****************************************************************/
-
-/*!****************************************************************!*\
-  !*** ./node_modules/@pixi/filter-noise/lib/filter-noise.es.js ***!
-  \****************************************************************/
-
-/*!******************************************************************!*\
-  !*** ./node_modules/@pixi/accessibility/lib/accessibility.es.js ***!
-  \******************************************************************/
-
-/*!******************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-sprite/lib/canvas-sprite.es.js ***!
-  \******************************************************************/
-
-/*!******************************************************************!*\
-  !*** ./node_modules/@pixi/sprite-tiling/lib/sprite-tiling.es.js ***!
-  \******************************************************************/
-
-/*!******************************************************************!*\
-  !*** ./node_modules/resource-loader/dist/resource-loader.esm.js ***!
-  \******************************************************************/
-
-/*!********************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-display/lib/canvas-display.es.js ***!
-  \********************************************************************/
-
-/*!********************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-extract/lib/canvas-extract.es.js ***!
-  \********************************************************************/
-
-/*!********************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-prepare/lib/canvas-prepare.es.js ***!
-  \********************************************************************/
-
-/*!**********************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-graphics/lib/canvas-graphics.es.js ***!
-  \**********************************************************************/
-
-/*!**********************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-renderer/lib/canvas-renderer.es.js ***!
-  \**********************************************************************/
-
-/*!**********************************************************************!*\
-  !*** ./node_modules/@pixi/sprite-animated/lib/sprite-animated.es.js ***!
-  \**********************************************************************/
-
-/*!************************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-particles/lib/canvas-particles.es.js ***!
-  \************************************************************************/
-
-/*!******************************************************************************!*\
-  !*** ./node_modules/@pixi/filter-color-matrix/lib/filter-color-matrix.es.js ***!
-  \******************************************************************************/
-
-/*!******************************************************************************!*\
-  !*** ./node_modules/@pixi/filter-displacement/lib/filter-displacement.es.js ***!
-  \******************************************************************************/
-
-/*!********************************************************************************!*\
-  !*** ./node_modules/@pixi/canvas-sprite-tiling/lib/canvas-sprite-tiling.es.js ***!
-  \********************************************************************************/
-
-/*!**********************************************************************************!*\
-  !*** ./node_modules/@pixi/mixin-cache-as-bitmap/lib/mixin-cache-as-bitmap.es.js ***!
-  \**********************************************************************************/
-
-/*!**************************************************************************************!*\
-  !*** ./node_modules/@pixi/mixin-get-child-by-name/lib/mixin-get-child-by-name.es.js ***!
-  \**************************************************************************************/
-
-/*!******************************************************************************************!*\
-  !*** ./node_modules/@pixi/mixin-get-global-position/lib/mixin-get-global-position.es.js ***!
-  \******************************************************************************************/
