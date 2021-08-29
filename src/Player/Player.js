@@ -185,7 +185,7 @@ export default class Player {
 
 	// Called above and externally
 	setReadingMode(readingMode) {
-		if (!this._pageNavigator || !readingMode || readingMode === this._pageNavigator.pageNavType) {
+		if (!readingMode) {
 			return
 		}
 		this._setPageNavigator(readingMode)
@@ -366,7 +366,11 @@ export default class Player {
 		}
 		this._eventEmitter.emit("dataparsing", data)
 
-		// Now build (and set) the page navigator to start with
+		// Now build (and set) the page navigator to start with,
+		// except if one has already been created (i.e. forced by the calling app)
+		if (this._pageNavigator) {
+			return
+		}
 		if (this._pageNavigatorsData.single) {
 			this._setPageNavigator("single", locator)
 		} else if (this._pageNavigatorsData.scroll) {
@@ -418,6 +422,9 @@ export default class Player {
 	// Set the pageNavigator, load its first resources and start playing the story
 	_setPageNavigator(pageNavType, locator = null) {
 		const oldPageNavigator = this._pageNavigator
+		if (oldPageNavigator && oldPageNavigator.pageNavType === pageNavType) {
+			return
+		}
 
 		let actualLocator = locator
 		if (!actualLocator && oldPageNavigator) {
@@ -600,6 +607,9 @@ export default class Player {
 	}
 
 	_updateLoadTasks(target) {
+		if (!this._pageNavigator) {
+			return
+		}
 		const { pageIndex = null, segmentIndex = null } = target || {}
 		this._pageNavigator.updateLoadTasks(pageIndex, segmentIndex)
 	}
