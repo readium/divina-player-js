@@ -296,7 +296,7 @@ const getRectForMediaFragmentAndSize = (mediaFragment, size) => {
 }
 
 const getShortenedHref = (href) => {
-	if (!href) {
+	if (!href || isAString(href) === false) {
 		return null
 	}
 	return href.split("#")[0]
