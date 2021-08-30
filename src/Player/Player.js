@@ -185,7 +185,7 @@ export default class Player {
 
 	// Called above and externally
 	setReadingMode(readingMode) {
-		if (!this._pageNavigator || !readingMode || readingMode === this._pageNavigator.pageNavType) {
+		if (!readingMode) {
 			return
 		}
 		this._setPageNavigator(readingMode)
@@ -366,7 +366,11 @@ export default class Player {
 		}
 		this._eventEmitter.emit("dataparsing", data)
 
-		// Now build (and set) the page navigator to start with
+		// Now build (and set) the page navigator to start with,
+		// except if one has already been created (i.e. forced by the calling app)
+		if (this._pageNavigator) {
+			return
+		}
 		if (this._pageNavigatorsData.single) {
 			this._setPageNavigator("single", locator)
 		} else if (this._pageNavigatorsData.scroll) {
@@ -418,6 +422,9 @@ export default class Player {
 	// Set the pageNavigator, load its first resources and start playing the story
 	_setPageNavigator(pageNavType, locator = null) {
 		const oldPageNavigator = this._pageNavigator
+		if (oldPageNavigator && oldPageNavigator.pageNavType === pageNavType) {
+			return
+		}
 
 		let actualLocator = locator
 		if (!actualLocator && oldPageNavigator) {
@@ -497,7 +504,8 @@ export default class Player {
 
 			const { initialNbOfResourcesToLoad } = this._options
 			const forcedNb = (initialNbOfResourcesToLoad !== undefined
-				&& Utils.isANumber(initialNbOfResourcesToLoad) && initialNbOfResourcesToLoad > 0)
+				&& Utils.isANumber(initialNbOfResourcesToLoad) === true
+				&& initialNbOfResourcesToLoad > 0)
 				? initialNbOfResourcesToLoad
 				: null
 			this._resourceManager.runInitialTasks(doAfterRunningInitialLoadTasks, forcedNb)
@@ -519,10 +527,12 @@ export default class Player {
 
 		let { href } = locator
 		const { locations, text } = locator
+
 		let readingMode = pageNavType || text
 		if (!readingMode) {
 			readingMode = (locations && locations.progression !== undefined) ? "scroll" : "single"
 		}
+
 		if (this._resourceManager.haveFirstResourcesLoaded === true && oldPageNavigator) {
 			href = oldPageNavigator.getCurrentHref()
 		}
@@ -545,7 +555,7 @@ export default class Player {
 	// For reaching a specific resource directly in the story (typically via a table of contents,
 	// however it is also used as the first step into the story navigation)
 	_getTargetFromHref(readingMode, targetHref, canUseShortenedHref = false) {
-		if (!targetHref) {
+		if (!targetHref || Utils.isAString(targetHref) === false) {
 			return { pageIndex: 0, pageSegmentIndex: 0, segmentIndex: 0 }
 		}
 
@@ -597,6 +607,9 @@ export default class Player {
 	}
 
 	_updateLoadTasks(target) {
+		if (!this._pageNavigator) {
+			return
+		}
 		const { pageIndex = null, segmentIndex = null } = target || {}
 		this._pageNavigator.updateLoadTasks(pageIndex, segmentIndex)
 	}
