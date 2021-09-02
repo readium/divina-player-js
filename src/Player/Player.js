@@ -75,7 +75,9 @@ export default class Player {
 		this._minRatio = null
 		this._maxRatio = null
 		const shouldReturnDefaultValue = true
-		this._spread = Utils.returnValidValue("spread", null, shouldReturnDefaultValue)
+		const value = null
+		this._continuous = Utils.returnValidValue("continuous", value, shouldReturnDefaultValue)
+		this._spread = Utils.returnValidValue("spread", value, shouldReturnDefaultValue)
 
 		this._tagManager = null
 		this._options = {}
@@ -337,6 +339,8 @@ export default class Player {
 			direction, continuous, spread, viewportRatio, languagesArray,
 		} = metadata || {}
 
+		this._continuous = continuous // Used in goTo (when called from ToC)
+
 		// Set spread (used to check whether the double reading mode is available)
 		this._spread = spread
 
@@ -540,7 +544,10 @@ export default class Player {
 
 		let readingMode = pageNavType || text
 		if (!readingMode) {
-			readingMode = (locations && locations.progression !== undefined) ? "scroll" : "single"
+			readingMode = ((locations && locations.progression !== undefined)
+				|| this._continuous === true)
+				? "scroll"
+				: "single"
 		}
 
 		if (this._resourceManager.haveFirstResourcesLoaded === true && oldPageNavigator) {
@@ -571,7 +578,7 @@ export default class Player {
 
 		const targetPath = (canUseShortenedHref === true)
 			? Utils.getShortenedHref(targetHref) // Which is actually the resource path
-			: null
+			: targetHref
 
 		let hardTarget = null
 		let softTarget = null
